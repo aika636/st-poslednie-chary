@@ -69,7 +69,7 @@
   position: fixed;
   top: calc(var(--topBarBlockSize, 0px) + 10px);
   right: 12px;
-  bottom: calc(var(--cc-form-h, 64px) + 10px);
+  height: calc(100dvh - var(--topBarBlockSize, 0px) - var(--cc-form-h, 64px) - 20px);
   width: min(1000px, calc(100vw - 72px));
   max-height: calc(100dvh - var(--topBarBlockSize, 0px) - var(--cc-form-h, 64px) - 24px);
   z-index: 3000;
@@ -213,7 +213,11 @@
 /* Свеча на кронштейне: поднимается над обложкой, чаша стоит на углу правой страницы.
    Над томом для неё оставлен отступ панели, угол страницы под ней свободен от кнопок. */
 #cc-panel { padding-top: 44px; pointer-events: none; }
-#cc-panel .cc-tome { pointer-events: auto; }
+#cc-panel .cc-tome { pointer-events: auto; cursor: grab; touch-action: none; }
+#cc-panel .cc-spine { touch-action: none; }
+#cc-panel .cc-page, #cc-panel .cc-side { cursor: auto; }
+#cc-panel.cc-dragging, #cc-panel.cc-dragging * { cursor: grabbing; user-select: none; }
+@media (max-width: 700px) { #cc-panel .cc-tome, #cc-panel .cc-spine { cursor: auto; touch-action: auto; } }
 #cc-panel .cc-tome-candle { position: absolute; z-index: 5; top: -44px; right: 4px; width: 84px; pointer-events: none; }
 #cc-panel .cc-tome-candle .cc-candle-box { position: relative; z-index: 1; width: 100%; }
 #cc-panel .cc-tome-candle .cc-candle { width: 84px; height: 126px; filter: drop-shadow(0 6px 6px rgba(10, 2, 20, .5)); }
@@ -844,11 +848,13 @@
   height: var(--bottomFormBlockSize, 32px);
   opacity: .85;
 }
+#cc-open { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; color: inherit !important; transition: none !important; }
+#cc-open .cc-candle-n { background: linear-gradient(180deg, var(--cc-cover-1), var(--cc-cover-3)) !important; color: var(--cc-gold) !important; border: 1px solid var(--cc-gold) !important; border-radius: 999px !important; padding: 0 6px !important; box-shadow: none !important; transition: none !important; }
 #cc-open:hover { opacity: 1; }
 #cc-open .cc-candle-box { flex-direction: row; gap: 3px; align-items: center; }
 #cc-open .cc-candle { width: 18px; height: 27px; }
 #cc-open .cc-candle-n { margin: 0; padding: 0 6px; font-size: 11px; line-height: 16px; }
-#cc-open.cc-armed .cc-candle-n { box-shadow: 0 0 8px var(--cc-accent-2); border-color: var(--cc-accent-2); }
+#cc-open.cc-armed .cc-candle-n { box-shadow: 0 0 8px var(--cc-accent-2) !important; border-color: var(--cc-accent-2) !important; }
 
 #cc-hint {
   display: flex;
@@ -869,8 +875,8 @@
   animation: cc-hint-in .25s ease-out;
 }
 #cc-hint .cc-hint-chip.cc-hint-on { border-color: var(--cc-accent-2); box-shadow: 0 0 12px color-mix(in srgb, var(--cc-accent-2) 45%, transparent); }
-#cc-hint button { border: 0; background: transparent; color: inherit; cursor: pointer; font: inherit; padding: 6px 4px 6px 12px; }
-#cc-hint .cc-hint-x { padding: 6px 10px 6px 6px; opacity: .7; }
+#cc-hint button { border: 0 !important; background: transparent !important; color: inherit !important; border-radius: 0 !important; box-shadow: none !important; transition: none !important; cursor: pointer; font: inherit; padding: 6px 4px 6px 12px !important; }
+#cc-hint .cc-hint-x { padding: 6px 10px 6px 6px !important; opacity: .7; }
 #cc-hint .cc-hint-x:hover { opacity: 1; }
 @keyframes cc-hint-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
@@ -939,10 +945,10 @@
 #cc-panel .cc-tome[data-layout="compact"][data-selected="false"] .cc-side { display:none; }
 #cc-panel .cc-tome[data-spread="true"] .cc-side { display:flex; }
 @media (max-width: 700px) {
-  #cc-panel { top:var(--topBarBlockSize,0px); left:0; right:0; bottom:0; width:auto; max-height:none; font-size:16px; }
+  #cc-panel { top:var(--topBarBlockSize,0px); left:0; right:0; height:calc(100dvh - var(--topBarBlockSize,0px)); width:auto; max-height:none; font-size:16px; }
   #cc-panel:has(.cc-tome) { width:auto; }
   #cc-panel .cc-tome { height:100%; max-height:none; }
-  #cc-panel .cc-tome::after, #cc-panel .cc-spine { display:none; }
+  #cc-panel .cc-tome::after, #cc-panel .cc-spine, #cc-panel .cc-corners { display:none; }
   #cc-panel .cc-page { flex-basis:100%; border-radius:4px; }
   #cc-panel .cc-side { display:none; flex-basis:100%; }
   #cc-panel .cc-tome[data-selected="true"][data-spread="true"] .cc-page { display:none; }

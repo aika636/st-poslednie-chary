@@ -199,3 +199,14 @@ export function buildView({ chatOpen, chatId = null, chat, meta, unsupported, se
     conflicts: computed.conflicts,
   };
 }
+
+// Смещение тома от места по умолчанию, зажатое так, чтобы минимум `keep` px обложки оставались на экране.
+// rect — рамка обложки без смещения.
+export function clampOffset(off, rect, vw, vh, keep = 120) {
+  const num = (v) => (Number.isFinite(v) ? v : 0);
+  const k = Math.min(keep, rect.width, rect.height);
+  const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), Math.max(lo, hi));
+  const x = clamp(num(off?.x), k - rect.left - rect.width, vw - k - rect.left);
+  const y = clamp(num(off?.y), -rect.top, vh - k - rect.top);
+  return { x: Math.round(x), y: Math.round(y) };
+}

@@ -4,6 +4,7 @@
 import { SCALE, THRESHOLDS, DIFFICULTIES, discountUseful, fractureLoad, scaleOf, rollsAgainst } from './core/rules.mjs';
 import { castCard, createCatalog } from './core/catalog.mjs';
 import SHORT from './core/data/short.mjs';
+import { clampOffset } from './view.mjs';
 import { candleSvg, candleMarks } from './candle.js';
 import { SOURCE_GLYPH, STAR, RING, CORNER, SLIP_NARROW, PAPERCLIP, BRACKET, glyphFor } from './glyphs.js';
 
@@ -736,13 +737,22 @@ export function createPanel(actions) {
   let scrollTop = false;
   let lastLevel = null;
   let renderedSpellId = null;
+  const host = document.createElement('div');
+  host.id = 'cc-panel-host';
+  const shadow = host.attachShadow({ mode: 'open' });
+  const reset = document.createElement('style');
+  reset.textContent = ':host { all: initial; }';
+  const sheet = document.createElement('link');
+  sheet.rel = 'stylesheet';
+  sheet.href = new URL('./style.css', import.meta.url).href;
   const root = document.createElement('div');
   root.id = 'cc-panel';
   root.className = 'cc-panel';
   root.hidden = true;
   root.setAttribute('role', 'dialog');
   root.setAttribute('aria-label', 'Последние чары');
-  document.body.append(root);
+  shadow.append(reset, sheet, root);
+  document.body.append(host);
 
   const preview = (kind, payload) => actions.preview(kind, payload);
   const st = () => (view ? current(view) : null);
@@ -750,7 +760,7 @@ export function createPanel(actions) {
 
   function paint() {
     if (root.hidden) return;
-    const active = document.activeElement;
+    const active = shadow.activeElement;
     let focusKey = null;
     let focusAct = null;
     let focusV = null;
@@ -1025,10 +1035,81 @@ export function createPanel(actions) {
   }, true);
   document.addEventListener('keydown', onKey);
 
+  // Перетаскивание: смещение от места по умолчанию, на телефонной вёрстке не применяется.
+  const POS_KEY = 'cena-chuda:pos';
+  const narrow = () => globalThis.matchMedia?.('(max-width: 700px)').matches ?? false;
+  let off = null;
+  try {
+    const p = JSON.parse(globalThis.localStorage?.getItem(POS_KEY) ?? 'null');
+    if (p && Number.isFinite(p.x) && Number.isFinite(p.y)) off = { x: p.x, y: p.y };
+  } catch { off = null; }
+  const savePos = () => {
+    try {
+      if (off) globalThis.localStorage?.setItem(POS_KEY, JSON.stringify(off));
+      else globalThis.localStorage?.removeItem(POS_KEY);
+    } catch { /* без хранилища */ }
+  };
+  function applyPos(next = off) {
+    root.style.translate = 'none';
+    if (!next || narrow() || root.hidden) return;
+    const tome = root.querySelector('.cc-tome');
+    if (!tome) return;
+    off = clampOffset(next, tome.getBoundingClientRect(), globalThis.innerWidth, globalThis.innerHeight);
+    root.style.translate = `${off.x}px ${off.y}px`;
+  }
+  // Если обложки почти не видно (окно сильно уменьшили), том возвращается на место.
+  function ensureReachable() {
+    const tome = root.querySelector('.cc-tome');
+    if (!off || narrow() || !tome) return;
+    const r = tome.getBoundingClientRect();
+    const vis = (a, b, max) => Math.min(b, max) - Math.max(a, 0);
+    if (vis(r.left, r.right, globalThis.innerWidth) >= 120 && vis(r.top, r.bottom, globalThis.innerHeight) >= 120) return;
+    off = null;
+    savePos();
+    applyPos();
+  }
+  const NO_GRAB = 'button, input, select, textarea, a, summary, label, [data-act], [contenteditable], .cc-page, .cc-side';
+  let drag = null;
+  root.addEventListener('pointerdown', (ev) => {
+    if (ev.button !== 0 || narrow() || !ev.target.closest?.('.cc-tome') || ev.target.closest(NO_GRAB)) return;
+    drag = { id: ev.pointerId, sx: ev.clientX, sy: ev.clientY, from: off ?? { x: 0, y: 0 }, moved: false };
+  });
+  root.addEventListener('pointermove', (ev) => {
+    if (!drag || ev.pointerId !== drag.id) return;
+    const dx = ev.clientX - drag.sx;
+    const dy = ev.clientY - drag.sy;
+    if (!drag.moved) {
+      if (Math.hypot(dx, dy) < 4) return;
+      drag.moved = true;
+      root.setPointerCapture?.(ev.pointerId);
+      root.classList.add('cc-dragging');
+    }
+    applyPos({ x: drag.from.x + dx, y: drag.from.y + dy });
+  });
+  const endDrag = (ev) => {
+    if (!drag || ev.pointerId !== drag.id) return;
+    const moved = drag.moved;
+    drag = null;
+    root.classList.remove('cc-dragging');
+    try { root.releasePointerCapture?.(ev.pointerId); } catch { /* захвата нет */ }
+    if (moved) savePos();
+  };
+  root.addEventListener('pointerup', endDrag);
+  root.addEventListener('pointercancel', endDrag);
+  root.addEventListener('dblclick', (ev) => {
+    if (narrow() || !ev.target.closest?.('.cc-tome') || ev.target.closest(NO_GRAB)) return;
+    off = null;
+    savePos();
+    applyPos();
+  });
+  globalThis.addEventListener?.('resize', () => applyPos());
+
   function open() {
     root.hidden = false;
     document.body.classList.add('cc-open');
     paint();
+    applyPos();
+    ensureReachable();
   }
 
   function close() {
