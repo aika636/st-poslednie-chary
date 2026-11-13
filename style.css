@@ -24,9 +24,9 @@
   --cc-bad: #b3324f;
   --cc-warn: #b0661c;
   --cc-ok: #2f8f7f;
-  --cc-r1: #2bb3ad;
-  --cc-r2: #7c4ccc;
-  --cc-r3: #c4506c;
+  --cc-r1: #4c6a50;
+  --cc-r2: #6b4066;
+  --cc-r3: #7d3040;
   --cc-wax: #f7efdf;
   --cc-wax-shade: #d9c7a4;
   --cc-flame-base: #ff7a2b;
@@ -59,6 +59,9 @@
   --cc-accent: var(--SmartThemeQuoteColor, #7c4ccc);
   --cc-accent-soft: color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 16%, transparent);
   --cc-on-accent: var(--SmartThemeBlurTintColor, #111);
+  --cc-r1: color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 18%, #3f5a44);
+  --cc-r2: color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 40%, #4a3a4a);
+  --cc-r3: color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 15%, #6b3038);
   --cc-display: var(--mainFontFamily, Georgia), serif;
   --cc-body: var(--mainFontFamily, Georgia), serif;
 }
@@ -1236,3 +1239,68 @@
 @media (min-width:701px) {
   #cc-panel .cc-tome > .cc-page { padding-left: 30px; }
 }
+
+/* ---------- брелок режима ---------- */
+#cc-panel .cc-pagehead .cc-charm { position: absolute; top: 0; right: 18px; z-index: 3; display: grid; justify-items: center; width: 52px; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; transform-origin: 50% 0; transition: transform .25s ease; }
+#cc-panel .cc-charm:hover { transform: rotate(-2deg); }
+#cc-panel .cc-charm:focus-visible { outline: 2px solid var(--cc-accent-2); outline-offset: 2px; border-radius: 6px; }
+#cc-panel .cc-charm.cc-locked { cursor: not-allowed; opacity: .55; }
+#cc-panel .cc-charm.cc-locked:hover { transform: none; }
+#cc-panel .cc-charm-chain { width: 22px; height: 27px; margin-bottom: -6px; overflow: visible; }
+#cc-panel .cc-chain-ring, #cc-panel .cc-chain-link { fill: none; stroke: url(#cc-charm-g); stroke-width: 1.8; }
+#cc-panel .cc-st1 { stop-color: var(--cc-gold); }
+#cc-panel .cc-st2 { stop-color: var(--cc-gold-2); }
+#cc-panel .cc-st3 { stop-color: var(--cc-gold-3); }
+#cc-panel .cc-coin3d { position: relative; display: block; width: 44px; height: 44px; perspective: 160px; transform-style: preserve-3d; }
+#cc-panel .cc-coin3d[data-side="dice"] { transform: rotateY(180deg); }
+#cc-panel .cc-coin3d[data-flip] { animation: cc-coin-flip .4s ease; }
+@keyframes cc-coin-flip { from { transform: rotateY(var(--cc-from, 0deg)); } }
+#cc-panel .cc-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+#cc-panel .cc-face-dice { transform: rotateY(180deg); }
+#cc-panel .cc-face svg { display: block; width: 44px; height: 44px; filter: drop-shadow(0 2px 2px rgba(40, 24, 8, .4)); }
+#cc-panel .cc-coin3d[data-side="story"] .cc-face-dice, #cc-panel .cc-coin3d[data-side="dice"] .cc-face-story { visibility: hidden; }
+#cc-panel .cc-coin3d[data-flip] .cc-face { visibility: visible; }
+#cc-panel .cc-cf-disc { fill: url(#cc-charm-g); stroke: var(--cc-gold-3); stroke-width: 1; }
+#cc-panel .cc-cf-rim { fill: none; stroke: var(--cc-gold-3); stroke-width: .8; opacity: .6; }
+#cc-panel .cc-cf-ink { fill: color-mix(in srgb, var(--cc-gold) 35%, transparent); stroke: var(--cc-cover-3); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+#cc-panel .cc-charm-cap { margin-top: 1px; font: 700 11px/1.1 var(--cc-display); letter-spacing: .04em; color: var(--cc-muted); white-space: nowrap; }
+@media (max-width: 700px) {
+  #cc-panel .cc-pagehead .cc-charm { top: 34px; right: 78px; }
+}
+
+/* ---------- закладки: сукно ---------- */
+#cc-panel .cc-ribbon {
+  color: #f6ecd8;
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, .05) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, .09) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, rgba(0, 0, 0, .28), transparent 24%), var(--cc-rb, var(--cc-r1));
+  box-shadow: inset 2px 0 0 rgba(255, 255, 255, .08), inset -2px 0 0 rgba(0, 0, 0, .14), inset 0 -1px 0 rgba(255, 255, 255, .12);
+  filter: saturate(.75) brightness(.9);
+}
+#cc-panel .cc-ribbon[aria-selected="true"] { filter: none; }
+#cc-panel .cc-ribbon::before { content: ""; position: absolute; inset: 3px 4px 10px; border: 1px dashed rgba(255, 244, 220, .22); pointer-events: none; }
+
+/* ---------- под рукой: пустые слоты, сейчас ---------- */
+#cc-panel .cc-hand-slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#cc-panel .cc-hand-slot { display: grid; place-items: center; min-height: 44px; border: 1.5px dashed color-mix(in srgb, var(--cc-muted) 55%, transparent); border-radius: 6px; color: color-mix(in srgb, var(--cc-muted) 55%, transparent); font-size: 16px; }
+#cc-panel .cc-hand-empty { margin: 6px 0 0; font-size: 12px; text-align: center; color: var(--cc-muted); }
+#cc-panel .cc-now-calm { padding: 5px 10px; border: 1px solid var(--cc-line); border-radius: 999px; background: rgba(255, 255, 255, .35); color: var(--cc-muted); font-size: 13px; }
+#cc-panel .cc-linkbtn { font: 500 12px var(--cc-body); color: var(--cc-muted); text-decoration: underline dotted; text-underline-offset: 3px; }
+#cc-panel .cc-linkbtn:hover { color: var(--cc-ink); }
+@media (max-width: 700px) {
+  #cc-panel .cc-hand-slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #cc-panel .cc-hand-grid:not(.cc-hand-slots) .cc-hand-slot { display: none; }
+}
+
+/* ---------- подпись у свечи тома, стикер с даром ---------- */
+#cc-panel .cc-tome-candle .cc-candle-cap { position: relative; display: block; margin-top: 2px; translate: -20px 0; text-align: center; color: var(--cc-gold); font: 700 9.5px/1.1 var(--cc-display); letter-spacing: .3px; white-space: nowrap; max-width: 64px; overflow: hidden; text-shadow: 0 1px 0 #120720; }
+#cc-panel .cc-tome-candle .cc-candle-cap + .cc-candle-n { margin-top: 1px; }
+@media (max-width: 700px) { #cc-panel .cc-tome-candle .cc-candle-cap { translate: -8px 0; font-size: 9px; letter-spacing: .2px; max-width: 56px; } }
+#cc-panel .cc-front-note {
+  position: absolute; left: 22px; right: 150px; bottom: 26px; max-width: 280px; margin: 0; padding: 16px 22px 18px 26px;
+  background: url("assets/scrap.webp") center / 100% 100% no-repeat; color: #6a2f6e; font: 16px/1.2 var(--cc-hand);
+  transform: rotate(-2deg); opacity: 1; filter: drop-shadow(0 2px 2px rgba(40, 24, 8, .3));
+}
+@media (max-width: 700px) { #cc-panel .cc-front-note { right: 130px; max-width: none; } }
+@media (forced-colors: active) { #cc-panel .cc-front-note { background: Canvas; border: 1px solid CanvasText; color: CanvasText; } }

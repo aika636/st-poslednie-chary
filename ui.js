@@ -4,7 +4,7 @@
 import { SCALE, THRESHOLDS, DIFFICULTIES, discountUseful, fractureLoad, scaleOf, rollsAgainst } from './core/rules.mjs';
 import { castCard, createCatalog } from './core/catalog.mjs';
 import SHORT from './core/data/short.mjs';
-import { clampOffset } from './view.mjs';
+import { clampOffset, canSwitchMode } from './view.mjs';
 import { candleSvg, candleMarks } from './candle.js';
 import { SOURCE_GLYPH, STAR, RING, CORNER, SLIP_NARROW, PAPERCLIP, BRACKET, glyphFor } from './glyphs.js';
 
@@ -190,6 +190,7 @@ export function candleHtml(view, { mini = false, uid = 'p', bare = false } = {})
   const title = `Напряжение ${scaleText(st, confirmed)}${load ? ` · надломы держат ${load}` : ''}`;
   return `<div class="cc-candle-box${mini ? ' cc-mini' : ''}" title="${esc(title)}">
     ${candleSvg({ level, forecast, temporary: marks.temporary, permanent: marks.permanent, mini, uid })}
+    ${mini ? '' : '<span class="cc-candle-cap">напряжение</span>'}
     <span class="cc-candle-n">${esc(scaleText(st, confirmed))}</span>
   </div>`;
 }
@@ -203,7 +204,30 @@ function conflictsHtml(view) {
 
 // ---------- обложка и шапка страницы ----------
 
-function headHtml(view) {
+const CHARM_FACES = {
+  story: '<path class="cc-cf-ink" d="M22 14c-3.5-2.6-9-2.8-12.5-.8v16.6c3.500-2 9-1.800 12.500.8 3.500-2.600 9-2.800 12.500-.8V13.200C31 11.200 25.500 11.400 22 14z"/><path class="cc-cf-ink" d="M22 14v16.600"/>',
+  dice: '<path class="cc-cf-ink" d="M22 7.500l12 7v14.500l-12 7-12-7V14.500z"/><path class="cc-cf-ink" d="M22 13l8.500 15.500h-17zM22 7.500V13M10 14.500l3.500 14M34 14.500l-3.500 14M22 36L13.500 28.500M22 36l8.500-7.500"/>',
+};
+const MODE_LABEL = { story: 'сюжет', dice: 'кубик d20' };
+const MODE_HINT = { story: 'Сюжет: чудо удаётся, платится цена', dice: 'Кубик d20: исход решает бросок при отправке' };
+
+// Брелок режима: монета на цепочке, одна сторона — «Сюжет», другая — «Кубик».
+function charmHtml(view, ui) {
+  const dice = view.mode === 'dice';
+  const lock = canSwitchMode({ pending: view.pending });
+  const next = dice ? 'story' : 'dice';
+  const label = `Режим: ${MODE_LABEL[view.mode] ?? MODE_LABEL.story}`;
+  const title = lock.ok ? `${MODE_HINT[view.mode] ?? MODE_HINT.story}. Нажмите, чтобы переключить` : lock.reason;
+  const flip = ui?.flipTo === view.mode ? ` data-flip="1" style="--cc-from:${dice ? '0deg' : '180deg'}"` : '';
+  const face = (k) => `<span class="cc-face cc-face-${k}"><svg viewBox="0 0 44 44" aria-hidden="true"><circle class="cc-cf-disc" cx="22" cy="22" r="20.500"/><circle class="cc-cf-rim" cx="22" cy="22" r="17"/>${CHARM_FACES[k]}</svg></span>`;
+  return `<button type="button" class="cc-charm${lock.ok ? '' : ' cc-locked'}" role="switch" aria-checked="${dice}" aria-disabled="${!lock.ok}" aria-label="${esc(label)}" title="${esc(title)}" data-act="mode" data-v="${next}">
+    <svg class="cc-charm-chain" viewBox="0 0 44 54" aria-hidden="true"><defs><linearGradient id="cc-charm-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="cc-st1"/><stop offset=".5" class="cc-st2"/><stop offset="1" class="cc-st3"/></linearGradient></defs><circle class="cc-chain-ring" cx="22" cy="5" r="4"/><ellipse class="cc-chain-link" cx="22" cy="15" rx="3" ry="5"/><ellipse class="cc-chain-link" cx="22" cy="25" rx="5" ry="3"/><ellipse class="cc-chain-link" cx="22" cy="34" rx="3" ry="5"/><ellipse class="cc-chain-link" cx="22" cy="44" rx="5" ry="3"/></svg>
+    <span class="cc-coin3d" data-side="${dice ? 'dice' : 'story'}"${flip}>${face('story')}${face('dice')}</span>
+    <span class="cc-charm-cap">${esc(MODE_LABEL[view.mode] ?? MODE_LABEL.story)}</span>
+  </button>`;
+}
+
+function headHtml(view, ui) {
   const st = current(view);
   const p = st.profile;
   const src = sourceById(view.data, p.source);
@@ -222,6 +246,7 @@ function headHtml(view) {
     </div>
     <div class="cc-flags">${flags.join('')}</div>
     ${conflictsHtml(view)}
+    ${charmHtml(view, ui)}
   </header>`;
 }
 
@@ -426,6 +451,7 @@ export function frontispiece(view) {
     const id = c?.spell?.id;
     if (id && byId.has(id) && !fav.includes(id) && !recent.includes(id)) recent.push(id);
   }
+  const slot = '<div class="cc-hand-slot" aria-hidden="true">✦</div>';
   const hand = [...fav.slice(0, 6), ...recent.slice(0, Math.max(0, 6 - Math.min(fav.length, 6)))].map((id) => byId.get(id));
   const card = (s) => {
     const queued = Boolean(queuedCast(view, s.id));
@@ -438,7 +464,8 @@ export function frontispiece(view) {
   const fr = list(done.fractures);
   const spent = Boolean(done.giftUsed);
   const pending = list(view.pending).filter((c) => c.kind === 'cast').map((c) => c.payload?.spell?.name).filter(Boolean);
-  const now = [
+  const calm = !effects.length && !fr.length && !pending.length;
+  const now = calm ? `<li class="cc-now-calm">${STAR}<span>спокойно: чар нет, надломов нет, дар ${spent ? 'потрачен' : 'доступен'}</span></li>` : [
     effects.length
       ? `<li>${STAR}<span>Действует: ${esc(effects.slice(0, 3).map((e) => e.spell?.name ?? 'чары').join(', '))}${effects.length > 3 ? ` и ещё ${effects.length - 3}` : ''}</span></li>`
       : `<li>${STAR}<span>Ничего не действует</span></li>`,
@@ -453,14 +480,16 @@ export function frontispiece(view) {
     </header>
     <section class="cc-hand" aria-label="Под рукой">
       ${rule('Под рукой')}
-      ${hand.length ? `<div class="cc-hand-grid">${hand.map(card).join('')}</div>` : '<p class="cc-small cc-hand-empty">Отметьте нужные чары звёздочкой на их странице — они лягут сюда. Недавние появятся сами.</p>'}
+      ${hand.length
+        ? `<div class="cc-hand-grid">${hand.map(card).join('')}${slot.repeat(hand.length % 2)}</div>`
+        : `<div class="cc-hand-grid cc-hand-slots">${slot.repeat(3)}</div><p class="cc-small cc-hand-empty">★ на странице чар — и они лягут сюда</p>`}
     </section>
     <section class="cc-now" aria-label="Сейчас">
       ${rule('Сейчас')}
       <ul>${now}</ul>
       <button type="button" class="cc-linkbtn" data-act="tab" data-v="state">Подробнее — в «Состоянии»</button>
     </section>
-    <p class="cc-front-note">${src?.gift ? `дар: ${esc(src.gift.charAt(0).toLowerCase() + src.gift.slice(1))}` : ''}</p>
+    ${src?.gift ? `<p class="cc-front-note">дар: ${esc(src.gift.charAt(0).toLowerCase() + src.gift.slice(1))}</p>` : ''}
   </div>`;
 }
 
@@ -712,11 +741,10 @@ export function panelHtml(view, ui, preview) {
   else ({ main, side } = castPage(view, ui, preview));
   const page = `<section class="cc-page">
     ${closeBtn}
-    ${headHtml(view)}
+    ${headHtml(view, ui)}
     ${ui.tab === 'cast' ? `<div class="cc-queue-slot">${queueHtml(view)}</div>` : ''}
     ${ui.tab === 'cast' ? `<div class="cc-toolbar"><button type="button" data-act="layout" data-v="${ui.layout === 'compact' ? 'spread' : 'compact'}" aria-label="${ui.layout === 'compact' ? 'Показать разворот' : 'Компактный режим'}">${ui.layout === 'compact' ? 'Разворот' : 'Компактно'}</button>${ui.spellId ? btn('unpick', 'К каталогу', { cls: 'cc-back' }) : ''}</div>` : ''}
     <div class="cc-pagebody">${main}</div>
-    <footer class="cc-pagefoot">${seg('mode', [['story', 'Сюжет', 'чудо удаётся, платится цена'], ['dice', 'Кубик d20', 'исход решает бросок при отправке']], view.mode)}</footer>
     ${ribbonsHtml(view, ui)}
   </section>`;
   const casting = ui.tab === 'cast';
@@ -782,6 +810,7 @@ export function createPanel(actions) {
     const resetScroll = scrollTop;
     scrollTop = false;
     root.innerHTML = panelHtml(view, ui, preview);
+    ui.flipTo = null;
     const body = root.querySelector('.cc-pagebody');
     if (body) body.scrollTop = resetScroll ? 0 : (ui.tab === 'cast' ? ui.listScroll : 0);
     // Короткая вспышка свечи, когда напряжение выросло (после отправки).
@@ -862,7 +891,7 @@ export function createPanel(actions) {
       case 'close': close(); return;
       case 'tab': ui.tab = v; ui.profileDraft = null; scrollTop = true; break;
       case 'more': ui.tab = 'more'; ui.moreOpen = v; scrollTop = true; break;
-      case 'mode': actions.setMode(v); return;
+      case 'mode': ui.flipTo = v; actions.setMode(v); return;
       case 'theme': actions.setTheme?.(v); return;
       case 'dequeue': actions.dequeue(v); return;
       case 'create': create(v); return;
