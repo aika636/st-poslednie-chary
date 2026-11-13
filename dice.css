@@ -1,0 +1,64 @@
+.cc-dice-result {
+  position: fixed;
+  z-index: 2147483000;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: calc(var(--cc-form-h, 64px) + 16px + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: 88px minmax(130px, 1fr) auto;
+  align-items: center;
+  gap: 15px;
+  width: min(470px, calc(100vw - 28px));
+  padding: 15px 16px;
+  border: 1px solid rgba(226, 192, 122, .75);
+  border-radius: 16px;
+  background: radial-gradient(ellipse at 5% 0%, #533475 0%, #241534 65%, #170f20 100%);
+  box-shadow: 0 12px 44px rgba(9, 4, 15, .62), inset 0 0 24px rgba(43, 179, 173, .1);
+  color: #fff4df;
+  font: 15px/1.35 Georgia, 'Times New Roman', serif;
+  pointer-events: auto;
+  animation: cc-dice-enter .38s cubic-bezier(.2,.85,.3,1) both;
+}
+.cc-dice-result__art { display: grid; place-items: center; width: 88px; height: 88px; }
+.cc-dice-result__die { display: block; width: 88px; height: 88px; overflow: visible; filter: drop-shadow(0 0 12px rgba(43, 179, 173, .32)); }
+.cc-dice-result__copy { display: grid; gap: 3px; min-width: 0; }
+.cc-dice-result__spell { overflow: hidden; color: #ead8b2; text-overflow: ellipsis; white-space: nowrap; }
+.cc-dice-result__number { color: #f4d791; font-size: 22px; letter-spacing: .025em; }
+.cc-dice-result__outcome { color: #70ded4; font-size: 15px; transition: color .2s ease; }
+.cc-dice-result[data-outcome="failure"] .cc-dice-result__outcome { color: #ee8a9e; }
+.cc-dice-result[data-outcome="success"] .cc-dice-result__outcome { color: #70ded4; }
+.cc-dice-result[data-outcome="complication"] .cc-dice-result__outcome { color: #f0ce7f; }
+.cc-dice-result__close { align-self: start; max-width: 96px; padding: 6px 8px; border: 1px solid rgba(226,192,122,.38); border-radius: 8px; background: rgba(255,255,255,.045); color: #eadfc8; font: inherit; font-size: 11px; cursor: pointer; }
+.cc-dice-result__close:hover, .cc-dice-result__close:focus-visible { border-color: #f1d48e; outline: 2px solid rgba(63,211,200,.55); outline-offset: 2px; }
+.cc-dice-result__art { perspective: 520px; }
+.cc-dice-result.is-rolling .cc-dice-result__die { transform-style: preserve-3d; animation: cc-dice-tumble .9s cubic-bezier(.18,.66,.35,1) infinite; }
+.cc-dice-result.is-settling .cc-dice-result__die { transform-style: preserve-3d; animation: cc-dice-land .42s cubic-bezier(.16,.78,.25,1) both; }
+.cc-dice-result.is-rolling .cc-dice-result__outcome::after { content: ' '; }
+@keyframes cc-dice-enter { from { opacity: 0; transform: translateY(15px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes cc-dice-tumble {
+  0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(.9); }
+  28% { transform: rotateX(155deg) rotateY(-78deg) rotateZ(90deg) scale(1.05); }
+  63% { transform: rotateX(290deg) rotateY(112deg) rotateZ(245deg) scale(.94); }
+  100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg) scale(.9); }
+}
+@keyframes cc-dice-land {
+  0% { transform: rotateX(44deg) rotateY(-30deg) rotateZ(-16deg) scale(1.08); }
+  60% { transform: rotateX(-8deg) rotateY(6deg) rotateZ(3deg) scale(.96); }
+  82% { transform: rotateX(4deg) rotateY(-3deg) rotateZ(-1deg) scale(1.025); }
+  100% { transform: rotateX(0) rotateY(0) rotateZ(0) scale(1); }
+}
+@media (max-width: 520px) {
+  .cc-dice-result { right: 10px; grid-template-columns: 66px 1fr; gap: 10px; width: min(360px, calc(100vw - 20px)); padding: 11px; }
+  .cc-dice-result__art, .cc-dice-result__die { width: 66px; height: 66px; }
+  .cc-dice-result__close { grid-column: 2; justify-self: start; max-width: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cc-dice-result, .cc-dice-result.is-rolling .cc-dice-result__die, .cc-dice-result.is-settling .cc-dice-result__die { animation: none; }
+}
+@media (forced-colors: active) {
+  .cc-dice-result { border: 2px solid CanvasText; background: Canvas; color: CanvasText; box-shadow: none; }
+  .cc-dice-result__spell, .cc-dice-result__number, .cc-dice-result__outcome,
+  .cc-dice-result[data-outcome] .cc-dice-result__outcome { color: CanvasText; }
+  .cc-dice-result__close { border: 1px solid ButtonText; background: ButtonFace; color: ButtonText; }
+  .cc-dice-result__close:hover, .cc-dice-result__close:focus-visible { outline: 2px solid Highlight; }
+  .cc-dice-result__die { filter: none; }
+}

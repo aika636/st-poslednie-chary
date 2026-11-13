@@ -1,0 +1,13 @@
+{
+    "display_name": "Последние чары",
+    "loading_order": 110,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "generate_interceptor": "cenaChudaInterceptor",
+    "author": "aika636",
+    "version": "0.1.0",
+    "homePage": "https://github.com/aika636/st-poslednie-chary",
+    "auto_update": false
+}
