@@ -178,7 +178,8 @@ export function scaleText(st, confirmed) {
 }
 
 // Свеча на томе: уровень — подтверждённое состояние, прогноз — с очередью.
-export function candleHtml(view, { mini = false, uid = 'p' } = {}) {
+export function candleHtml(view, { mini = false, uid = 'p', bare = false } = {}) {
+  if (bare) return `<div class="cc-candle-box cc-mini">${candleSvg({ level: 0, mini: true, uid })}</div>`;
   const confirmed = view?.state;
   const st = current(view ?? {});
   if (!st) return '';

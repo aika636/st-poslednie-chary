@@ -10,6 +10,7 @@ import {
   upsertTemplate, removeTemplate, addCustomSpell as addCustomSpellTo, PROMPT_OPTIONS, DEPTH_MIN, DEPTH_MAX,
 } from './view.mjs';
 import { createPanel, candleHtml } from './ui.js';
+import { clampOffset } from './view.mjs';
 import { createDicePresenter } from './dice.js';
 import { buildMatchers, findSpell } from './hint.js';
 import FRACTURES from './core/data/fractures.mjs';
@@ -318,7 +319,7 @@ function refresh() {
   });
 }
 
-// Кнопка у поля ввода: без профиля — палочка, с профилем — маленькая свеча с числом.
+// Летающая кнопка: свеча без подписи, а в чате с профилем — свеча с числом.
 function updateButton(cur, view) {
   const btn = document.getElementById('cc-open');
   if (!btn) return;
@@ -327,10 +328,25 @@ function updateButton(cur, view) {
   btn.title = n ? `${TITLE} — в очереди: ${n}, уйдёт с сообщением` : TITLE;
   btn.style.display = readSettings().enabled ? '' : 'none';
   btn.dataset.theme = readSettings().theme;
-  const candle = view?.hasProfile && view.state ? candleHtml(view, { mini: true, uid: 'mini' }) : '';
-  btn.classList.toggle('fa-solid', !candle);
-  btn.classList.toggle('fa-wand-sparkles', !candle);
-  btn.innerHTML = candle;
+  btn.innerHTML = view?.hasProfile && view.state ? candleHtml(view, { mini: true, uid: 'mini' }) : candleHtml(null, { mini: true, uid: 'mini', bare: true });
+  placeButton();
+}
+
+const BTN_KEY = 'cena-chuda:btn';
+const BTN_SIZE = 44;
+let btnOff = null;
+
+// Позиция задаётся left/top: на мобильной вёрстке таверны fixed считается от <html>, и bottom ненадёжен.
+function placeButton() {
+  const btn = document.getElementById('cc-open');
+  if (!btn) return;
+  const formH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cc-form-h')) || 64;
+  const rect = { left: innerWidth - 12 - BTN_SIZE, top: innerHeight - formH - 76 - BTN_SIZE, width: BTN_SIZE, height: BTN_SIZE };
+  btnOff = clampOffset(btnOff ?? { x: 0, y: 0 }, rect, innerWidth, innerHeight, BTN_SIZE);
+  const barBottom = document.getElementById('top-settings-holder')?.getBoundingClientRect().bottom || 0;
+  btnOff.y = Math.max(btnOff.y, Math.ceil(barBottom) - rect.top);
+  btn.style.setProperty('left', `${rect.left + btnOff.x}px`, 'important');
+  btn.style.setProperty('top', `${rect.top + btnOff.y}px`, 'important');
 }
 
 // ---------- подсказка каста по тексту поста ----------
@@ -420,8 +436,9 @@ function mountHint() {
   area?.addEventListener('compositionend', scheduleHint);
   // Высота формы ввода: том не должен закрывать кнопку отправки.
   const setH = () => document.documentElement.style.setProperty('--cc-form-h', `${Math.ceil(sheld.getBoundingClientRect().height)}px`);
-  setH();
-  try { new ResizeObserver(setH).observe(sheld); } catch { globalThis.addEventListener?.('resize', setH); }
+  const setHp = () => { setH(); placeButton(); };
+  setHp();
+  try { new ResizeObserver(setHp).observe(sheld); } catch { globalThis.addEventListener?.('resize', setH); }
 }
 
 function mountFonts() {
@@ -445,38 +462,62 @@ function mountDiceStyles() {
 // ---------- разметка таверны ----------
 
 function mountButton() {
-  const left = document.getElementById('leftSendForm');
-  if (left && !document.getElementById('cc-open')) {
-    const btn = document.createElement('div');
-    btn.id = 'cc-open';
-    btn.className = 'fa-solid fa-wand-sparkles interactable';
-    btn.tabIndex = 0;
-    btn.title = TITLE;
-    btn.setAttribute('role', 'button');
-    btn.setAttribute('aria-label', TITLE);
-    btn.addEventListener('click', () => panel?.toggle());
-    btn.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        panel?.toggle();
-      }
-    });
-    left.append(btn);
-  }
-  const menu = document.getElementById('extensionsMenu');
-  if (menu && !document.getElementById('cc-menu-item')) {
-    const item = document.createElement('div');
-    item.id = 'cc-menu-item';
-    item.className = 'list-group-item flex-container flexGap5 interactable';
-    item.tabIndex = 0;
-    const icon = document.createElement('div');
-    icon.className = 'fa-solid fa-wand-sparkles extensionsMenuExtensionButton';
-    const label = document.createElement('span');
-    label.textContent = TITLE;
-    item.append(icon, label);
-    item.addEventListener('click', () => panel?.open());
-    menu.append(item);
-  }
+  if (document.getElementById('cc-open')) return;
+  const btn = document.createElement('div');
+  btn.id = 'cc-open';
+  btn.tabIndex = 0;
+  btn.title = TITLE;
+  btn.setAttribute('role', 'button');
+  btn.setAttribute('aria-label', TITLE);
+  try {
+    const p = JSON.parse(localStorage.getItem(BTN_KEY) ?? 'null');
+    if (p && Number.isFinite(p.x) && Number.isFinite(p.y)) btnOff = { x: p.x, y: p.y };
+  } catch { btnOff = null; }
+  let drag = null;
+  let dragged = false;
+  btn.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    dragged = false;
+    drag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, from: btnOff ?? { x: 0, y: 0 }, moved: false };
+    btn.setPointerCapture?.(e.pointerId);
+  });
+  btn.addEventListener('pointermove', (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.sx;
+    const dy = e.clientY - drag.sy;
+    if (!drag.moved) {
+      if (Math.hypot(dx, dy) < 4) return;
+      drag.moved = true;
+      btn.classList.add('cc-dragging');
+    }
+    btnOff = { x: drag.from.x + dx, y: drag.from.y + dy };
+    placeButton();
+  });
+  const end = (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    dragged = drag.moved;
+    drag = null;
+    btn.classList.remove('cc-dragging');
+    if (dragged) {
+      try { localStorage.setItem(BTN_KEY, JSON.stringify(btnOff)); } catch { /* без хранилища */ }
+    }
+  };
+  btn.addEventListener('pointerup', end);
+  btn.addEventListener('pointercancel', end);
+  btn.addEventListener('click', () => {
+    if (dragged) { dragged = false; return; }
+    panel?.toggle();
+  });
+  btn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      panel?.toggle();
+    }
+  });
+  btn.innerHTML = candleHtml(null, { mini: true, uid: 'mini', bare: true });
+  document.body.append(btn);
+  placeButton();
+  addEventListener('resize', placeButton);
 }
 
 function el(tag, props = {}, children = []) {

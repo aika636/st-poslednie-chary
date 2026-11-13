@@ -839,22 +839,45 @@
 /* ---------- у поля ввода ---------- */
 
 #cc-open {
-  display: inline-flex;
+  position: fixed !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: 2990;
+  box-sizing: border-box !important;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  margin: 0 !important;
   cursor: pointer;
-  min-width: var(--bottomFormBlockSize, 32px);
-  height: var(--bottomFormBlockSize, 32px);
-  opacity: .85;
+  opacity: .92;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  background: radial-gradient(circle at 50% 40%, var(--cc-cover-1), var(--cc-cover-3)) !important;
+  border: 1.5px solid var(--cc-gold) !important;
+  border-radius: 50% !important;
+  box-shadow: 0 3px 10px rgba(10, 2, 20, .45) !important;
+  padding: 0 !important;
+  color: var(--cc-gold) !important;
+  transition: none !important;
 }
-#cc-open { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; color: inherit !important; transition: none !important; }
-#cc-open .cc-candle-n { background: linear-gradient(180deg, var(--cc-cover-1), var(--cc-cover-3)) !important; color: var(--cc-gold) !important; border: 1px solid var(--cc-gold) !important; border-radius: 999px !important; padding: 0 6px !important; box-shadow: none !important; transition: none !important; }
-#cc-open:hover { opacity: 1; }
-#cc-open .cc-candle-box { flex-direction: row; gap: 3px; align-items: center; }
-#cc-open .cc-candle { width: 18px; height: 27px; }
-#cc-open .cc-candle-n { margin: 0; padding: 0 6px; font-size: 11px; line-height: 16px; }
-#cc-open.cc-armed .cc-candle-n { box-shadow: 0 0 8px var(--cc-accent-2) !important; border-color: var(--cc-accent-2) !important; }
+#cc-open[hidden] { display: none; }
+#cc-open:hover, #cc-open.cc-dragging { opacity: 1; }
+#cc-open.cc-dragging { cursor: grabbing; }
+#cc-open:focus-visible { outline: 2px solid var(--cc-accent-2); outline-offset: 2px; }
+#cc-open * { box-sizing: border-box; }
+#cc-open .cc-candle-box { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 0; pointer-events: none; }
+#cc-open .cc-candle { width: 22px; height: 32px; }
+#cc-open .cc-candle-n {
+  position: absolute; right: -4px; bottom: -4px; margin: 0 !important; min-width: 0;
+  padding: 0 4px !important; font-size: 10px; line-height: 14px;
+  background: linear-gradient(180deg, var(--cc-cover-1), var(--cc-cover-3)) !important; color: var(--cc-gold) !important;
+  border: 1px solid var(--cc-gold) !important; border-radius: 999px !important; box-shadow: none !important; transition: none !important;
+}
+#cc-open.cc-armed { box-shadow: 0 0 10px var(--cc-accent-2) !important; border-color: var(--cc-accent-2) !important; }
 
 #cc-hint {
   display: flex;
