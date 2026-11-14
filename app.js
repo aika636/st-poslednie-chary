@@ -2,18 +2,18 @@
 import {
   META_KEY, MODES, previewCommand, enqueue as coreEnqueue, dequeue as coreDequeue, commitPending,
   updateEvent as coreUpdateEvent, toggleEvent as coreToggleEvent, computeChat,
-} from './core/chat-journal.mjs?v=0.1.1';
-import { createSnapshot } from './core/state.mjs?v=0.1.1';
-import { statusBlock } from './core/prompt.mjs?v=0.1.1';
+} from './core/chat-journal.mjs?v=0.1.2';
+import { createSnapshot } from './core/state.mjs?v=0.1.2';
+import { statusBlock } from './core/prompt.mjs?v=0.1.2';
 import {
   readMeta, worthWarning, hasProfile, hasHistory, canSwitchMode, buildView, promptTexts, normalizeSettings, clampDepth,
   upsertTemplate, removeTemplate, addCustomSpell as addCustomSpellTo, PROMPT_OPTIONS, DEPTH_MIN, DEPTH_MAX,
-} from './view.mjs?v=0.1.1';
-import { createPanel, candleHtml } from './ui.js?v=0.1.1';
-import { clampOffset } from './view.mjs?v=0.1.1';
-import { createDicePresenter } from './dice.js?v=0.1.1';
-import { buildMatchers, findSpell } from './hint.js?v=0.1.1';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.1';
+} from './view.mjs?v=0.1.2';
+import { createPanel, candleHtml } from './ui.js?v=0.1.2';
+import { clampOffset } from './view.mjs?v=0.1.2';
+import { createDicePresenter } from './dice.js?v=0.1.2';
+import { buildMatchers, findSpell } from './hint.js?v=0.1.2';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.2';
 
 const MODULE = 'cena-chuda';
 const SETTINGS_KEY = 'cenaChuda';
@@ -345,8 +345,8 @@ function placeButton() {
   btnOff = clampOffset(btnOff ?? { x: 0, y: 0 }, rect, innerWidth, innerHeight, BTN_SIZE);
   const barBottom = document.getElementById('top-settings-holder')?.getBoundingClientRect().bottom || 0;
   btnOff.y = Math.max(btnOff.y, Math.ceil(barBottom) - rect.top);
-  btn.style.setProperty('left', `${rect.left + btnOff.x}px`, 'important');
-  btn.style.setProperty('top', `${rect.top + btnOff.y}px`, 'important');
+  btn.style.setProperty('left', `${rect.left + btnOff.x}px`);
+  btn.style.setProperty('top', `${rect.top + btnOff.y}px`);
 }
 
 // ---------- подсказка каста по тексту поста ----------
@@ -446,7 +446,7 @@ function mountFonts() {
   const link = document.createElement('link');
   link.id = 'cc-fonts';
   link.rel = 'stylesheet';
-  link.href = new URL('./fonts/fonts.css?v=0.1.1', import.meta.url).href;
+  link.href = new URL('./fonts/fonts.css?v=0.1.2', import.meta.url).href;
   document.head.append(link);
 }
 
@@ -455,7 +455,7 @@ function mountStyle() {
   const link = document.createElement('link');
   link.id = 'cc-style';
   link.rel = 'stylesheet';
-  link.href = new URL('./style.css?v=0.1.1', import.meta.url).href;
+  link.href = new URL('./style.css?v=0.1.2', import.meta.url).href;
   document.head.append(link);
 }
 
@@ -464,7 +464,7 @@ function mountDiceStyles() {
   const link = document.createElement('link');
   link.id = 'cc-dice-style';
   link.rel = 'stylesheet';
-  link.href = new URL('./dice.css?v=0.1.1', import.meta.url).href;
+  link.href = new URL('./dice.css?v=0.1.2', import.meta.url).href;
   document.head.append(link);
 }
 

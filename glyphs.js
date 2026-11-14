@@ -79,17 +79,6 @@ export const CORNER = `<svg class="cc-corner" viewBox="0 0 36 36" aria-hidden="t
   <circle cx="5.8" cy="5.8" r=".9" class="cc-corner-glint"/>
 </svg>`;
 
-// Узкая записка под скрепкой (широкая записка — растровая, в style.css).
-export const SLIP_NARROW = `<svg class="cc-slip cc-slip-narrow" viewBox="0 0 32 52" aria-hidden="true" focusable="false">
-  <path d="M3 3l25-1 1.5 49H1.5Z" class="cc-slip-paper cc-slip-blue"/>
-  <path d="M15.5 9.5a2.4 2.4 0 1 1 .1 0M15.5 12v4M9 22h13M9 27h10" class="cc-slip-runes"/>
-</svg>`;
-export const PAPERCLIP = `<svg class="cc-paperclip" viewBox="0 0 14 40" aria-hidden="true" focusable="false">
-  <path d="M4 36V7a3.5 3.5 0 0 1 7 0v24a2 2 0 0 1-4 0V11" class="cc-paperclip-shadow" transform="translate(.8 1)"/>
-  <path d="M4 36V7a3.5 3.5 0 0 1 7 0v24a2 2 0 0 1-4 0V11" class="cc-paperclip-wire"/>
-  <path d="M4.8 30V7.5a2.7 2.7 0 0 1 2.6-2.6" class="cc-paperclip-shine"/>
-</svg>`;
-
 // Кронштейн подсвечника: пластина на поле обложки, литое плечо держит чашу свечи.
 export const BRACKET = `<svg class="cc-bracket" viewBox="0 0 60 70" aria-hidden="true" focusable="false">
   <path d="M14 22C13 40 26 48 42 46" class="cc-bracket-arm-shadow" transform="translate(1.2 1.8)"/>
