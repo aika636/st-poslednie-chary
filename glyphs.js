@@ -53,8 +53,8 @@ const rivet = (x, y) => `<g class="cc-rivet" transform="translate(${x} ${y})">
 
 export const RING = `<svg class="cc-ring" viewBox="0 0 150 70" aria-hidden="true" focusable="false">
   <defs>
-    <linearGradient id="cc-ring-gold" gradientUnits="userSpaceOnUse" x1="30" y1="8" x2="84" y2="62"><stop offset="0" stop-color="#fff0b8"/><stop offset=".35" stop-color="#e6bb5c"/><stop offset=".7" stop-color="#b07f2e"/><stop offset="1" stop-color="#7a5219"/></linearGradient>
-    <linearGradient id="cc-ring-steel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef0f4"/><stop offset=".5" stop-color="#b6bac4"/><stop offset="1" stop-color="#7d818d"/></linearGradient>
+    <linearGradient id="cc-ring-gold" gradientUnits="userSpaceOnUse" x1="30" y1="8" x2="84" y2="62"><stop offset="0" stop-color="#d9bb78"/><stop offset=".35" stop-color="#e6bb5c"/><stop offset=".7" stop-color="#b07f2e"/><stop offset="1" stop-color="#7a5219"/></linearGradient>
+    <linearGradient id="cc-ring-steel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b4b8c2"/><stop offset=".5" stop-color="#8a8e9a"/><stop offset="1" stop-color="#5c606b"/></linearGradient>
     <radialGradient id="cc-ring-pit" cx=".42" cy=".38" r=".7"><stop offset="0" stop-color="#05010c"/><stop offset=".7" stop-color="#2a1a14"/><stop offset="1" stop-color="#5a4630"/></radialGradient>
     <clipPath id="cc-ring-behind"><rect x="0" y="0" width="60" height="70"/></clipPath>
   </defs>

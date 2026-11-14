@@ -190,8 +190,8 @@ export function candleHtml(view, { mini = false, uid = 'p', bare = false } = {})
   const title = `Напряжение ${scaleText(st, confirmed)}${load ? ` · надломы держат ${load}` : ''}`;
   return `<div class="cc-candle-box${mini ? ' cc-mini' : ''}" title="${esc(title)}">
     ${candleSvg({ level, forecast, temporary: marks.temporary, permanent: marks.permanent, mini, uid })}
-    ${mini ? '' : '<span class="cc-candle-cap">напряжение</span>'}
     <span class="cc-candle-n">${esc(scaleText(st, confirmed))}</span>
+    ${mini ? '' : '<span class="cc-candle-cap">напряжение</span>'}
   </div>`;
 }
 

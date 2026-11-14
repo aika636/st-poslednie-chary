@@ -37,7 +37,7 @@
   --cc-seam: #e8c56b;
   --cc-wick: #2b1a10;
   --cc-hand: 'CC Marck Script', 'Segoe Script', cursive;
-  --cc-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --cc-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --cc-display: 'CC Playfair Display', 'Playfair Display', Georgia, 'Times New Roman', serif;
   --cc-body: 'CC Alegreya', Alegreya, Georgia, 'Times New Roman', serif;
 }
@@ -94,6 +94,7 @@
 
 #cc-panel .cc-tome {
   position: relative;
+  isolation: isolate;
   flex: 1;
   display: flex;
   gap: 0;
@@ -104,19 +105,21 @@
   padding: 26px 30px 54px 64px;
   border-radius: 16px 12px 12px 16px;
   background:
-    linear-gradient(90deg, rgba(15, 5, 31, .48), transparent 7%, transparent 94%, rgba(15, 5, 31, .26)),
-    repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 5px),
-    linear-gradient(135deg, #63369a, #42216f 48%, #281343);
-  box-shadow: 0 20px 42px rgba(7,2,18,.48), inset 0 1px rgba(255,255,255,.14), 0 0 0 2px #26103f, 0 0 0 4px #9b7743;
+    linear-gradient(90deg, rgba(15, 5, 31, .4), transparent 7%, transparent 94%, rgba(15, 5, 31, .2)),
+    radial-gradient(ellipse at 9% 100%, rgba(226, 192, 122, .055), transparent 24%),
+    radial-gradient(ellipse at 96% 52%, rgba(226, 192, 122, .04), transparent 16%),
+    url("assets/cover-grain.svg") 0 0 / 128px 128px repeat,
+    linear-gradient(110deg, var(--cc-cover-1), var(--cc-cover-2) 72%, var(--cc-cover-3));
+  box-shadow: 0 16px 32px rgba(7, 2, 18, .4), inset 0 1px rgba(255, 255, 255, .06), 0 0 0 2px var(--cc-cover-3), 0 0 0 3px var(--cc-gold-3);
 }
-#cc-panel .cc-tome[data-theme="tavern"] { background: linear-gradient(135deg, var(--cc-cover-1), var(--cc-cover-2) 48%, var(--cc-cover-3)); }
 /* Тиснёная рамка по обложке. */
 #cc-panel .cc-tome::before {
   content: "";
   position: absolute;
   inset: 8px;
-  border: 1px solid rgba(231,197,127,.52);
+  border: 1px solid color-mix(in srgb, var(--cc-cover-3) 70%, transparent);
   border-radius: 11px 9px 9px 11px;
+  box-shadow: 0 1px 0 rgba(255, 240, 210, .08);
   pointer-events: none;
 }
 /* Корешок. */
@@ -126,7 +129,7 @@
   inset: 0 auto 0 0;
   width: 56px;
   border-radius: 16px 0 0 16px;
-  background: linear-gradient(90deg,#1b0b30 0%,#714a9b 36%,#311a4c 74%,#1b0b30 100%);
+  background: linear-gradient(90deg, var(--cc-cover-3) 0%, color-mix(in srgb, var(--cc-cover-1) 75%, var(--cc-cover-3)) 38%, var(--cc-cover-2) 74%, var(--cc-cover-3) 100%);
   box-shadow: 1px 0 rgba(255,255,255,.12), 5px 0 10px rgba(8,2,20,.22);
   pointer-events: none;
 }
@@ -145,8 +148,10 @@
 }
 /* Кольца: SVG 1:1, сдвиг -6 px — механизм на корешке (x=27), край блока (x=60), люверс на листе (x=96). */
 #cc-panel .cc-ring { position: relative; z-index: 1; display: block; width: 150px; height: 70px; overflow: visible; }
+/* Тень от колец на бумаге у люверсов: центры колец — 1/6, 1/2 и 5/6 высоты корешка. */
+#cc-panel .cc-spine::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 150px; z-index: 0; background: radial-gradient(circle 17px at 96px 16.667%, rgba(40, 25, 10, .18), transparent), radial-gradient(circle 17px at 96px 50%, rgba(40, 25, 10, .18), transparent), radial-gradient(circle 17px at 96px 83.333%, rgba(40, 25, 10, .18), transparent); }
 /* Стальная планка механизма вдоль корешка. */
-#cc-panel .cc-spine::before { content: ""; position: absolute; left: 15px; top: -10px; bottom: -10px; width: 12px; border-radius: 6px; background: linear-gradient(90deg, #6f727d, #eef0f4 35%, #b6bac4 60%, #6f727d); box-shadow: 1px 2px 3px rgba(10, 2, 22, .5), inset 0 0 0 1px rgba(40, 42, 50, .5); }
+#cc-panel .cc-spine::before { content: ""; position: absolute; left: 15px; top: -10px; bottom: -10px; width: 12px; border-radius: 6px; background: linear-gradient(90deg, #3c3e48, #858995 38%, #646874 62%, #3c3e48); box-shadow: 1px 2px 3px rgba(10, 2, 22, .5), inset 0 0 0 1px rgba(40, 42, 50, .5); }
 #cc-panel .cc-ring-back { filter: brightness(.8); }
 #cc-panel .cc-ring rect, #cc-panel .cc-ring ellipse { stroke-linecap: butt; }
 #cc-panel .cc-ring .cc-ring-plate-inset { fill: none; }
@@ -154,11 +159,11 @@
 #cc-panel .cc-ring-shadow { stroke: rgba(10, 2, 22, .55); stroke-width: 12.5; }
 #cc-panel .cc-ring-rim { stroke: #5c3b10; stroke-width: 12.5; }
 #cc-panel .cc-ring-body { stroke: url(#cc-ring-gold); stroke-width: 9.8; }
-#cc-panel .cc-ring-bounce { stroke: #b48cf0; stroke-width: 1.6; opacity: .55; }
-#cc-panel .cc-ring-shine { stroke: #fff8dc; stroke-width: 2.2; opacity: .95; stroke-linecap: round; }
+#cc-panel .cc-ring-bounce { stroke: #b48cf0; stroke-width: 1.2; opacity: .16; }
+#cc-panel .cc-ring-shine { stroke: #f3e6c0; stroke-width: 1.3; opacity: .5; stroke-linecap: round; stroke-dasharray: 8 36; }
 #cc-panel .cc-ring .cc-ring-plate-shadow { fill: rgba(10, 2, 22, .5); }
 #cc-panel .cc-ring .cc-ring-plate { fill: url(#cc-ring-steel); stroke: #4d505b; stroke-width: 1.2; }
-#cc-panel .cc-ring .cc-ring-plate-inset { stroke: rgba(255, 255, 255, .55); stroke-width: .8; }
+#cc-panel .cc-ring .cc-ring-plate-inset { stroke: rgba(255, 255, 255, .25); stroke-width: .8; }
 #cc-panel .cc-ring-eyelet { fill: url(#cc-ring-gold); stroke: #5c3b10; stroke-width: 1.2; }
 #cc-panel .cc-ring-hole { fill: url(#cc-ring-pit); }
 #cc-panel .cc-ring .cc-ring-lip { stroke: url(#cc-ring-gold); stroke-width: 4.2; }
@@ -175,10 +180,10 @@
 #cc-panel .cc-corner:nth-child(4) { right: 0; bottom: 0; transform: scale(-1); }
 #cc-panel .cc-corner-shadow { fill: rgba(10, 2, 22, .5); }
 #cc-panel .cc-corner-plate { fill: url(#cc-ring-steel); stroke: #45474f; stroke-width: 1; }
-#cc-panel .cc-corner-inset { fill: none; stroke: rgba(255, 255, 255, .5); stroke-width: .7; }
+#cc-panel .cc-corner-inset { fill: none; stroke: rgba(255, 255, 255, .22); stroke-width: .7; }
 #cc-panel .cc-corner-star { fill: #2a1640; }
 #cc-panel .cc-corner-rivet { fill: #d8c07a; stroke: #6a4a16; stroke-width: .9; }
-#cc-panel .cc-corner-glint { fill: #fff; }
+#cc-panel .cc-corner-glint { fill: #fff; opacity: .35; }
 
 /* Торец блока страниц: выступает из-под разворота снизу и по бокам. */
 #cc-panel .cc-edges {
@@ -189,13 +194,14 @@
   left: 54px;
   pointer-events: none;
   background:
-    linear-gradient(90deg, transparent 46%, rgba(70, 45, 25, .32) 50%, transparent 54%) bottom / 100% 11px no-repeat,
-    repeating-linear-gradient(180deg, #d4c6a8 0 1px, #f8f2e4 1px 2.6px) bottom / 100% 11px no-repeat,
-    repeating-linear-gradient(90deg, #d4c6a8 0 1px, #f8f2e4 1px 2.6px) right / 11px 100% no-repeat,
-    repeating-linear-gradient(90deg, #f8f2e4 0 1.6px, #d4c6a8 1.6px 2.6px) left / 10px 100% no-repeat;
+    linear-gradient(90deg, transparent 46%, rgba(70, 45, 25, .22) 50%, transparent 54%) bottom / 100% 11px no-repeat,
+    repeating-linear-gradient(180deg, rgba(160, 140, 104, .42) 0 .8px, #f6f0e2 .8px 2.6px, rgba(160, 140, 104, .26) 2.6px 3.1px, #f6f0e2 3.1px 4.1px, rgba(160, 140, 104, .36) 4.1px 5.4px, #f6f0e2 5.4px 8.4px, rgba(160, 140, 104, .24) 8.4px 9px, #f6f0e2 9px 10.4px) bottom / 100% 11px no-repeat,
+    repeating-linear-gradient(90deg, rgba(160, 140, 104, .4) 0 1px, #f6f0e2 1px 3.2px, rgba(160, 140, 104, .24) 3.2px 3.7px, #f6f0e2 3.7px 6px, rgba(160, 140, 104, .34) 6px 7.5px, #f6f0e2 7.5px 8.7px) right / 11px 100% no-repeat,
+    repeating-linear-gradient(90deg, #f6f0e2 0 1.6px, rgba(160, 140, 104, .34) 1.6px 2.5px, #f6f0e2 2.5px 5.5px, rgba(160, 140, 104, .22) 5.5px 6.2px, #f6f0e2 6.2px 9.3px) left / 10px 100% no-repeat;
   clip-path: polygon(1px 0, 100% 0, calc(100% - 1px) 34%, 100% 67%, calc(100% - 1px) 100%, 74% 100%, 50% calc(100% - 1px), 26% 100%, 0 calc(100% - 1px), 1px 50%);
-  filter: drop-shadow(0 3px 3px rgba(10, 2, 22, .35));
+  filter: drop-shadow(0 4px 5px rgba(10, 2, 22, .4));
 }
+#cc-panel .cc-edges::after { content: ""; position: absolute; left: 8px; right: 2px; bottom: -1px; height: 10px; z-index: -1; background: repeating-linear-gradient(180deg, rgba(160, 140, 104, .3) 0 .7px, #efe8d8 .7px 3.6px, rgba(160, 140, 104, .2) 3.6px 4.1px, #efe8d8 4.1px 7px); }
 #cc-panel .cc-tome[data-theme="tavern"] .cc-edges { opacity: .55; }
 
 
@@ -217,21 +223,20 @@
   min-width: 52px;
   translate: -20px 0;
   padding: 3px 10px 4px;
-  border: 1.5px solid #e3c77f;
-  border-radius: 5px;
-  background: linear-gradient(180deg, #4a2a73, #22103a);
-  box-shadow: 0 0 0 2px #2a1342, 0 3px 6px rgba(10, 2, 20, .5), inset 0 1px rgba(255, 255, 255, .18);
-  color: #f3d98f;
+  border: 1px solid var(--cc-gold-2);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--cc-cover-2) 85%, black);
+  box-shadow: 0 2px 3px rgba(10, 2, 20, .4);
+  color: var(--cc-gold);
   font: 700 17px/1.1 var(--cc-display);
   text-align: center;
-  text-shadow: 0 1px 0 #120720;
 }
 #cc-panel .cc-bracket { position: absolute; z-index: 0; top: 96px; right: -4px; width: 60px; height: 70px; overflow: visible; }
 #cc-panel .cc-bracket path { fill: none; stroke-linecap: round; }
 #cc-panel .cc-bracket .cc-bracket-arm-shadow { stroke: rgba(10, 2, 22, .5); stroke-width: 6; }
 #cc-panel .cc-bracket .cc-bracket-arm { stroke: url(#cc-ring-gold); stroke-width: 5; }
 #cc-panel .cc-bracket .cc-bracket-curl { stroke: url(#cc-ring-gold); stroke-width: 2.6; }
-#cc-panel .cc-bracket .cc-bracket-shine { stroke: #fff3c4; stroke-width: 1; opacity: .8; }
+#cc-panel .cc-bracket .cc-bracket-shine { stroke: #f3e6c0; stroke-width: .8; opacity: .3; }
 #cc-panel .cc-bracket .cc-bracket-plate { fill: url(#cc-ring-steel); stroke: #45474f; stroke-width: 1; }
 #cc-panel .cc-bracket-rivet { fill: #d8c07a; stroke: #6a4a16; stroke-width: .8; }
 
@@ -246,7 +251,7 @@
   flex-direction: column;
   border-radius: 6px 12px 12px 6px;
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
     radial-gradient(140% 90% at 50% 40%, var(--cc-page) 55%, var(--cc-page-2));
   box-shadow:
     1px 1px 0 var(--cc-page-edge), 3px 3px 0 var(--cc-page-2), 4px 4px 0 var(--cc-page-edge), 6px 6px 0 var(--cc-page-2),
@@ -321,7 +326,7 @@
   background: linear-gradient(180deg, color-mix(in srgb, var(--cc-accent) 88%, white), var(--cc-accent));
   color: var(--cc-on-accent);
   border-color: color-mix(in srgb, var(--cc-gold) 60%, transparent);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--cc-accent) 40%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--cc-accent) 35%, transparent);
 }
 #cc-panel .cc-flags { display: flex; flex-wrap: wrap; gap: 6px; }
 #cc-panel .cc-flag {
@@ -332,7 +337,7 @@
   color: var(--cc-muted);
 }
 #cc-panel .cc-flag .cc-glyph { width: 14px; height: 14px; color: var(--cc-gold-2); }
-#cc-panel .cc-flag:not(.cc-off) .cc-glyph { color: var(--cc-accent-2); filter: drop-shadow(0 0 3px var(--cc-accent-2)); }
+#cc-panel .cc-flag:not(.cc-off) .cc-glyph { color: var(--cc-accent-2); filter: drop-shadow(0 0 1px color-mix(in srgb, var(--cc-accent-2) 45%, transparent)); }
 #cc-panel .cc-flag.cc-off .cc-glyph { opacity: .45; }
 #cc-panel .cc-warnflag { color: var(--cc-warn); }
 
@@ -889,7 +894,7 @@
   background-image: linear-gradient(90deg, rgba(108,79,44,.06), transparent 12%, transparent 94%, rgba(85,62,38,.04));
   box-shadow: 0 0 0 1px #d9ccb0, 0 0 12px rgba(50,35,24,.12) inset;
 }
-#cc-panel .cc-page::before { inset: 8px 3px 8px 8px; border-color: rgba(163,133,82,.32); border-radius: 3px 0 0 3px; box-shadow: none; }
+#cc-panel .cc-page::before { inset: 8px 3px 8px 8px; border-color: rgba(163,133,82,.2); border-radius: 3px 0 0 3px; box-shadow: none; }
 #cc-panel .cc-side {
   position: relative;
   inset: auto;
@@ -904,9 +909,9 @@
   border-radius: 0 4px 4px 0;
   background-color: #fbf8ed;
   background-image: linear-gradient(90deg, rgba(88,64,41,.11), rgba(255,255,255,.04) 13%, transparent 30%, transparent 94%, rgba(85,62,38,.04));
-  box-shadow: inset 14px 0 22px -20px rgba(38,22,12,.6), 0 0 0 1px #d9ccb0;
+  box-shadow: inset 12px 0 20px -20px rgba(38,22,12,.38), 0 0 0 1px #d9ccb0;
 }
-#cc-panel .cc-side::after { content:""; position:absolute; inset:8px 8px 8px 2px; border:1px solid rgba(163,133,82,.32); pointer-events:none; border-radius:0 3px 3px 0; }
+#cc-panel .cc-side::after { content:""; position:absolute; inset:8px 8px 8px 2px; border:1px solid rgba(163,133,82,.2); pointer-events:none; border-radius:0 3px 3px 0; }
 #cc-panel .cc-leaf-g { color: var(--cc-accent); background: transparent; box-shadow:none; }
 #cc-panel .cc-leaf-g .cc-glyph { filter:none; }
 #cc-panel .cc-pagehead { padding-top: 22px; }
@@ -1120,7 +1125,8 @@
 #cc-panel .cc-lavender { position: absolute; z-index: 3; bottom: -38px; left: 63%; width: 34px; height: 116px; background: url("assets/lavender.webp") center / contain no-repeat; transform: rotate(-76deg); filter: drop-shadow(0 2px 2px rgba(10, 2, 22, .35)) saturate(.85); pointer-events: none; }
 #cc-panel .cc-props { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
 /* Тёплое пятно от свечи на правой странице. */
-#cc-panel .cc-candlelight { position: absolute; top: 0; right: 0; width: 46%; height: 58%; background: radial-gradient(60% 55% at 88% 6%, rgba(255, 196, 110, .16), rgba(255, 170, 80, .05) 55%, transparent 75%); mix-blend-mode: multiply; animation: cc-glow 2.6s ease-in-out infinite; }
+#cc-panel .cc-candlelight { position: absolute; top: 0; right: 0; width: 34%; height: 34%; background: radial-gradient(ellipse at 96% 2%, rgba(255, 211, 140, .15), rgba(255, 190, 110, .05) 55%, transparent 72%); mix-blend-mode: screen; animation: cc-light 3.2s ease-in-out infinite; }
+@keyframes cc-light { 0%, 100% { opacity: .8; } 50% { opacity: 1; } }
 /* Мотылёк сидит на верхнем обрезе рядом со свечой; изредка вспархивает. */
 #cc-panel .cc-moth { position: absolute; top: -27px; right: 168px; width: 62px; height: 55px; }
 #cc-panel .cc-moth i { position: absolute; inset: 0; background: center / contain no-repeat; filter: drop-shadow(0 3px 2px rgba(10, 2, 22, .45)); }
@@ -1142,7 +1148,7 @@
   97% { opacity: 0; }
 }
 /* Сургучная печать с мотыльком на пустой правой странице. */
-#cc-panel .cc-frontispiece::after { content: ""; position: absolute; right: 22px; bottom: 22px; width: 104px; height: 100px; background: url("assets/seal.webp") center / contain no-repeat; transform: rotate(-9deg); filter: drop-shadow(0 2px 2px rgba(40, 10, 40, .35)); pointer-events: none; }
+#cc-panel .cc-frontispiece::after { content: ""; position: absolute; right: 22px; bottom: 22px; width: 88px; height: 85px; background: url("assets/seal.webp") center / contain no-repeat; transform: rotate(-9deg); filter: saturate(.8) brightness(.94) drop-shadow(0 1px 1px rgba(40, 10, 40, .22)); pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
   #cc-panel .cc-candlelight, #cc-panel .cc-moth i { animation: none; }
 }
@@ -1215,7 +1221,7 @@
 }
 
 /* ---------- закладки: язычки с обреза книги ---------- */
-#cc-panel .cc-ribbons { position: absolute; z-index: 0; left: calc(100% - 38px); top: 150px; display: flex; flex-direction: column; gap: 8px; }
+#cc-panel .cc-ribbons { filter: drop-shadow(1px 2px 2px rgba(10, 2, 22, .4)); position: absolute; z-index: 0; left: calc(100% - 38px); top: 150px; display: flex; flex-direction: column; gap: 8px; }
 #cc-panel .cc-ribbon {
   position: relative;
   width: 38px;
@@ -1260,7 +1266,16 @@
 
 /* ---------- под рукой: пустые слоты, сейчас ---------- */
 #cc-panel .cc-hand-slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-#cc-panel .cc-hand-slot { display: grid; place-items: center; min-height: 44px; border: 1.5px dashed color-mix(in srgb, var(--cc-muted) 55%, transparent); border-radius: 6px; color: color-mix(in srgb, var(--cc-muted) 55%, transparent); font-size: 16px; }
+#cc-panel .cc-hand-slot {
+  --cc-m: color-mix(in srgb, var(--cc-muted) 50%, transparent);
+  display: grid; place-items: center; min-height: 44px; border: 0; border-radius: 0; font-size: 15px; color: color-mix(in srgb, var(--cc-muted) 38%, transparent);
+  background:
+    linear-gradient(var(--cc-m), var(--cc-m)) 0 0 / 9px 1.5px, linear-gradient(var(--cc-m), var(--cc-m)) 0 0 / 1.5px 9px,
+    linear-gradient(var(--cc-m), var(--cc-m)) 100% 0 / 9px 1.5px, linear-gradient(var(--cc-m), var(--cc-m)) 100% 0 / 1.5px 9px,
+    linear-gradient(var(--cc-m), var(--cc-m)) 0 100% / 9px 1.5px, linear-gradient(var(--cc-m), var(--cc-m)) 0 100% / 1.5px 9px,
+    linear-gradient(var(--cc-m), var(--cc-m)) 100% 100% / 9px 1.5px, linear-gradient(var(--cc-m), var(--cc-m)) 100% 100% / 1.5px 9px;
+  background-repeat: no-repeat;
+}
 #cc-panel .cc-hand-empty { margin: 6px 0 0; font-size: 12px; text-align: center; color: var(--cc-muted); }
 #cc-panel .cc-now-calm { padding: 5px 10px; border: 1px solid var(--cc-line); border-radius: 999px; background: rgba(255, 255, 255, .35); color: var(--cc-muted); font-size: 13px; }
 #cc-panel .cc-linkbtn { font: 500 12px var(--cc-body); color: var(--cc-muted); text-decoration: underline dotted; text-underline-offset: 3px; }
@@ -1271,12 +1286,11 @@
 }
 
 /* ---------- подпись у свечи тома, стикер с даром ---------- */
-#cc-panel .cc-tome-candle .cc-candle-cap { position: relative; display: block; margin-top: 2px; translate: -20px 0; text-align: center; color: var(--cc-gold); font: 700 9.5px/1.1 var(--cc-display); letter-spacing: .3px; white-space: nowrap; max-width: 64px; overflow: hidden; text-shadow: 0 1px 0 #120720; }
-#cc-panel .cc-tome-candle .cc-candle-cap + .cc-candle-n { margin-top: 1px; }
+#cc-panel .cc-tome-candle .cc-candle-cap { position: relative; display: block; margin-top: 3px; translate: -20px 0; text-align: center; color: var(--cc-muted); font: 700 9.5px/1.1 var(--cc-display); letter-spacing: .3px; white-space: nowrap; max-width: 64px; overflow: hidden; }
 @media (max-width: 700px) { #cc-panel .cc-tome-candle .cc-candle-cap { translate: -8px 0; font-size: 9px; letter-spacing: .2px; max-width: 56px; } }
 #cc-panel .cc-front-note {
-  position: absolute; left: 22px; right: 150px; bottom: 26px; max-width: 280px; margin: 0; padding: 16px 22px 18px 26px;
-  background: url("assets/scrap.webp") center / 100% 100% no-repeat; color: #6a2f6e; font: 16px/1.2 var(--cc-hand);
+  position: absolute; left: 22px; right: 150px; bottom: 26px; max-width: 296px; margin: 0; padding: 16px 22px 18px 26px;
+  background: url("assets/scrap.webp") center / 100% 100% no-repeat; color: #5a3b4a; font: 17.5px/1.2 var(--cc-hand);
   transform: rotate(-2deg); opacity: 1; filter: drop-shadow(0 2px 2px rgba(40, 24, 8, .3));
 }
 @media (max-width: 700px) { #cc-panel .cc-front-note { right: 130px; max-width: none; } }
