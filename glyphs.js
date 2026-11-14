@@ -91,3 +91,11 @@ export const BRACKET = `<svg class="cc-bracket" viewBox="0 0 60 70" aria-hidden=
 </svg>`;
 
 export const glyphFor = (spell) => DIRECTION_GLYPH[spell?.direction] ?? DIRECTION_GLYPH.matter;
+
+// Вышивка на декоративных закладках сверху: мотылёк и веточка лаванды, стежки одной нитью.
+export const STITCH_MOTH = `<svg class="cc-stitch" viewBox="0 0 16 14" aria-hidden="true" focusable="false">
+  <path d="M8 3v9M8 3 6 .8M8 3l2-2.2M8 5C5 1 1 2 1.500 6 2 9 5 9 8 8M8 5c3-4 7-3 6.500 1C14 9 11 9 8 8"/>
+</svg>`;
+export const STITCH_LAVENDER = `<svg class="cc-stitch" viewBox="0 0 14 22" aria-hidden="true" focusable="false">
+  <path d="M7 21V4M7 5c-2-.4-3-2-2.600-3.600 1.600.2 2.600 1.600 2.600 3.600zM7 5c2-.4 3-2 2.600-3.600-1.600.2-2.600 1.600-2.600 3.600zM7 11c-2-.4-3-2-2.600-3.600 1.600.2 2.600 1.600 2.600 3.600zM7 11c2-.4 3-2 2.600-3.600-1.600.2-2.600 1.600-2.600 3.600zM7 17c-2-.4-3-2-2.600-3.600 1.600.2 2.600 1.600 2.600 3.600zM7 17c2-.4 3-2 2.600-3.600-1.600.2-2.600 1.600-2.600 3.600z"/>
+</svg>`;

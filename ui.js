@@ -1,12 +1,12 @@
 // Панель «Последних чар» — том заклинаний со свечой. Разметка строками от view, события через
 // data-act / data-bind. Правил здесь нет: можно ли, сколько стоит и что предупредить —
 // говорит actions.preview. Весь текст из чата, профиля и метаданных — только через esc().
-import { SCALE, THRESHOLDS, DIFFICULTIES, discountUseful, fractureLoad, scaleOf, rollsAgainst } from './core/rules.mjs?v=0.1.2';
-import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.2';
-import SHORT from './core/data/short.mjs?v=0.1.2';
-import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.2';
-import { candleSvg, candleMarks } from './candle.js?v=0.1.2';
-import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, glyphFor } from './glyphs.js?v=0.1.2';
+import { SCALE, THRESHOLDS, DIFFICULTIES, discountUseful, fractureLoad, scaleOf, rollsAgainst } from './core/rules.mjs?v=0.1.3';
+import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.3';
+import SHORT from './core/data/short.mjs?v=0.1.3';
+import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.3';
+import { candleSvg, candleMarks } from './candle.js?v=0.1.3';
+import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.3';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"'`]/g, (ch) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;',
@@ -716,6 +716,7 @@ export function choiceHtml(view, ui) {
 const tome = (view, inner, { side = '', spread = false, selected = false, layout = 'spread', candle = '', ribbons = '' } = {}) => {
   const theme = esc(view?.settings?.theme ?? 'amethyst');
   return `<div class="cc-tome" data-theme="${theme}" data-spread="${spread}" data-selected="${selected}" data-layout="${esc(layout)}">
+    <div class="cc-marks" aria-hidden="true"><i class="cc-mark cc-mark-a">${STITCH_MOTH}</i><i class="cc-mark cc-mark-b">${STITCH_LAVENDER}</i></div>
     <div class="cc-edges" aria-hidden="true"></div>
     <div class="cc-lavender" aria-hidden="true"></div>
     <div class="cc-corners" aria-hidden="true">${CORNER}${CORNER}${CORNER}${CORNER}</div>
@@ -772,7 +773,7 @@ export function createPanel(actions) {
   reset.textContent = ':host { all: initial; }';
   const sheet = document.createElement('link');
   sheet.rel = 'stylesheet';
-  sheet.href = new URL('./style.css?v=0.1.2', import.meta.url).href;
+  sheet.href = new URL('./style.css?v=0.1.3', import.meta.url).href;
   const root = document.createElement('div');
   root.id = 'cc-panel';
   root.className = 'cc-panel';

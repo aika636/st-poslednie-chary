@@ -1,15 +1,15 @@
 // Чистые части слоя SillyTavern: чтение метаданных без записи, сборка view для панели,
 // тексты для промпта по типу генерации, настройки, шаблоны и свои заклинания.
 // Без DOM и без SillyTavern: всё нужное приходит параметрами.
-import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.2';
-import { statusBlock, turnFact, notesOfRows } from './core/prompt.mjs?v=0.1.2';
-import { createProfile } from './core/state.mjs?v=0.1.2';
-import { customSpell, validateSpell } from './core/catalog.mjs?v=0.1.2';
-import SPELLS from './core/data/spells.mjs?v=0.1.2';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.2';
-import TAGS from './core/data/tags.mjs?v=0.1.2';
-import DIRECTIONS from './core/data/directions.mjs?v=0.1.2';
-import SOURCES from './core/data/sources.mjs?v=0.1.2';
+import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.3';
+import { statusBlock, turnFact, notesOfRows } from './core/prompt.mjs?v=0.1.3';
+import { createProfile } from './core/state.mjs?v=0.1.3';
+import { customSpell, validateSpell } from './core/catalog.mjs?v=0.1.3';
+import SPELLS from './core/data/spells.mjs?v=0.1.3';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.3';
+import TAGS from './core/data/tags.mjs?v=0.1.3';
+import DIRECTIONS from './core/data/directions.mjs?v=0.1.3';
+import SOURCES from './core/data/sources.mjs?v=0.1.3';
 
 export const DEPTH_MIN = 0;
 export const DEPTH_MAX = 10;
