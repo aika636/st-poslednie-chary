@@ -1,12 +1,12 @@
 // Панель «Последних чар» — том заклинаний со свечой. Разметка строками от view, события через
 // data-act / data-bind. Правил здесь нет: можно ли, сколько стоит и что предупредить —
 // говорит actions.preview. Весь текст из чата, профиля и метаданных — только через esc().
-import { SCALE, THRESHOLDS, DIFFICULTIES, discountUseful, fractureLoad, scaleOf, rollsAgainst } from './core/rules.mjs?v=0.1.3';
-import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.3';
-import SHORT from './core/data/short.mjs?v=0.1.3';
-import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.3';
-import { candleSvg, candleMarks } from './candle.js?v=0.1.3';
-import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.3';
+import { SCALE, THRESHOLDS, DIFFICULTIES, discountUseful, fractureLoad, scaleOf, rollsAgainst } from './core/rules.mjs?v=0.1.4';
+import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.4';
+import SHORT from './core/data/short.mjs?v=0.1.4';
+import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.4';
+import { candleSvg, candleMarks } from './candle.js?v=0.1.4';
+import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.4';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"'`]/g, (ch) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;',
@@ -50,7 +50,7 @@ export function initialUi() {
     tab: 'cast',
     layout: 'spread', school: '', listScroll: 0,
     q: '', label: '',
-    spellId: null, opts: emptyOpts(),
+    spellId: null, lastSpellId: null, opts: emptyOpts(),
     custom: emptyCustom(), customErrors: [],
     manifestFor: null, acceptFor: null, accept: { text: '', tag: '' },
     noteText: '', traitText: '',
@@ -64,6 +64,16 @@ export function switchChat(ui, prevChatId, nextChatId) {
   const { tab, layout } = ui;
   Object.assign(ui, initialUi(), { tab: tab === 'more' ? 'cast' : tab, layout: layout ?? 'spread' });
   return true;
+}
+
+// Закладки сверху: «Где остановилась» открывает последний лист, «Избранное» — каталог с фильтром.
+export function resumeSpell(ui, spellIds) {
+  if (!ui.lastSpellId || !list(spellIds).includes(ui.lastSpellId)) return false;
+  Object.assign(ui, { tab: 'cast', spellId: ui.lastSpellId, opts: emptyOpts(), leafFactsOpen: false, leafSettingsOpen: false });
+  return true;
+}
+export function openFavorites(ui) {
+  Object.assign(ui, { tab: 'cast', spellId: null, school: 'fav', q: '', profileDraft: null });
 }
 
 // ---------- чистые помощники ----------
@@ -713,10 +723,20 @@ export function choiceHtml(view, ui) {
 
 // ---------- весь том ----------
 
-const tome = (view, inner, { side = '', spread = false, selected = false, layout = 'spread', candle = '', ribbons = '' } = {}) => {
+function marksHtml(view, ui) {
+  const last = list(view.data?.spells).find((s) => s.id === ui.lastSpellId);
+  const onCast = ui.tab === 'cast';
+  const resume = last ? `Где остановилась: ${last.name}` : 'Здесь появится последнее открытое заклинание';
+  return `<div class="cc-marks">
+    <button type="button" class="cc-mark cc-mark-a" data-act="resume" aria-label="${esc(resume)}" title="${esc(resume)}" aria-disabled="${!last}"${attr('data-active', Boolean(last && onCast && ui.spellId === last.id))}>${STITCH_MOTH}</button>
+    <button type="button" class="cc-mark cc-mark-b" data-act="favshelf" aria-label="Избранное" title="Избранное"${attr('data-active', onCast && !ui.spellId && ui.school === 'fav' && !ui.q)}>${STITCH_LAVENDER}</button>
+  </div>`;
+}
+
+const tome = (view, inner, { side = '', spread = false, selected = false, layout = 'spread', candle = '', ribbons = '', marks = '' } = {}) => {
   const theme = esc(view?.settings?.theme ?? 'amethyst');
   return `<div class="cc-tome" data-theme="${theme}" data-spread="${spread}" data-selected="${selected}" data-layout="${esc(layout)}">
-    <div class="cc-marks" aria-hidden="true"><i class="cc-mark cc-mark-a">${STITCH_MOTH}</i><i class="cc-mark cc-mark-b">${STITCH_LAVENDER}</i></div>
+    ${marks}
     <div class="cc-edges" aria-hidden="true"></div>
     <div class="cc-lavender" aria-hidden="true"></div>
     <div class="cc-corners" aria-hidden="true">${CORNER}${CORNER}${CORNER}${CORNER}</div>
@@ -748,7 +768,7 @@ export function panelHtml(view, ui, preview) {
     <div class="cc-pagebody">${main}</div>
   </section>`;
   const casting = ui.tab === 'cast';
-  return tome(view, page, { side: casting ? side : frontispiece(view), spread: true, selected: Boolean(casting && ui.spellId), layout: ui.layout ?? 'spread', candle: candleHtml(view), ribbons: ribbonsHtml(view, ui) });
+  return tome(view, page, { side: casting ? side : frontispiece(view), spread: true, selected: Boolean(casting && ui.spellId), layout: ui.layout ?? 'spread', candle: candleHtml(view), ribbons: ribbonsHtml(view, ui), marks: marksHtml(view, ui) });
 }
 
 // ---------- DOM ----------
@@ -773,7 +793,7 @@ export function createPanel(actions) {
   reset.textContent = ':host { all: initial; }';
   const sheet = document.createElement('link');
   sheet.rel = 'stylesheet';
-  sheet.href = new URL('./style.css?v=0.1.3', import.meta.url).href;
+  sheet.href = new URL('./style.css?v=0.1.4', import.meta.url).href;
   const root = document.createElement('div');
   root.id = 'cc-panel';
   root.className = 'cc-panel';
@@ -789,6 +809,7 @@ export function createPanel(actions) {
 
   function paint() {
     if (root.hidden) return;
+    if (ui.spellId) ui.lastSpellId = ui.spellId;
     const active = shadow.activeElement;
     let focusKey = null;
     let focusAct = null;
@@ -898,6 +919,8 @@ export function createPanel(actions) {
       // каст
       case 'f-label': ui.label = ui.label === v ? '' : v; break;
       case 'school': ui.school = v; break;
+      case 'resume': if (!resumeSpell(ui, list(view?.data?.spells).map((x) => x.id))) return; break;
+      case 'favshelf': openFavorites(ui); scrollTop = true; break;
       case 'layout': ui.layout = v === 'compact' ? 'compact' : 'spread'; break;
       case 'pick':
         // Повторный клик по открытой строке закрывает лист.
@@ -1162,6 +1185,7 @@ export function createPanel(actions) {
       if (switchChat(ui, view?.chatId, next?.chatId)) { scrollTop = true; lastLevel = null; }
       view = next;
       if (ui.spellId && !spellById(ui.spellId)) ui.spellId = null;
+      if (ui.lastSpellId && !spellById(ui.lastSpellId)) ui.lastSpellId = null;
       paint();
     },
   };

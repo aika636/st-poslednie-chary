@@ -1,4 +1,4 @@
-import { judgeRoll, threshold } from './core/rules.mjs?v=0.1.3';
+import { judgeRoll, threshold } from './core/rules.mjs?v=0.1.4';
 
 const validD20 = (value) => Number.isInteger(value) && value >= 1 && value <= 20;
 

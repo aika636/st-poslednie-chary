@@ -1,6 +1,6 @@
 // Тексты для модели: блок состояния (каждый ход) и факт хода (только для ответа на сообщение).
 // Только проза: никаких чисел механики, ID, цен, бросков и порогов.
-import { SCALE, scaleOf, fractureLoad } from './rules.mjs?v=0.1.3';
+import { SCALE, scaleOf, fractureLoad } from './rules.mjs?v=0.1.4';
 
 const SOURCE_GEN = { knowledge: 'знания', blood: 'крови', faith: 'веры', pact: 'договора', nature: 'природы' };
 
