@@ -1,21 +1,21 @@
 // «Последние чары» — слой SillyTavern: хранение в чате, очередь до отправки, тексты в промпте, панель.
 import {
   META_KEY, MODES, previewCommand, enqueue as coreEnqueue, dequeue as coreDequeue, commitPending,
-  updateEvent as coreUpdateEvent, toggleEvent as coreToggleEvent, computeChat,
-} from './core/chat-journal.mjs?v=0.1.9';
-import { createSnapshot } from './core/state.mjs?v=0.1.9';
-import { statusBlock } from './core/prompt.mjs?v=0.1.9';
+  toggleEvent as coreToggleEvent, computeChat,
+} from './core/chat-journal.mjs?v=0.1.10';
+import { createSnapshot } from './core/state.mjs?v=0.1.10';
+import { statusBlock } from './core/prompt.mjs?v=0.1.10';
 import {
   readMeta, worthWarning, hasProfile, hasHistory, canSwitchMode, buildView, promptTexts, normalizeSettings, clampDepth,
   upsertTemplate, removeTemplate, addCustomSpell as addCustomSpellTo, PROMPT_OPTIONS, DEPTH_MIN, DEPTH_MAX,
-} from './view.mjs?v=0.1.9';
-import { createPanel, candleHtml } from './ui.js?v=0.1.9';
-import { levelGrew, playFx } from './candle.js?v=0.1.9';
-import { scaleOf } from './core/rules.mjs?v=0.1.9';
-import { clampOffset } from './view.mjs?v=0.1.9';
-import { createDicePresenter } from './dice.js?v=0.1.9';
-import { buildMatchers, findSpell } from './hint.js?v=0.1.9';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.9';
+} from './view.mjs?v=0.1.10';
+import { createPanel, candleHtml } from './ui.js?v=0.1.10';
+import { levelGrew, playFx } from './candle.js?v=0.1.10';
+import { scaleOf } from './core/rules.mjs?v=0.1.10';
+import { clampOffset } from './view.mjs?v=0.1.10';
+import { createDicePresenter } from './dice.js?v=0.1.10';
+import { buildMatchers, findSpell } from './hint.js?v=0.1.10';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.10';
 
 const MODULE = 'cena-chuda';
 const SETTINGS_KEY = 'cenaChuda';
@@ -30,6 +30,7 @@ const ctx = () => SillyTavern.getContext();
 const toast = (kind, text) => globalThis.toastr?.[kind]?.(text, TITLE);
 const chatId = () => ctx().getCurrentChatId?.() ?? null;
 const chatOpen = () => Boolean(chatId());
+const eventTypes = (c) => c.event_types ?? c.eventTypes;
 
 // ---------- настройки ----------
 
@@ -67,21 +68,22 @@ function warnUnsupported(cur) {
 // пишет только текущий чат, а записать чужой чат его снимком нельзя без риска затереть свежие данные.
 // saveChat контекста (saveChatConditional) пишет и сообщения, и метаданные, в том числе в группах.
 let queue = Promise.resolve();
-let dirtyChat = null;
+const dirtyChats = new Set();
 function persist() {
-  dirtyChat = chatId();
+  const now = chatId();
+  if (now) dirtyChats.add(now);
   const step = async () => {
-    const id = dirtyChat;
-    dirtyChat = null;
-    if (!id) return;
-    if (chatId() !== id) {
+    const ids = [...dirtyChats];
+    dirtyChats.clear();
+    const cur = chatId();
+    for (const id of ids) {
+      if (id === cur) continue;
       // Правка лежит в метаданных прошлого чата в памяти; сохранится, только если таверна
       // сама записала тот чат при переключении.
       console.warn(`[${MODULE}] изменение магии не сохранено отдельно: чат «${id}» сменился до записи. `
         + 'Если таверна не сохранила его при переключении, последняя правка в нём потеряна.');
-      return;
     }
-    await ctx().saveChat();
+    if (cur && ids.includes(cur)) await ctx().saveChat();
   };
   queue = queue.then(step).catch((err) => console.error(`[${MODULE}] не сохранено:`, err));
   return queue;
@@ -115,10 +117,14 @@ function setPrompts(status, fact) {
   c.setExtensionPrompt(INJECT.fact, fact, IN_CHAT, 0, false, ROLE_SYSTEM);
 }
 
+// Режим бога в модель не передаётся: он лишь убирает из текста угрозу надломом.
+const promptOptions = (s) => ({ ...PROMPT_OPTIONS, free: s.free });
+
 function updatePrompts(type = 'normal') {
   const cur = current();
+  const s = readSettings();
   const { status, fact } = promptTexts({
-    chat: cur.chat, meta: cur.meta, unsupported: cur.unsupported, enabled: readSettings().enabled, type,
+    chat: cur.chat, meta: cur.meta, unsupported: cur.unsupported, enabled: s.enabled, type, options: promptOptions(s),
   });
   setPrompts(status, fact);
 }
@@ -231,10 +237,6 @@ const actions = {
     mutate((meta) => (coreDequeue(meta, commandId) ? { write: true } : {}));
   },
 
-  updateEvent(eventId, patch) {
-    mutate((meta, chat) => (coreUpdateEvent(chat, meta, eventId, patch) ? { write: true } : {}));
-  },
-
   toggleEvent(eventId) {
     mutate((meta, chat) => (coreToggleEvent(chat, meta, eventId) ? { write: true } : {}));
   },
@@ -285,7 +287,7 @@ const actions = {
 async function onMessageSent(index) {
   const id = chatId();
   const cur = current();
-  if (!cur.open || cur.unsupported || !hasProfile(cur.meta)) return;
+  if (!readSettings().enabled || !cur.open || cur.unsupported || !hasProfile(cur.meta)) return;
   const r = commitPending(cur.chat, cur.meta, Number(index), { now: Date.now(), rng: Math.random, fractures: FRACTURES });
   if (!r.changed) return;
   ctx().chatMetadata[META_KEY] = cur.meta;
@@ -467,7 +469,7 @@ function mountFonts() {
   const link = document.createElement('link');
   link.id = 'cc-fonts';
   link.rel = 'stylesheet';
-  link.href = new URL('./fonts/fonts.css?v=0.1.9', import.meta.url).href;
+  link.href = new URL('./fonts/fonts.css?v=0.1.10', import.meta.url).href;
   document.head.append(link);
 }
 
@@ -476,7 +478,7 @@ function mountStyle() {
   const link = document.createElement('link');
   link.id = 'cc-style';
   link.rel = 'stylesheet';
-  link.href = new URL('./style.css?v=0.1.9', import.meta.url).href;
+  link.href = new URL('./style.css?v=0.1.10', import.meta.url).href;
   document.head.append(link);
 }
 
@@ -485,7 +487,7 @@ function mountDiceStyles() {
   const link = document.createElement('link');
   link.id = 'cc-dice-style';
   link.rel = 'stylesheet';
-  link.href = new URL('./dice.css?v=0.1.9', import.meta.url).href;
+  link.href = new URL('./dice.css?v=0.1.10', import.meta.url).href;
   document.head.append(link);
 }
 
@@ -622,10 +624,11 @@ function init() {
   mountSettings();
 
   const ev = c.eventSource;
-  const t = c.event_types;
+  const t = eventTypes(c);
+  // Промис возвращается: ST ждёт его перед reloadCurrentChat при вставке в прошлое (/send at=).
   ev.on(t.MESSAGE_SENT, (index) => {
     dismissed.clear();
-    onMessageSent(index).catch((err) => console.error(`[${MODULE}] очередь не зафиксирована:`, err)).finally(updateHint);
+    return onMessageSent(index).catch((err) => console.error(`[${MODULE}] очередь не зафиксирована:`, err)).finally(updateHint);
   });
   ev.on(t.CHAT_CHANGED, () => {
     pendingRollChat = null;
@@ -651,10 +654,10 @@ globalThis.CenaChudaAPI = Object.freeze({
     const cur = current();
     if (cur.unsupported || !hasProfile(cur.meta)) return '';
     const view = computeChat(cur.chat, cur.meta);
-    return view ? statusBlock(view.state, PROMPT_OPTIONS) : '';
+    return view ? statusBlock(view.state, promptOptions(readSettings())) : '';
   },
 });
 
 // APP_READY в таверне «залипающее»: подписка после события срабатывает сразу.
 const c0 = ctx();
-c0.eventSource.on(c0.event_types.APP_READY, init);
+c0.eventSource.on(eventTypes(c0).APP_READY, init);

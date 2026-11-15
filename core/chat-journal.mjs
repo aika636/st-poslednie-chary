@@ -1,9 +1,9 @@
 // Связка журнала с чатом: где лежат события, очередь команд до отправки, фиксация очереди
-// в сообщение игрока, правка событий из панели и выбор сообщения для факта хода.
+// в сообщение игрока, отключение событий и выбор сообщения для факта хода.
 // Без DOM и без SillyTavern: на входе массив сообщений чата и объект метаданных чата.
 // Время, генератор случайных чисел и id приходят параметрами.
-import { applyEvent, replay, EVENT_KINDS } from './journal.mjs?v=0.1.9';
-import { rollsAgainst, DIFFICULTIES } from './rules.mjs?v=0.1.9';
+import { applyEvent, replay, EVENT_KINDS } from './journal.mjs?v=0.1.10';
+import { rollsAgainst, DIFFICULTIES } from './rules.mjs?v=0.1.10';
 
 export const META_KEY = 'cenaChuda';
 export const EXTRA_KEY = 'cenaChuda';
@@ -280,21 +280,6 @@ function findEvent(chat, eventId) {
     if (event) return { event, mesIndex: i };
   }
   return null;
-}
-
-// Правка события из панели (замена заклинания, цели, исхода…). Бросок не перебрасывается:
-// roll и d20 из правки игнорируются, сложность меняется внутри прежнего броска.
-export function updateEvent(chat, meta, eventId, patch = {}) {
-  const found = findEvent(chat, eventId);
-  if (!found) return null;
-  const { event } = found;
-  const { roll, d20, difficulty, ...rest } = patch;
-  const payload = { ...(event.payload ?? {}), ...structuredClone(rest) };
-  if (difficulty !== undefined && payload.roll && DIFFICULTIES.includes(difficulty)) {
-    payload.roll = { ...payload.roll, difficulty };
-  }
-  event.payload = payload;
-  return found;
 }
 
 // Отключение и возврат события.

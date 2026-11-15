@@ -1,4 +1,4 @@
-import { judgeRoll, threshold } from './core/rules.mjs?v=0.1.9';
+import { judgeRoll, threshold } from './core/rules.mjs?v=0.1.10';
 
 const validD20 = (value) => Number.isInteger(value) && value >= 1 && value <= 20;
 
@@ -99,7 +99,6 @@ export function createDicePresenter({ document: doc = globalThis.document, reduc
   let timer = null;
   let mounted = null;
   let destroyed = false;
-  let dismissed = false;
 
   const cleanup = () => {
     if (timer !== null) clearTimeout(timer);
@@ -111,7 +110,7 @@ export function createDicePresenter({ document: doc = globalThis.document, reduc
     timer = null;
     mounted?.remove();
     mounted = null;
-    if (!queue.length || destroyed || dismissed) return;
+    if (!queue.length || destroyed) return;
     const roll = queue.shift();
     if (!doc?.body) return;
     mounted = doc.createElement('section');
@@ -128,7 +127,7 @@ export function createDicePresenter({ document: doc = globalThis.document, reduc
     doc.body.append(mounted);
     const motionOff = reducedMotion ?? doc.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
     const reveal = () => {
-      if (!mounted || destroyed || dismissed) return;
+      if (!mounted || destroyed) return;
       mounted.classList.remove('is-rolling');
       mounted.classList.add('is-settling');
       mounted.dataset.outcome = outcomeTone(roll);
@@ -144,18 +143,17 @@ export function createDicePresenter({ document: doc = globalThis.document, reduc
     update(view, { committed = false } = {}) {
       if (destroyed) return;
       if (!view?.chatOpen || view.unsupported || view.settings?.enabled === false) {
-        cleanup(); queue = []; seen = new Set(); chatId = view?.chatId ?? null; dismissed = false;
+        cleanup(); queue = []; seen = new Set(); chatId = view?.chatId ?? null;
         return;
       }
       if ((view?.chatId ?? null) !== chatId) {
-        cleanup(); queue = []; seen = new Set(); chatId = view?.chatId ?? null; dismissed = false;
+        cleanup(); queue = []; seen = new Set(); chatId = view?.chatId ?? null;
         for (const roll of committedRolls(view)) seen.add(roll.id);
         return;
       }
       const result = newRolls(seen, view);
       seen = result.seen;
-      if (!committed || !result.rolls.length || dismissed) return;
-      dismissed = false;
+      if (!committed || !result.rolls.length) return;
       queue.push(...result.rolls);
       if (!mounted && timer === null) finish();
     },

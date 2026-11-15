@@ -1,4 +1,4 @@
-import { L, F, E } from './kit.js?v=0.1.9';
+import { L, F, E } from './kit.js?v=0.1.10';
 
 // Целительство и метаморфозы: тело и органические линии.
 export default {

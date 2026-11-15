@@ -1,15 +1,15 @@
 // Чистые части слоя SillyTavern: чтение метаданных без записи, сборка view для панели,
 // тексты для промпта по типу генерации, настройки, шаблоны и свои заклинания.
 // Без DOM и без SillyTavern: всё нужное приходит параметрами.
-import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.9';
-import { statusBlock, turnFact, notesOfRows, fracturesOfRows } from './core/prompt.mjs?v=0.1.9';
-import { createProfile } from './core/state.mjs?v=0.1.9';
-import { customSpell, validateSpell } from './core/catalog.mjs?v=0.1.9';
-import SPELLS from './core/data/spells.mjs?v=0.1.9';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.9';
-import TAGS from './core/data/tags.mjs?v=0.1.9';
-import DIRECTIONS from './core/data/directions.mjs?v=0.1.9';
-import SOURCES from './core/data/sources.mjs?v=0.1.9';
+import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.10';
+import { statusBlock, turnFact, notesOfRows, fracturesOfRows } from './core/prompt.mjs?v=0.1.10';
+import { createProfile } from './core/state.mjs?v=0.1.10';
+import { customSpell, validateSpell } from './core/catalog.mjs?v=0.1.10';
+import SPELLS from './core/data/spells.mjs?v=0.1.10';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.10';
+import TAGS from './core/data/tags.mjs?v=0.1.10';
+import DIRECTIONS from './core/data/directions.mjs?v=0.1.10';
+import SOURCES from './core/data/sources.mjs?v=0.1.10';
 
 export const DEPTH_MIN = 0;
 export const DEPTH_MAX = 10;
@@ -180,6 +180,7 @@ export function buildView({ chatOpen, chatId = null, chat, meta, unsupported, se
     snapshot: null,
     state: null,
     forecast: null,
+    giftBase: {},
     pending: [],
     pendingRows: [],
     rows: [],
@@ -196,8 +197,16 @@ export function buildView({ chatOpen, chatId = null, chat, meta, unsupported, se
   base.pending = Array.isArray(meta.pending) ? meta.pending : [];
   const computed = computeChat(chat ?? [], meta);
   if (!computed) return base;
+  // Состояние без одного каста очереди: по нему считается доступность дара при замене этого каста.
+  const giftBase = {};
+  for (const c of base.pending) {
+    if (c?.kind !== 'cast') continue;
+    const f = computeChat(chat ?? [], { ...meta, pending: base.pending.filter((x) => x !== c) })?.pendingPreview.state;
+    if (f) giftBase[c.id] = { giftUsed: f.giftUsed, lastPaid: f.lastPaid ?? null };
+  }
   return {
     ...base,
+    giftBase,
     state: computed.state,
     forecast: computed.pendingPreview.state,
     pendingRows: computed.pendingPreview.rows,

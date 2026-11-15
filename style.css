@@ -1228,6 +1228,10 @@
 @media (max-width: 700px) {
   #cc-panel .cc-pagehead .cc-charm { top: 34px; right: 78px; }
 }
+/* В компактном виде страница доходит до свечи: брелок уходит левее неё. */
+@media (min-width: 701px) {
+  #cc-panel .cc-tome[data-layout="compact"] .cc-pagehead .cc-charm { right: 96px; }
+}
 
 /* ---------- закладки: язычки с обреза книги ---------- */
 #cc-panel .cc-ribbons { filter: drop-shadow(1px 2px 2px rgba(10, 2, 22, .4)); position: absolute; z-index: 0; left: calc(100% - 38px); top: 150px; display: flex; flex-direction: column; gap: 8px; }
@@ -1525,9 +1529,10 @@
 /* школа влечения: акцент */
 #cc-panel .cc-spell-row[data-direction="desire"], #cc-panel .cc-leaf[data-direction="desire"], #cc-panel .cc-chapter[data-direction="desire"] { --school-accent:#b3395e; }
 
-#cc-panel .cc-layoutbtn { position:absolute; top:12px; left:46px; z-index:4; height:24px; padding:0 9px; border:1px dashed color-mix(in srgb, var(--cc-ink) 45%, transparent); border-radius:2px; background:transparent; color:var(--cc-muted); font:600 11.5px var(--cc-body); cursor:pointer; }
-#cc-panel .cc-layoutbtn:hover { color:var(--cc-ink); border-style:solid; background:var(--cc-accent-soft); }
+#cc-panel .cc-layoutbtn { position:absolute; top:12px; left:46px; z-index:4; height:24px; padding:0 9px; border:1px solid color-mix(in srgb, var(--cc-gold-3) 55%, transparent); border-radius:3px; background:color-mix(in srgb, var(--cc-gold) 24%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.35); color:var(--cc-muted); font:600 11.5px var(--cc-body); cursor:pointer; }
+#cc-panel .cc-layoutbtn:hover { color:var(--cc-ink); border-color:var(--cc-gold-3); background:color-mix(in srgb, var(--cc-gold) 42%, transparent); }
 #cc-panel .cc-layoutbtn:focus-visible { outline:2px solid var(--cc-accent); outline-offset:2px; }
+#cc-panel .cc-layoutbtn.cc-inleaf { position:static; }
 @media (max-width:700px) { #cc-panel .cc-layoutbtn { display:none; } }
 
 #cc-panel .cc-tome-candle .cc-candle-n { white-space:nowrap; }

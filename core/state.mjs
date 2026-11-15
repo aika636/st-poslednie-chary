@@ -1,7 +1,7 @@
 // Профиль персоны, начальный снимок и состояние. Снимок — состояние до журнала:
 // его не перезаписывают, иначе удаление старого сообщения не отменит последствий.
-import { SOURCES, ENVIRONMENTS, MASTERIES, DEFAULT_MASTERY, scaleFor, fractureLoad } from './rules.mjs?v=0.1.9';
-import { canonicalFavorites } from './data/spell-replacements.mjs?v=0.1.9';
+import { SOURCES, ENVIRONMENTS, MASTERIES, DEFAULT_MASTERY, scaleFor, fractureLoad, severityOf } from './rules.mjs?v=0.1.10';
+import { canonicalFavorites } from './data/spell-replacements.mjs?v=0.1.10';
 
 export const cloneState = (s) => structuredClone(s);
 
@@ -26,18 +26,23 @@ export function createProfile(input = {}) {
 }
 
 // Снимок допускает начальные значения (напряжение, надломы), чтобы продолжить историю,
-// начатую без расширения.
-export function createSnapshot(input = {}) {
+// начатую без расширения. lenient — для снимков уже в чате: проверки веса и суммы не бросают.
+export function createSnapshot(input = {}, { lenient = false } = {}) {
   const strain = input.strain ?? 0;
   const profile = createProfile(input.profile);
   const cap = scaleFor(profile);
   if (!Number.isInteger(strain) || strain < 0 || strain > cap) throw new Error(`напряжение должно быть от 0 до ${cap}`);
   const environment = input.environment ?? 'unspecified';
   if (!ENVIRONMENTS.includes(environment)) throw new Error(`неизвестная среда «${environment}»`);
+  const fractures = list(input.fractures).map((f) => ({ ...f, severity: f.severity ?? (Number.isInteger(f.weight) ? severityOf(f.weight) : 1) }));
+  if (!lenient) {
+    if (fractures.some((f) => !Number.isInteger(f.weight) || f.weight < 1)) throw new Error('вес надлома должен быть целым от 1');
+    if (strain + Math.min(cap, fractureLoad(fractures)) > cap) throw new Error('напряжение вместе с надломами больше шкалы');
+  }
   return {
     profile,
     strain,
-    fractures: list(input.fractures).map((f) => ({ ...f })),
+    fractures,
     giftUsed: Boolean(input.giftUsed),
     breatherUsed: Boolean(input.breatherUsed),
     environment,
@@ -45,7 +50,7 @@ export function createSnapshot(input = {}) {
 }
 
 export function initialState(snapshot) {
-  const s = createSnapshot(snapshot);
+  const s = createSnapshot(snapshot, { lenient: true });
   return {
     profile: s.profile,
     strain: s.strain,

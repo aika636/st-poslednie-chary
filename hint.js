@@ -11,11 +11,12 @@ export function stem(word) {
   return w;
 }
 
+// Однословные названия и названия, начинающиеся с короткого служебного слова («До поры», «На грани»), ловятся только с заглавной.
 export function matcherFor(spell) {
   const words = norm(spell?.name).match(/\p{L}+/gu) ?? [];
   if (!words.length) return null;
   const body = words.map((w) => `${escRe(stem(w))}\\p{L}*`).join('[\\s,—–-]+');
-  return { id: spell.id, name: spell.name, size: words.join(' ').length, re: new RegExp(`(?<!\\p{L})${body}(?!\\p{L})`, 'u') };
+  return { id: spell.id, name: spell.name, size: words.join(' ').length, cap: words.length === 1 || words[0].length <= 3, re: new RegExp(`(?<!\\p{L})${body}(?!\\p{L})`, 'u') };
 }
 
 export function buildMatchers(spells) {
@@ -30,7 +31,11 @@ export function findSpell(text, matchers, exclude = new Set()) {
   if (t.trim().length < 3) return null;
   for (const m of matchers) {
     if (exclude.has(m.id)) continue;
-    if (m.re.test(t)) return { id: m.id, name: m.name };
+    const hit = m.re.exec(t);
+    if (!hit) continue;
+    const ch = String(text)[hit.index];
+    if (m.cap && (!ch || ch === ch.toLowerCase())) continue;
+    return { id: m.id, name: m.name };
   }
   return null;
 }

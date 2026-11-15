@@ -66,9 +66,6 @@ export function scaleOf(state) {
 // Тяжесть надлома: вес, но не выше трёх.
 export const severityOf = (weight) => Math.min(3, weight);
 
-// Сможет ли дар-скидка что-то дать: только при ненулевой цене до скидки.
-export const discountUseful = (source, baseCost) => DISCOUNT_SOURCES.has(source) && baseCost > 0;
-
 // Цена каста. gift — игрок хочет применить дар своего источника к этому касту.
 // Возвращает итоговую цену, применён ли дар и предупреждения. Ничего не запрещает.
 // mode — новый дар по виду: repeat (знание, повтор последнего платного чуда), blood (кровь, чудо ценой 2–3 за лёгкий надлом).
@@ -78,8 +75,9 @@ export function castCost({ spell, source, environment, giftUsed, gift, mode, las
   if (source === 'nature' && environment === 'lifeless') cost += 1;
   let giftApplied = null;
   if (mode) {
-    if (giftUsed) warnings.push('дар уже использован до отдыха: заклинание стоит обычную цену');
-    else if (mode === 'repeat' && source === 'knowledge' && lastPaid === spell.id && cost > 0) {
+    if (giftUsed) {
+      if (mode !== 'mercy') warnings.push('дар уже использован до отдыха: заклинание стоит обычную цену');
+    } else if (mode === 'repeat' && source === 'knowledge' && lastPaid === spell.id && cost > 0) {
       cost -= 1;
       giftApplied = 'repeat';
     } else if (mode === 'blood' && source === 'blood' && (spell.cost === 2 || spell.cost === 3)) {

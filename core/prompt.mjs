@@ -1,6 +1,6 @@
 // Тексты для модели: блок состояния (каждый ход) и факт хода (только для ответа на сообщение).
 // Только проза: никаких чисел механики, ID, цен, бросков и порогов.
-import { scaleFor, scaleOf, fractureLoad } from './rules.mjs?v=0.1.9';
+import { scaleFor, scaleOf, fractureLoad } from './rules.mjs?v=0.1.10';
 
 const SOURCE_GEN = { knowledge: 'знания', blood: 'крови', faith: 'веры', pact: 'договора', nature: 'природы' };
 
@@ -27,21 +27,34 @@ function strainTier(filled, cap) {
   if (filled <= 0) return 0;
   if (filled >= cap) return 4;
   if (filled === cap - 1) return 3;
+  if (filled === 1) return 1;
   return filled / (cap - 1) < 0.5 ? 1 : 2;
 }
 
-function strainText(state) {
+// Предел без угрозы: в режиме бога и пока вера не истратила Милость новая плата надломом не грозит.
+const LIMIT_SAFE_TEXT = {
+  none: 'Силы на пределе: цена прошлых чудес уже учтена. Колдовать ещё можно.',
+  part: 'Силы на пределе: часть их держат надломы, остальное — обычная усталость от магии. Колдовать ещё можно.',
+  all: 'Силы на пределе: их целиком держат надломы, и обычный отдых их не вернёт. Колдовать ещё можно.',
+};
+const MERCY_TEXT = ' Высшая сила пока милостива: первый перегруз до отдыха не оставит надлома.';
+const HELD_BY_FRACTURES = ' Часть напряжения держат надломы: обычный отдых их не снимет.';
+
+function strainText(state, { free = false } = {}) {
   const cap = scaleFor(state.profile);
   const filled = scaleOf(state);
   const load = fractureLoad(state.fractures ?? []);
-  if (filled < cap || load === 0) return STRAIN_TEXT[strainTier(filled, cap)];
-  return load >= cap ? LIMIT_FRACTURES_TEXT.all : LIMIT_FRACTURES_TEXT.part;
+  if (filled < cap) return STRAIN_TEXT[strainTier(filled, cap)] + (load > 0 ? HELD_BY_FRACTURES : '');
+  const kind = load === 0 ? 'none' : load >= cap ? 'all' : 'part';
+  if (free) return LIMIT_SAFE_TEXT[kind];
+  if (state.profile?.source === 'faith' && !state.giftUsed) return LIMIT_SAFE_TEXT[kind] + MERCY_TEXT;
+  return kind === 'none' ? STRAIN_TEXT[4] : LIMIT_FRACTURES_TEXT[kind];
 }
 
 const SEVERITY_TEXT = {
   1: 'лёгкий, проявляется время от времени',
   2: 'серьёзный, устойчиво мешает',
-  3: 'тяжёлый, стал заметной частью её состояния',
+  3: 'тяжёлый, стал заметной частью состояния персоны',
 };
 
 const ENVIRONMENT_TEXT = {
@@ -170,7 +183,9 @@ function effectsSection(state) {
   for (const e of state.effects ?? []) {
     const key = e.target?.key ?? '';
     if (!groups.has(key)) groups.set(key, { label: key ? targetLabel(e.target) : '', items: [] });
-    groups.get(key).items.push({ text: effectLine(e, state), compact: e.detail === 'compact' });
+    const item = { text: effectLine(e, state), compact: e.detail === 'compact' };
+    const items = groups.get(key).items;
+    if (!items.some((x) => x.text === item.text)) items.push(item);
   }
   // Сжатые эффекты идут списком через запятую, подробные — отдельными предложениями.
   return [...groups.values()].map((g) => {
@@ -185,7 +200,7 @@ function effectsSection(state) {
 
 // Блок состояния: кто персона, как выглядит её магия, сколько осталось сил и что действует.
 // skipNotes — id заметок, которые уже сказаны в факте этого хода: в «недавних» их не повторяем.
-export function statusBlock(state, { sources = {}, tags = null, recentNotes = 3, skipNotes = [], skipFractures = [] } = {}) {
+export function statusBlock(state, { sources = {}, tags = null, recentNotes = 3, skipNotes = [], skipFractures = [], free = false } = {}) {
   const p = state.profile ?? {};
   const src = sources[p.source];
   const out = ["[Persona's magic]", WORLD_TEXT];
@@ -193,12 +208,12 @@ export function statusBlock(state, { sources = {}, tags = null, recentNotes = 3,
   const who = clean(p.name) ? `Персона — ${clean(p.name)}.` : 'Персона игрока владеет магией.';
   out.push(src ? `${who} Источник магии — ${src.name.toLowerCase()}. ${sentence(src.trait)}` : who);
   const look = [];
-  if (clean(p.signature)) look.push(`How her magic looks and feels: ${sentence(lowerFirst(clean(p.signature)))}`);
+  if (clean(p.signature)) look.push(`How the persona's magic looks and feels: ${sentence(lowerFirst(clean(p.signature)))}`);
   if (clean(p.expression)) look.push(`Expression: ${sentence(lowerFirst(clean(p.expression)))}`);
   if (look.length) out.push(look.join(' '));
   if (p.source === 'pact' && clean(p.patron)) out.push(`Patron: ${sentence(p.patron)}`);
 
-  out.push(strainText(state));
+  out.push(strainText(state, { free }));
 
   const fractures = state.fractures ?? [];
   if (fractures.length) out.push('Fractures:', ...fractures.map((f) => `— ${fractureLine(f, skipFractures.includes(f.id))}`));
@@ -272,10 +287,12 @@ function castLines(row, last, { sources, tags }) {
   }
 
   if (c.fractureId) {
-    const f = (last.after.fractures ?? []).find((x) => x.id === c.fractureId);
+    const f = (row.after.fractures ?? []).find((x) => x.id === c.fractureId);
+    // Проявление приходит отдельным событием после каста: его берём из конца хода.
+    const shown = (last.after.fractures ?? []).find((x) => x.id === c.fractureId)?.manifest ?? f?.manifest;
     const sev = { 1: 'лёгкий', 2: 'серьёзный', 3: 'тяжёлый' }[Math.min(3, f?.severity ?? 1)];
     let line = c.gift === 'blood' ? `Остался ${sev} надлом.` : `Магия взяла больше, чем было сил: остался ${sev} надлом.`;
-    if (f?.manifest?.text) line += ` ${sentence(f.manifest.text)}`;
+    if (shown?.text) line += ` ${sentence(shown.text)}`;
     lines.push(line);
   }
 

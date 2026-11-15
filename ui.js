@@ -1,12 +1,12 @@
 // Панель «Последних чар» — том заклинаний со свечой. Разметка строками от view, события через
 // data-act / data-bind. Правил здесь нет: можно ли, сколько стоит и что предупредить —
 // говорит actions.preview. Весь текст из чата, профиля и метаданных — только через esc().
-import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.9';
-import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.9';
-import SHORT from './core/data/short.mjs?v=0.1.9';
-import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.9';
-import { candleSvg, candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.9';
-import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.9';
+import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.10';
+import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.10';
+import SHORT from './core/data/short.mjs?v=0.1.10';
+import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.10';
+import { candleSvg, candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.10';
+import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.10';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"'`]/g, (ch) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;',
@@ -107,10 +107,14 @@ export function debtDefault(view) {
   return conds.length ? conds[Object.keys((view?.state ?? {}).casts ?? {}).length % conds.length] : '';
 }
 
-const castCtx = (view, source) => ({
-  mode: view.mode, source, giftUsed: view.state?.giftUsed, lastPaid: view.state?.lastPaid ?? null,
-  free: view.settings?.free === true, debtDefault: debtDefault(view),
-});
+// Дары считаются по прогнозу с очередью; у уже стоящего каста — по состоянию без него.
+const castCtx = (view, source, queuedId = null) => {
+  const g = (queuedId && view.giftBase?.[queuedId]) || view.forecast || view.state;
+  return {
+    mode: view.mode, source, giftUsed: g?.giftUsed, lastPaid: g?.lastPaid ?? null,
+    free: view.settings?.free === true, debtDefault: debtDefault(view),
+  };
+};
 
 // Каст одним нажатием. «Сюжет» — всегда успех, «Кубик» — обычная сложность. Дар кнопкой (opts.gift):
 // повтор знания, кровь, долг договора. Милость веры просится всегда: журнал применит её сам при перегрузе.
@@ -119,7 +123,7 @@ export function quickPayload(spell, { mode, source, giftUsed, free, lastPaid = n
   const payload = { spell: castCard(spell), env: false };
   const gift = giftOption(source, spell, { giftUsed, free, lastPaid });
   if (free) payload.free = true;
-  if (!free && !giftUsed && source === 'faith') payload.giftMode = 'mercy';
+  if (!free && source === 'faith') payload.giftMode = 'mercy';
   if (opts.gift && gift === 'repeat') payload.giftMode = 'repeat';
   if (opts.gift && gift === 'blood') payload.giftMode = 'blood';
   if (opts.gift && gift === 'loan') {
@@ -143,8 +147,9 @@ function safePreview(preview, kind, payload) {
 }
 
 // Короткое описание команды или события — простой текст (экранируется при выводе).
-export function describe(kind, payload, st) {
+export function describe(kind, payload, st, applied) {
   const p = payload ?? {};
+  const given = applied === undefined || Boolean(applied);
   const effect = (id) => st?.effects?.find((e) => e.id === id) ?? st?.notes?.find((n) => n.effectId === id);
   const fracture = (id) => st?.fractures?.find((f) => f.id === id);
   const castName = (id) => st?.casts?.[id]?.spell?.name;
@@ -155,9 +160,9 @@ export function describe(kind, payload, st) {
       if (p.target?.label) parts.push(`→ ${p.target.label}`);
       if (p.outcome && p.outcome !== 'success') parts.push(`· ${OUTCOME_RU[p.outcome] ?? p.outcome}`);
       else if (p.difficulty && p.difficulty !== 'normal') parts.push(`· сложность ${DIFFICULTY_RU[p.difficulty] ?? p.difficulty}`);
-      if (p.gift) parts.push(p.debt !== undefined ? '· в долг' : '· с даром');
-      else if (p.giftMode === 'repeat') parts.push('· повтор по записи');
-      else if (p.giftMode === 'blood') parts.push('· через кровь');
+      if (p.gift && given) parts.push(p.debt !== undefined ? '· в долг' : '· с даром');
+      else if (p.giftMode === 'repeat' && given) parts.push('· повтор по записи');
+      else if (p.giftMode === 'blood' && given) parts.push('· через кровь');
       return parts.join(' ');
     }
     case 'faith_pray': return `Молитва за «${castName(p.castId) ?? 'чудо'}»`;
@@ -219,7 +224,7 @@ export function candleHtml(view, { mini = false, uid = 'p', bare = false } = {})
   const marks = candleMarks(confirmed ?? st);
   const level = scaleOf(confirmed ?? st);
   const forecast = scaleOf(st);
-  const cap = scaleFor(st.profile);
+  const cap = Math.max(scaleFor(st.profile), scaleFor((confirmed ?? st).profile));
   const load = Math.min(cap, fractureLoad(list(st.fractures)));
   const title = `Напряжение ${scaleText(st, confirmed)}${load ? ` · надломы держат ${load}` : ''}`;
   return `<div class="cc-candle-box${mini ? ' cc-mini' : ''}" title="${esc(title)}">
@@ -305,7 +310,7 @@ export function queueHtml(view) {
     if (row?.ok === false) note = `<span class="cc-bad-text">${esc(capFirst(row.reason ?? 'не выйдет'))}</span>`;
     else if (row?.warnings?.length) note = `<span class="cc-warn-text">${esc(row.warnings.map(capFirst).join(' · '))}</span>`;
     return `<span class="cc-q-item" data-status="${row?.ok === false ? 'bad' : row?.warnings?.length ? 'warn' : 'ok'}">
-      <b>${esc(describe(cmd.kind, cmd.payload, st))}</b>${note}
+      <b>${esc(describe(cmd.kind, cmd.payload, st, cmd.kind === 'cast' ? (current(view).casts?.[cmd.id]?.gift ?? null) : undefined))}</b>${note}
       <button type="button" class="cc-x" data-act="dequeue" data-v="${esc(cmd.id)}" title="Убрать из очереди" aria-label="Убрать из очереди">✕</button>
     </span>`;
   }).join('');
@@ -432,7 +437,7 @@ export function leafHtml(view, ui, preview, spell) {
     } else problems = warnBox(r.reason ?? 'так не выйдет', 'cc-bad');
   }
   if (payload.free) costLine = 'Цена 0 · режим бога: без напряжения и надломов';
-  const gift = payload.free ? null : giftOption(src, spell, castCtx(view, src));
+  const gift = payload.free ? null : giftOption(src, spell, castCtx(view, src, queued?.id));
   const extra = [];
   if (view.mode === 'dice' && rollsAgainst(spell)) {
     extra.push(`<div class="cc-field"><span>Сложность цели</span>${seg('difficulty', DIFFICULTIES.map((d) => [d, `${DIFFICULTY_RU[d]} · ${THRESHOLDS[spell.resist][d]}`]), queued?.payload?.difficulty ?? opts.difficulty)}</div>`);
@@ -445,6 +450,7 @@ export function leafHtml(view, ui, preview, spell) {
   return `<article class="cc-leaf" data-direction="${esc(spell.direction ?? 'custom')}" data-queued="${Boolean(queued)}">
     <nav class="cc-leaf-nav" aria-label="Навигация страницы">
       <button type="button" data-act="unpick">← Каталог</button>
+      ${ui.layout === 'compact' ? '<button type="button" class="cc-layoutbtn cc-inleaf" data-act="layout" data-v="spread">Разворот</button>' : ''}
       <button type="button" data-act="close" aria-label="Закрыть том">✕</button>
     </nav>
     <div class="cc-leaf-top">
@@ -591,8 +597,7 @@ function recoveryHtml(view, preview) {
     const r = pv(kind, payload);
     return btn(act, label, { disabled: !r.ok, title: r.ok ? '' : capFirst(r.reason ?? ''), cls: 'cc-ghost' });
   };
-  const confirmed = view.state ?? st;
-  const root = src === 'nature' && view.settings?.free !== true && !confirmed.giftUsed && !confirmed.breatherUsed && confirmed.strain >= 2;
+  const root = src === 'nature' && view.settings?.free !== true && !st.giftUsed && !st.breatherUsed && st.strain >= 2;
   const out = [`<div class="cc-actions">
     ${root ? action('breather-root', 'breather', 'Передышка — снимет 2 (укоренение)', { root: true }) : action('breather', 'breather', 'Передышка')}
     ${action('rest', 'rest', 'Отдых')}
@@ -702,7 +707,7 @@ function journalHtml(view) {
     else if (row.ok === false) note = `<span class="cc-bad-text">Не применено: ${esc(row.reason ?? '')}</span>`;
     else if (row.warnings?.length) note = `<span class="cc-warn-text">${esc(row.warnings.map(capFirst).join(' · '))}</span>`;
     return `<div class="cc-log" data-status="${status}">
-      <div class="cc-log-main"><span>#${esc(row.mesIndex)} · ${esc(KIND_RU[row.event?.kind] ?? 'событие')}</span><b>${esc(describe(row.event?.kind, row.event?.payload, st))}</b>${extra ? `<span>${esc(extra)}</span>` : ''}${note}</div>
+      <div class="cc-log-main"><span>#${esc(row.mesIndex)} · ${esc(KIND_RU[row.event?.kind] ?? 'событие')}</span><b>${esc(describe(row.event?.kind, row.event?.payload, st, st?.casts?.[row.event?.id] ? (st.casts[row.event.id].gift ?? null) : undefined))}</b>${extra ? `<span>${esc(extra)}</span>` : ''}${note}</div>
       ${btn('toggle-event', row.disabled ? 'Вернуть' : 'Отключить', { v: row.event?.id, cls: 'cc-ghost' })}
     </div>`;
   }).join('');
@@ -820,7 +825,7 @@ export function createPanel(actions) {
   reset.textContent = ':host { all: initial; }';
   const sheet = document.createElement('link');
   sheet.rel = 'stylesheet';
-  sheet.href = new URL('./style.css?v=0.1.9', import.meta.url).href;
+  sheet.href = new URL('./style.css?v=0.1.10', import.meta.url).href;
   const root = document.createElement('div');
   root.id = 'cc-panel';
   root.className = 'cc-panel';
@@ -893,16 +898,35 @@ export function createPanel(actions) {
   }
 
   const enqueue = (kind, payload) => actions.enqueue(kind, payload);
+  let lastOnce = { kind: '', at: 0 };
+  // Отдых и конец сцены дважды подряд не нужны: двойной клик не плодит дубль.
+  const enqueueOnce = (kind, payload) => {
+    const now = Date.now();
+    if (list(view?.pending).some((c) => c.kind === kind) || (lastOnce.kind === kind && now - lastOnce.at < 600)) return;
+    lastOnce = { kind, at: now };
+    enqueue(kind, payload);
+  };
+  // Настройки листа берутся из уже стоящего в очереди каста, чтобы замена не теряла дар, долг и сложность.
+  function syncOpts() {
+    const q = queuedCast(view, ui.spellId);
+    if (!q) return;
+    const p = q.payload ?? {};
+    ui.opts = {
+      difficulty: DIFFICULTIES.includes(p.difficulty) ? p.difficulty : 'normal',
+      gift: Boolean(p.gift || p.giftMode === 'repeat' || p.giftMode === 'blood'),
+      debt: p.debt && p.debt !== debtDefault(view) ? p.debt : '',
+    };
+  }
 
   // Каст одним нажатием: в очередь с настройками листа; если уже в очереди — заменить.
-  function castSpell(spellId, { replace = false } = {}) {
+  function castSpell(spellId, { replace = false, opts } = {}) {
     const spell = spellById(spellId);
     const s = st();
     if (!spell || !s) return null;
     const old = queuedCast(view, spellId);
     if (old && !replace) return old;
     if (old) actions.dequeue(old.id);
-    const payload = quickPayload(spell, castCtx(view, s.profile.source), ui.opts);
+    const payload = quickPayload(spell, castCtx(view, s.profile.source, old?.id), opts ?? ui.opts);
     if (!old) ui.castFx = { id: spellId, at: Date.now(), kind: castFxKind(ui.spellId, spellId) };
     return enqueue('cast', payload);
   }
@@ -961,20 +985,26 @@ export function createPanel(actions) {
       case 'pick':
         // Повторный клик по открытой строке закрывает лист.
         if (ui.spellId === v) { ui.spellId = null; break; }
-        ui.opts = emptyOpts(); ui.leafFactsOpen = false; ui.leafSettingsOpen = false; ui.spellId = v; break;
+        ui.opts = emptyOpts(); ui.leafFactsOpen = false; ui.leafSettingsOpen = false; ui.spellId = v; syncOpts(); break;
       case 'toggle-cast': {
         if (ui.spellId !== v) { ui.opts = emptyOpts(); ui.leafFactsOpen = false; ui.leafSettingsOpen = false; }
         ui.spellId = v;
+        syncOpts();
         break;
       }
-      case 'cast': ui.opts.gift = false; castSpell(v); return;
+      case 'cast': {
+        const o = v === ui.spellId ? ui.opts : emptyOpts();
+        o.gift = false;
+        castSpell(v, { opts: o });
+        return;
+      }
       case 'cast-gift': ui.opts.gift = true; castSpell(v, { replace: true }); return;
       case 'unpick': ui.spellId = null; break;
       case 'fav': patchList('favorites', v); return;
-      case 'difficulty': ui.opts.difficulty = v; if (queuedCast(view, ui.spellId)) { castSpell(ui.spellId, { replace: true }); return; } break;
+      case 'difficulty': syncOpts(); ui.opts.difficulty = v; if (queuedCast(view, ui.spellId)) { castSpell(ui.spellId, { replace: true }); return; } break;
       // состояние
       case 'effect-end': enqueue('effect_end', { effectId: v, reason: 'removed' }); return;
-      case 'scene-end': enqueue('scene_end', { effectIds: list(s?.effects).filter((e) => e.spell?.duration !== 'bond').map((e) => e.id) }); return;
+      case 'scene-end': enqueueOnce('scene_end', { effectIds: list(s?.effects).filter((e) => e.spell?.duration !== 'bond').map((e) => e.id) }); return;
       case 'manifest-open': ui.manifestFor = v; break;
       case 'manifest-cancel': ui.manifestFor = null; break;
       case 'manifest': {
@@ -1001,7 +1031,7 @@ export function createPanel(actions) {
       }
       case 'debt-settle': enqueue('debt_settle', { debtId: v }); return;
       case 'breather': enqueue('breather', {}); return;
-      case 'rest': enqueue('rest', {}); return;
+      case 'rest': enqueueOnce('rest', {}); return;
       case 'breather-root': enqueue('breather', { root: true }); return;
       // ещё
       case 'note-add': {
@@ -1061,7 +1091,11 @@ export function createPanel(actions) {
     const el = ev.target;
     if (!el.dataset?.bind || !root.contains(el) || isChoice(el)) return;
     const { bind, value } = bindValue(el);
-    if (bind === 'q') { paint(); return; }
+    if (bind === 'q') { if (!ev.isComposing) paint(); return; }
+    if (bind === 'opts.debt') {
+      const b = root.querySelector('.cc-gift');
+      if (b && /^В долг/.test(b.textContent)) b.textContent = `В долг — условие: ${clean(value) || debtDefault(view) || 'назовёт покровитель'}`;
+    }
     if (bind.startsWith('prof.')) {
       const b = root.querySelector('[data-act="prof-save"]');
       if (b) b.disabled = false;
@@ -1081,7 +1115,7 @@ export function createPanel(actions) {
     if (el.dataset?.bind) {
       if (isChoice(el)) { bindValue(el); paint(); return; }
       // Условие долга: после ввода каст в очереди обновляется.
-      if (el.dataset.bind === 'opts.debt' && queuedCast(view, ui.spellId)) castSpell(ui.spellId, { replace: true });
+      if (el.dataset.bind === 'opts.debt' && queuedCast(view, ui.spellId)) { const typed = ui.opts.debt; syncOpts(); ui.opts.debt = typed; castSpell(ui.spellId, { replace: true }); }
       return;
     }
     switch (act) {
@@ -1099,7 +1133,9 @@ export function createPanel(actions) {
   }
 
   function onKey(ev) {
-    if (ev.key !== 'Escape' || root.hidden) return;
+    if (ev.key !== 'Escape' || root.hidden || ev.isComposing || ev.defaultPrevented) return;
+    const a = document.activeElement;
+    if (a && a !== document.body && a !== host) return;
     // Esc сначала закрывает лист заклинания, потом весь том.
     if (ui.spellId && ui.tab === 'cast') { ui.spellId = null; paint(); return; }
     close();
@@ -1108,6 +1144,7 @@ export function createPanel(actions) {
   root.addEventListener('click', onClick);
   root.addEventListener('input', onInput);
   root.addEventListener('change', onChange);
+  root.addEventListener('compositionend', (ev) => { if (ev.target?.dataset?.bind === 'q') paint(); });
   // toggle у <details> не всплывает — ловим на погружении, чтобы перерисовка помнила раскрытое.
   root.addEventListener('toggle', (ev) => {
     const key = ev.target?.dataset?.more;
@@ -1214,8 +1251,7 @@ export function createPanel(actions) {
     // Каст из подсказки у поля ввода: те же правила, что у нажатия в томе.
     quickCast(spellId) {
       if (!view?.hasProfile) return null;
-      ui.opts = emptyOpts();
-      return castSpell(spellId);
+      return castSpell(spellId, { opts: emptyOpts() });
     },
     render(next) {
       if (switchChat(ui, view?.chatId, next?.chatId)) { scrollTop = true; lastLevel = null; ui.dropAt = 0; ui.castFx = null; }
