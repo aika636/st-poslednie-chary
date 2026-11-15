@@ -5,8 +5,8 @@
 import {
   MASTERIES, scaleFor, SOURCES, ENVIRONMENTS, OUTCOMES, LASTING, PRAYER_THRESHOLD, castCost, payStrain, severityOf,
   rollsAgainst, threshold, judgeRoll, fractureLoad,
-} from './rules.mjs?v=0.1.7';
-import { initialState, cloneState, createProfile } from './state.mjs?v=0.1.7';
+} from './rules.mjs?v=0.1.8';
+import { initialState, cloneState, createProfile } from './state.mjs?v=0.1.8';
 
 export const EFFECT_END_REASONS = ['done', 'broke', 'escaped', 'consent', 'scene', 'removed'];
 
@@ -84,14 +84,14 @@ function cast(d, a, ctx) {
   else outcome = 'success';
 
   const { source } = d.profile;
-  const price = castCost({ spell, source, environment: d.environment, giftUsed: d.giftUsed, gift: Boolean(p.gift) });
+  const price = p.free === true ? { cost: 0, giftApplied: null, warnings: [] } : castCost({ spell, source, environment: d.environment, giftUsed: d.giftUsed, gift: Boolean(p.gift) });
   const violations = violationsOf(d, spell);
   ctx.warnings.push(...price.warnings, ...violations.map(violationWarning));
   if (source === 'nature' && d.environment === 'unspecified') ctx.warnings.push('среда не отмечена: надбавка природы не учтена');
   if (spell.resist === 'consent' && p.consent === false) ctx.warnings.push('цель не согласна: связь держится только на согласии');
   if (price.giftApplied) d.giftUsed = true;
 
-  const { strain, overflow } = payStrain(d, price.cost);
+  const { strain, overflow } = p.free === true ? { strain: d.strain, overflow: 0 } : payStrain(d, price.cost);
   d.strain = strain;
   let fractureId = null;
   if (overflow > 0) {

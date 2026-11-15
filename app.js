@@ -2,20 +2,20 @@
 import {
   META_KEY, MODES, previewCommand, enqueue as coreEnqueue, dequeue as coreDequeue, commitPending,
   updateEvent as coreUpdateEvent, toggleEvent as coreToggleEvent, computeChat,
-} from './core/chat-journal.mjs?v=0.1.7';
-import { createSnapshot } from './core/state.mjs?v=0.1.7';
-import { statusBlock } from './core/prompt.mjs?v=0.1.7';
+} from './core/chat-journal.mjs?v=0.1.8';
+import { createSnapshot } from './core/state.mjs?v=0.1.8';
+import { statusBlock } from './core/prompt.mjs?v=0.1.8';
 import {
   readMeta, worthWarning, hasProfile, hasHistory, canSwitchMode, buildView, promptTexts, normalizeSettings, clampDepth,
   upsertTemplate, removeTemplate, addCustomSpell as addCustomSpellTo, PROMPT_OPTIONS, DEPTH_MIN, DEPTH_MAX,
-} from './view.mjs?v=0.1.7';
-import { createPanel, candleHtml } from './ui.js?v=0.1.7';
-import { levelGrew, playFx } from './candle.js?v=0.1.7';
-import { scaleOf } from './core/rules.mjs?v=0.1.7';
-import { clampOffset } from './view.mjs?v=0.1.7';
-import { createDicePresenter } from './dice.js?v=0.1.7';
-import { buildMatchers, findSpell } from './hint.js?v=0.1.7';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.7';
+} from './view.mjs?v=0.1.8';
+import { createPanel, candleHtml } from './ui.js?v=0.1.8';
+import { levelGrew, playFx } from './candle.js?v=0.1.8';
+import { scaleOf } from './core/rules.mjs?v=0.1.8';
+import { clampOffset } from './view.mjs?v=0.1.8';
+import { createDicePresenter } from './dice.js?v=0.1.8';
+import { buildMatchers, findSpell } from './hint.js?v=0.1.8';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.8';
 
 const MODULE = 'cena-chuda';
 const SETTINGS_KEY = 'cenaChuda';
@@ -261,6 +261,12 @@ const actions = {
     refresh();
   },
 
+  setFree(on) {
+    writeSettings({ free: Boolean(on) });
+    syncSettingsDrawer();
+    refresh();
+  },
+
   setTheme(theme) {
     writeSettings({ theme });
     refresh();
@@ -461,7 +467,7 @@ function mountFonts() {
   const link = document.createElement('link');
   link.id = 'cc-fonts';
   link.rel = 'stylesheet';
-  link.href = new URL('./fonts/fonts.css?v=0.1.7', import.meta.url).href;
+  link.href = new URL('./fonts/fonts.css?v=0.1.8', import.meta.url).href;
   document.head.append(link);
 }
 
@@ -470,7 +476,7 @@ function mountStyle() {
   const link = document.createElement('link');
   link.id = 'cc-style';
   link.rel = 'stylesheet';
-  link.href = new URL('./style.css?v=0.1.7', import.meta.url).href;
+  link.href = new URL('./style.css?v=0.1.8', import.meta.url).href;
   document.head.append(link);
 }
 
@@ -479,7 +485,7 @@ function mountDiceStyles() {
   const link = document.createElement('link');
   link.id = 'cc-dice-style';
   link.rel = 'stylesheet';
-  link.href = new URL('./dice.css?v=0.1.7', import.meta.url).href;
+  link.href = new URL('./dice.css?v=0.1.8', import.meta.url).href;
   document.head.append(link);
 }
 
@@ -556,6 +562,7 @@ function mountSettings() {
   if (!host || document.getElementById('cc-settings')) return;
   const enabled = el('input', { type: 'checkbox', id: 'cc-enabled' });
   const desire = el('input', { type: 'checkbox', id: 'cc-desire' });
+  const free = el('input', { type: 'checkbox', id: 'cc-free' });
   const depth = el('input', { type: 'number', id: 'cc-depth', className: 'text_pole', min: String(DEPTH_MIN), max: String(DEPTH_MAX) });
   const box = el('div', { id: 'cc-settings' }, [
     el('div', { className: 'inline-drawer' }, [
@@ -566,6 +573,7 @@ function mountSettings() {
       el('div', { className: 'inline-drawer-content' }, [
         el('label', { className: 'checkbox_label' }, [enabled, el('span', { textContent: 'Включено' })]),
         el('label', { className: 'checkbox_label' }, [desire, el('span', { textContent: 'Чары влечения (18+)' })]),
+        el('label', { className: 'checkbox_label' }, [free, el('span', { textContent: 'Режим бога (каст без цены)' })]),
         el('label', { htmlFor: 'cc-depth', textContent: 'Глубина блока состояния' }),
         depth,
         el('small', { textContent: 'Факт хода всегда идёт сразу после сообщения игрока.' }),
@@ -575,6 +583,7 @@ function mountSettings() {
   host.append(box);
   enabled.addEventListener('change', () => actions.setEnabled(enabled.checked));
   desire.addEventListener('change', () => actions.setDesire(desire.checked));
+  free.addEventListener('change', () => actions.setFree(free.checked));
   depth.addEventListener('change', () => actions.setDepth(depth.value));
   syncSettingsDrawer();
 }
@@ -586,6 +595,8 @@ function syncSettingsDrawer() {
   if (enabled) enabled.checked = s.enabled;
   const desire = document.getElementById('cc-desire');
   if (desire) desire.checked = s.desire;
+  const free = document.getElementById('cc-free');
+  if (free) free.checked = s.free;
   if (depth) depth.value = String(s.depth);
 }
 

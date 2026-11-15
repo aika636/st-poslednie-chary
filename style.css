@@ -44,21 +44,22 @@
 
 /* Как таверна: цвета из темы пользователя, фактура спокойнее. */
 #cc-panel:has(.cc-tome[data-theme="tavern"]), #cc-open[data-theme="tavern"], #cc-hint[data-theme="tavern"] {
-  --cc-cover-1: color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 45%, var(--SmartThemeBlurTintColor, #1d1a22));
-  --cc-cover-2: color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 22%, var(--SmartThemeBlurTintColor, #1d1a22));
-  --cc-cover-3: color-mix(in srgb, black 35%, var(--SmartThemeBlurTintColor, #1d1a22));
+  --cc-tint: var(--SmartThemeBlurTintColor, #1d1a22);
+  --cc-cover-1: color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 45%, var(--cc-tint));
+  --cc-cover-2: color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 22%, var(--cc-tint));
+  --cc-cover-3: color-mix(in srgb, black 35%, var(--cc-tint));
   --cc-gold: color-mix(in srgb, var(--SmartThemeQuoteColor, #e2c07a) 55%, #f0e2c0);
   --cc-gold-2: color-mix(in srgb, var(--SmartThemeQuoteColor, #b38a45) 60%, #8a6a3a);
   --cc-gold-3: color-mix(in srgb, var(--SmartThemeQuoteColor, #7a5a26) 50%, #3a2a14);
-  --cc-page: color-mix(in srgb, var(--SmartThemeBodyColor, #ddd) 6%, var(--SmartThemeBlurTintColor, #1d1a22));
-  --cc-page-2: color-mix(in srgb, var(--SmartThemeBodyColor, #ddd) 10%, var(--SmartThemeBlurTintColor, #1d1a22));
-  --cc-page-edge: color-mix(in srgb, var(--SmartThemeBodyColor, #ddd) 18%, var(--SmartThemeBlurTintColor, #1d1a22));
+  --cc-page: color-mix(in srgb, var(--SmartThemeBodyColor, #ddd) 6%, var(--cc-tint));
+  --cc-page-2: color-mix(in srgb, var(--SmartThemeBodyColor, #ddd) 10%, var(--cc-tint));
+  --cc-page-edge: color-mix(in srgb, var(--SmartThemeBodyColor, #ddd) 18%, var(--cc-tint));
   --cc-ink: var(--SmartThemeBodyColor, #ddd);
   --cc-muted: var(--SmartThemeEmColor, #999);
   --cc-line: color-mix(in srgb, var(--SmartThemeBodyColor, #ddd) 18%, transparent);
   --cc-accent: var(--SmartThemeQuoteColor, #7c4ccc);
   --cc-accent-soft: color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 16%, transparent);
-  --cc-on-accent: var(--SmartThemeBlurTintColor, #111);
+  --cc-on-accent: var(--cc-tint);
   --cc-r1: color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 18%, #3f5a44);
   --cc-r2: color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 40%, #4a3a4a);
   --cc-r3: color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 15%, #6b3038);
@@ -187,6 +188,8 @@
 
 /* Торец блока страниц: выступает из-под разворота снизу и по бокам. */
 #cc-panel .cc-edges {
+  --cc-ep: color-mix(in srgb, var(--cc-page-2) 82%, #5a3a12);
+  --cc-el: color-mix(in srgb, var(--cc-page-edge) 60%, #2e1a08);
   position: absolute;
   top: 30px;
   right: 19px;
@@ -194,15 +197,18 @@
   left: 54px;
   pointer-events: none;
   background:
+    linear-gradient(180deg, transparent 30%, rgba(52, 28, 8, .38)) bottom / 100% 11px no-repeat,
+    linear-gradient(90deg, rgba(60, 34, 10, .3), transparent 14%, rgba(60, 34, 10, .16) 31%, transparent 47%, rgba(60, 34, 10, .34) 66%, transparent 79%, rgba(60, 34, 10, .26)) bottom / 100% 11px no-repeat,
+    linear-gradient(270deg, rgba(52, 28, 8, .4), transparent 70%) right / 11px 100% no-repeat,
+    linear-gradient(180deg, rgba(60, 34, 10, .28), transparent 18%, rgba(60, 34, 10, .12) 40%, transparent 52%, rgba(60, 34, 10, .3) 78%, transparent) right / 11px 100% no-repeat,
     linear-gradient(90deg, transparent 46%, rgba(70, 45, 25, .22) 50%, transparent 54%) bottom / 100% 11px no-repeat,
-    repeating-linear-gradient(180deg, rgba(160, 140, 104, .42) 0 .8px, #f6f0e2 .8px 2.6px, rgba(160, 140, 104, .26) 2.6px 3.1px, #f6f0e2 3.1px 4.1px, rgba(160, 140, 104, .36) 4.1px 5.4px, #f6f0e2 5.4px 8.4px, rgba(160, 140, 104, .24) 8.4px 9px, #f6f0e2 9px 10.4px) bottom / 100% 11px no-repeat,
-    repeating-linear-gradient(90deg, rgba(160, 140, 104, .4) 0 1px, #f6f0e2 1px 3.2px, rgba(160, 140, 104, .24) 3.2px 3.7px, #f6f0e2 3.7px 6px, rgba(160, 140, 104, .34) 6px 7.5px, #f6f0e2 7.5px 8.7px) right / 11px 100% no-repeat,
-    repeating-linear-gradient(90deg, #f6f0e2 0 1.6px, rgba(160, 140, 104, .34) 1.6px 2.5px, #f6f0e2 2.5px 5.5px, rgba(160, 140, 104, .22) 5.5px 6.2px, #f6f0e2 6.2px 9.3px) left / 10px 100% no-repeat;
+    repeating-linear-gradient(180deg, color-mix(in srgb, var(--cc-el) 48%, transparent) 0 .8px, var(--cc-ep) .8px 2.6px, color-mix(in srgb, var(--cc-el) 30%, transparent) 2.6px 3.1px, var(--cc-ep) 3.1px 4.1px, color-mix(in srgb, var(--cc-el) 42%, transparent) 4.1px 5.4px, var(--cc-ep) 5.4px 8.4px, color-mix(in srgb, var(--cc-el) 28%, transparent) 8.4px 9px, var(--cc-ep) 9px 10.4px) bottom / 100% 11px no-repeat,
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--cc-el) 46%, transparent) 0 1px, var(--cc-ep) 1px 3.2px, color-mix(in srgb, var(--cc-el) 28%, transparent) 3.2px 3.7px, var(--cc-ep) 3.7px 6px, color-mix(in srgb, var(--cc-el) 40%, transparent) 6px 7.5px, var(--cc-ep) 7.5px 8.7px) right / 11px 100% no-repeat,
+    repeating-linear-gradient(90deg, var(--cc-ep) 0 1.6px, color-mix(in srgb, var(--cc-el) 40%, transparent) 1.6px 2.5px, var(--cc-ep) 2.5px 5.5px, color-mix(in srgb, var(--cc-el) 26%, transparent) 5.5px 6.2px, var(--cc-ep) 6.2px 9.3px) left / 10px 100% no-repeat;
   clip-path: polygon(1px 0, 100% 0, calc(100% - 1px) 34%, 100% 67%, calc(100% - 1px) 100%, 74% 100%, 50% calc(100% - 1px), 26% 100%, 0 calc(100% - 1px), 1px 50%);
   filter: drop-shadow(0 4px 5px rgba(10, 2, 22, .4));
 }
-#cc-panel .cc-edges::after { content: ""; position: absolute; left: 8px; right: 2px; bottom: -1px; height: 10px; z-index: -1; background: repeating-linear-gradient(180deg, rgba(160, 140, 104, .3) 0 .7px, #efe8d8 .7px 3.6px, rgba(160, 140, 104, .2) 3.6px 4.1px, #efe8d8 4.1px 7px); }
-#cc-panel .cc-tome[data-theme="tavern"] .cc-edges { opacity: .55; }
+#cc-panel .cc-edges::after { content: ""; position: absolute; left: 8px; right: 2px; bottom: -1px; height: 10px; z-index: -1; background: repeating-linear-gradient(180deg, color-mix(in srgb, var(--cc-el) 36%, transparent) 0 .7px, color-mix(in srgb, var(--cc-ep) 90%, #3a2208) .7px 3.6px, color-mix(in srgb, var(--cc-el) 26%, transparent) 3.6px 4.1px, color-mix(in srgb, var(--cc-ep) 90%, #3a2208) 4.1px 7px); }
 
 
 /* Свеча на обложке. */
@@ -250,21 +256,14 @@
   display: flex;
   flex-direction: column;
   border-radius: 6px 12px 12px 6px;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
-    radial-gradient(140% 90% at 50% 40%, var(--cc-page) 55%, var(--cc-page-2));
-  box-shadow:
-    1px 1px 0 var(--cc-page-edge), 3px 3px 0 var(--cc-page-2), 4px 4px 0 var(--cc-page-edge), 6px 6px 0 var(--cc-page-2),
-    0 0 26px rgba(80, 50, 20, .25) inset;
 }
-/* Двойная тонкая рамка-паспарту. */
+/* Одна тонкая внутренняя рамка (на обеих страницах). */
 #cc-panel .cc-page::before {
   content: "";
   position: absolute;
   inset: 7px;
-  border: 1px solid color-mix(in srgb, var(--cc-gold-2) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cc-ink) 22%, transparent);
   border-radius: 4px 9px 9px 4px;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cc-page) 0%, transparent), 0 0 0 4px color-mix(in srgb, var(--cc-gold-2) 20%, transparent);
   pointer-events: none;
 }
 
@@ -383,7 +382,9 @@
 .cc-candle .cc-c-dish-top { fill: var(--cc-gold); }
 .cc-candle .cc-c-puddle { fill: var(--cc-wax); }
 .cc-candle .cc-c-wax { stroke: var(--cc-wax-shade); stroke-width: .6; }
-.cc-candle .cc-c-pool { fill: var(--cc-wax-shade); opacity: .7; }
+.cc-candle .cc-c-pool { fill: var(--cc-wax-shade); opacity: .75; }
+.cc-candle .cc-c-pool-in { fill: color-mix(in srgb, var(--cc-wax-shade) 70%, var(--cc-wick)); opacity: .55; }
+.cc-candle .cc-c-pool-lip { fill: none; stroke: #fff; stroke-width: .7; stroke-linecap: round; opacity: .45; }
 .cc-candle .cc-c-drip { fill: var(--cc-wax); stroke: var(--cc-wax-shade); stroke-width: .4; }
 .cc-candle .cc-c-crack { fill: none; stroke: var(--cc-scorch); stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; }
 .cc-candle .cc-c-seam { fill: none; stroke: var(--cc-seam); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 1.5px var(--cc-seam)); }
@@ -709,7 +710,7 @@
 #cc-panel .cc-starbtn .cc-glyph { width: 20px; height: 20px; }
 #cc-panel .cc-starbtn[aria-pressed="true"] .cc-g-line { fill: var(--cc-gold); }
 /* Правый верхний угол листа занят свечой — крестик стоит рядом со звездой. */
-#cc-panel .cc-leaf-x { left: 34px; }
+#cc-panel .cc-leaf-x { left: 46px; }
 #cc-panel .cc-leaf-name { text-align: center; font: 700 24px/1.15 var(--cc-display); text-wrap: balance; }
 #cc-panel .cc-leaf-short { text-align: center; font-style: italic; color: var(--cc-muted); }
 #cc-panel .cc-leaf-cost {
@@ -811,6 +812,10 @@
 .cc-glyph .cc-g-line { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .cc-glyph .cc-g-fill { fill: currentColor; }
 
+@supports (color: rgb(from red r g b)) {
+  #cc-panel:has(.cc-tome[data-theme="tavern"]), #cc-open[data-theme="tavern"], #cc-hint[data-theme="tavern"] { --cc-tint: rgb(from var(--SmartThemeBlurTintColor, #1d1a22) r g b / 1); }
+}
+
 /* ---------- у поля ввода ---------- */
 
 #cc-open {
@@ -900,11 +905,8 @@
   flex: 1 1 50%;
   height: 100%;
   border-radius: 4px 0 0 4px;
-  background-color: #fbf8ed;
-  background-image: linear-gradient(90deg, rgba(108,79,44,.06), transparent 12%, transparent 94%, rgba(85,62,38,.04));
-  box-shadow: 0 0 0 1px #d9ccb0, 0 0 12px rgba(50,35,24,.12) inset;
 }
-#cc-panel .cc-page::before { inset: 8px 3px 8px 8px; border-color: rgba(163,133,82,.2); border-radius: 3px 0 0 3px; box-shadow: none; }
+#cc-panel .cc-page::before { inset: 8px 3px 8px 8px; border-radius: 3px 0 0 3px; }
 #cc-panel .cc-side {
   position: relative;
   inset: auto;
@@ -917,14 +919,13 @@
   align-items: stretch;
   padding: 0;
   border-radius: 0 4px 4px 0;
-  background-color: #fbf8ed;
-  background-image: linear-gradient(90deg, rgba(88,64,41,.11), rgba(255,255,255,.04) 13%, transparent 30%, transparent 94%, rgba(85,62,38,.04));
-  box-shadow: inset 12px 0 20px -20px rgba(38,22,12,.38), 0 0 0 1px #d9ccb0;
+  box-shadow: inset 12px 0 20px -20px rgba(38,22,12,.38);
 }
-#cc-panel .cc-side::after { content:""; position:absolute; inset:8px 8px 8px 2px; border:1px solid rgba(163,133,82,.2); pointer-events:none; border-radius:0 3px 3px 0; }
+#cc-panel .cc-side::after { content:""; position:absolute; inset:8px 8px 8px 2px; border:1px solid color-mix(in srgb, var(--cc-ink) 22%, transparent); pointer-events:none; border-radius:0 3px 3px 0; }
 #cc-panel .cc-leaf-g { color: var(--cc-accent); background: transparent; box-shadow:none; }
 #cc-panel .cc-leaf-g .cc-glyph { filter:none; }
 #cc-panel .cc-pagehead { padding-top: 22px; }
+@media (min-width:701px) { #cc-panel .cc-tome[data-layout] .cc-section > .cc-pagehead, #cc-panel .cc-tome .cc-page > .cc-pagehead { padding-top:44px; } }
 #cc-panel .cc-pagebody { padding-bottom: 16px; }
 #cc-panel .cc-queue { flex: none; max-height: 106px; overflow:auto; padding: 7px 10px; border: 1px solid rgba(135,111,69,.25); border-left: 3px solid var(--cc-accent); border-radius: 4px; background: rgba(255,255,255,.44); }
 #cc-panel .cc-spell-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:4px; border-bottom:1px dotted var(--cc-line); }
@@ -977,10 +978,7 @@
   font-family: var(--cc-body);
   color: var(--cc-ink);
 }
-#cc-panel:has(.cc-tome[data-theme="tavern"]) { --cc-page: color-mix(in srgb, var(--SmartThemeBodyColor, #ddd) 6%, var(--SmartThemeBlurTintColor, #1d1a22)); }
-#cc-panel .cc-page, #cc-panel .cc-side { background-color: var(--cc-page); }
-#cc-panel .cc-page { background-image: var(--cc-grain), radial-gradient(60% 40% at 8% 100%, rgba(150,110,60,.07), transparent 70%), radial-gradient(50% 35% at 96% 4%, rgba(160,110,50,.06), transparent 70%), linear-gradient(90deg, rgba(108,79,44,.045), transparent 12%, transparent 94%, rgba(85,62,38,.035)); }
-#cc-panel .cc-side { background-image: var(--cc-grain), radial-gradient(70% 45% at 100% 0, rgba(255,190,90,.10), transparent 70%), linear-gradient(90deg, rgba(85,62,38,.07), transparent 9%); }
+#cc-panel:has(.cc-tome[data-theme="tavern"]) { --cc-page: color-mix(in srgb, var(--SmartThemeBodyColor, #ddd) 6%, var(--cc-tint)); }
 #cc-panel .cc-side { max-height:none; }
 #cc-panel .cc-leaf { color: var(--cc-ink); font: 16px/1.52 var(--cc-body); }
 #cc-panel .cc-leaf-name, #cc-panel .cc-frontispiece h2, #cc-panel .cc-chapter-h span { font-family: var(--cc-display); }
@@ -1361,9 +1359,9 @@
 /* Кожа таверны: коричневая основа, смешанная с цветом темы. */
 #cc-panel:has(.cc-tome[data-theme="tavern"]) {
   --cc-glow: transparent;
-  --cc-cover-1: color-mix(in srgb, #7a5230 55%, color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 45%, var(--SmartThemeBlurTintColor, #1d1a22)));
-  --cc-cover-2: color-mix(in srgb, #52341c 55%, color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 22%, var(--SmartThemeBlurTintColor, #1d1a22)));
-  --cc-cover-3: color-mix(in srgb, #2a180c 60%, color-mix(in srgb, black 35%, var(--SmartThemeBlurTintColor, #1d1a22)));
+  --cc-cover-1: color-mix(in srgb, #7a5230 55%, color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 45%, var(--cc-tint)));
+  --cc-cover-2: color-mix(in srgb, #52341c 55%, color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 22%, var(--cc-tint)));
+  --cc-cover-3: color-mix(in srgb, #2a180c 60%, color-mix(in srgb, black 35%, var(--cc-tint)));
 }
 #cc-panel .cc-tome {
   background:
@@ -1410,10 +1408,13 @@
     radial-gradient(ellipse 80% 75% at 50% 45%, var(--cc-glow), transparent 72%),
     radial-gradient(ellipse 115% 110% at 50% 45%, transparent 40%, rgba(120, 78, 22, .36) 100%),
     radial-gradient(circle 90px at 100% 0, rgba(70, 38, 10, .2), transparent),
+    radial-gradient(ellipse 150px 120px at 82% 9%, rgba(255, 190, 90, .07), transparent),
     url("assets/parchment.webp");
-  background-position: 0 0, 0 0, 0 0, 0 0, 200px 130px;
+  background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 200px 130px;
+  background-size: auto, auto, auto, auto, auto, 520px 520px;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+  background-blend-mode: normal, normal, normal, normal, normal, multiply;
 }
-#cc-panel .cc-page::before { border-color: color-mix(in srgb, var(--cc-ink) 38%, transparent); box-shadow: 0 0 0 3px transparent, 0 0 0 4px color-mix(in srgb, var(--cc-ink) 16%, transparent); }
 #cc-panel .cc-pagehead::after { background: radial-gradient(circle at 50% 50%, var(--cc-ink) 0 2.5px, transparent 3px), linear-gradient(90deg, transparent, var(--cc-ci) 18%, var(--cc-ci) 82%, transparent) center / 100% 1px no-repeat; opacity: .75; }
 #cc-panel .cc-title i { color: var(--cc-ink); opacity: .7; }
 
@@ -1473,6 +1474,7 @@
 @media (max-width: 700px) {
   #cc-panel .cc-tome { background-size: auto, 0 0, 0 0, 0 0, 0 0, auto, 300px 300px, auto; }
   #cc-panel .cc-page, #cc-panel .cc-side { background-size: auto, auto, auto, auto, 400px 400px; }
+  #cc-panel .cc-side { background-size: auto, auto, auto, auto, auto, 400px 400px; }
 }
 @media (forced-colors: active) {
   #cc-panel .cc-tome, #cc-panel .cc-page, #cc-panel .cc-side { background-image: none; }
@@ -1509,7 +1511,7 @@
   100% { filter: none; transform: scale(1); }
 }
 #cc-panel .cc-tome[data-theme="tavern"] .cc-candle-cap { font-size: 8.5px; letter-spacing: 0; max-width: none; overflow: visible; }
-@media (max-width: 700px) { #cc-panel .cc-tome[data-theme="tavern"] .cc-candle-cap { font-size: 8px; } #cc-panel .cc-tome-candle .cc-candle-cap { max-width: 60px; } }
+@media (max-width: 700px) { #cc-panel .cc-tome-candle .cc-candle-cap { display: none; } }
 @media (prefers-reduced-motion: reduce) {
   .cc-candle-box.cc-drop .cc-candle, .cc-candle-box.cc-drop .cc-c-fall,
   #cc-panel .cc-leaf.cc-cast-fx, #cc-panel .cc-leaf.cc-cast-fx .cc-leaf-g, #cc-panel .cc-row-fx, #cc-panel .cc-row-fx .cc-spell-g { animation: none !important; }
@@ -1521,3 +1523,12 @@
 }
 /* школа влечения: акцент */
 #cc-panel .cc-spell-row[data-direction="desire"], #cc-panel .cc-leaf[data-direction="desire"], #cc-panel .cc-chapter[data-direction="desire"] { --school-accent:#b3395e; }
+
+#cc-panel .cc-layoutbtn { position:absolute; top:12px; left:46px; z-index:4; height:24px; padding:0 9px; border:1px dashed color-mix(in srgb, var(--cc-ink) 45%, transparent); border-radius:2px; background:transparent; color:var(--cc-muted); font:600 11.5px var(--cc-body); cursor:pointer; }
+#cc-panel .cc-layoutbtn:hover { color:var(--cc-ink); border-style:solid; background:var(--cc-accent-soft); }
+#cc-panel .cc-layoutbtn:focus-visible { outline:2px solid var(--cc-accent); outline-offset:2px; }
+@media (max-width:700px) { #cc-panel .cc-layoutbtn { display:none; } }
+
+#cc-panel .cc-tome-candle .cc-candle-n { white-space:nowrap; }
+@media (max-width:700px) { #cc-panel .cc-tome-candle .cc-candle-n { font-size:12px; padding:2px 5px; translate:-14px 0; } }
+#cc-open .cc-candle-n { white-space:nowrap; }

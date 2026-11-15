@@ -1,6 +1,6 @@
 // Тексты для модели: блок состояния (каждый ход) и факт хода (только для ответа на сообщение).
 // Только проза: никаких чисел механики, ID, цен, бросков и порогов.
-import { scaleFor, scaleOf, fractureLoad } from './rules.mjs?v=0.1.7';
+import { scaleFor, scaleOf, fractureLoad } from './rules.mjs?v=0.1.8';
 
 const SOURCE_GEN = { knowledge: 'знания', blood: 'крови', faith: 'веры', pact: 'договора', nature: 'природы' };
 
@@ -225,7 +225,9 @@ export function statusBlock(state, { sources = {}, tags = null, recentNotes = 3,
   if (p.source === 'nature' && ENVIRONMENT_TEXT[state.environment]) out.push(ENVIRONMENT_TEXT[state.environment]);
 
   const skip = new Set(skipNotes);
-  const notes = recentNotes > 0 ? (state.notes ?? []).filter((n) => !skip.has(n.id)).slice(-recentNotes) : [];
+  const active = new Set((state.effects ?? []).map((e) => e.spell?.id).filter(Boolean));
+  const again = (n) => n.kind === 'effect-end' && n.spell?.id && active.has(n.spell.id);
+  const notes = recentNotes > 0 ? (state.notes ?? []).filter((n) => !skip.has(n.id) && !again(n)).slice(-recentNotes) : [];
   const noteLines = notes.map((n) => noteText(n, state)).filter(Boolean);
   if (noteLines.length) out.push('Recent magical consequences:', ...noteLines.map((n) => `— ${n}`));
 

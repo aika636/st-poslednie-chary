@@ -1,7 +1,7 @@
 // Профиль персоны, начальный снимок и состояние. Снимок — состояние до журнала:
 // его не перезаписывают, иначе удаление старого сообщения не отменит последствий.
-import { SOURCES, ENVIRONMENTS, MASTERIES, DEFAULT_MASTERY, scaleFor, fractureLoad } from './rules.mjs?v=0.1.7';
-import { canonicalFavorites } from './data/spell-replacements.mjs?v=0.1.7';
+import { SOURCES, ENVIRONMENTS, MASTERIES, DEFAULT_MASTERY, scaleFor, fractureLoad } from './rules.mjs?v=0.1.8';
+import { canonicalFavorites } from './data/spell-replacements.mjs?v=0.1.8';
 
 export const cloneState = (s) => structuredClone(s);
 

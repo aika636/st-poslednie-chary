@@ -1,20 +1,20 @@
 // Чистые части слоя SillyTavern: чтение метаданных без записи, сборка view для панели,
 // тексты для промпта по типу генерации, настройки, шаблоны и свои заклинания.
 // Без DOM и без SillyTavern: всё нужное приходит параметрами.
-import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.7';
-import { statusBlock, turnFact, notesOfRows, fracturesOfRows } from './core/prompt.mjs?v=0.1.7';
-import { createProfile } from './core/state.mjs?v=0.1.7';
-import { customSpell, validateSpell } from './core/catalog.mjs?v=0.1.7';
-import SPELLS from './core/data/spells.mjs?v=0.1.7';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.7';
-import TAGS from './core/data/tags.mjs?v=0.1.7';
-import DIRECTIONS from './core/data/directions.mjs?v=0.1.7';
-import SOURCES from './core/data/sources.mjs?v=0.1.7';
+import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.8';
+import { statusBlock, turnFact, notesOfRows, fracturesOfRows } from './core/prompt.mjs?v=0.1.8';
+import { createProfile } from './core/state.mjs?v=0.1.8';
+import { customSpell, validateSpell } from './core/catalog.mjs?v=0.1.8';
+import SPELLS from './core/data/spells.mjs?v=0.1.8';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.8';
+import TAGS from './core/data/tags.mjs?v=0.1.8';
+import DIRECTIONS from './core/data/directions.mjs?v=0.1.8';
+import SOURCES from './core/data/sources.mjs?v=0.1.8';
 
 export const DEPTH_MIN = 0;
 export const DEPTH_MAX = 10;
 export const THEMES = ['amethyst', 'tavern'];
-export const DEFAULT_SETTINGS = Object.freeze({ enabled: true, depth: 1, templates: [], theme: 'amethyst', desire: false });
+export const DEFAULT_SETTINGS = Object.freeze({ enabled: true, depth: 1, templates: [], theme: 'amethyst', desire: false, free: false });
 
 // Школа, выключенная по умолчанию: её чары и вкладка видны только при включённой настройке.
 export const OPTIONAL_SCHOOL = 'desire';
@@ -119,6 +119,7 @@ export function normalizeSettings(raw) {
     templates: Array.isArray(s.templates) ? s.templates.filter((t) => isObject(t) && isText(t.name)) : [],
     theme: THEMES.includes(s.theme) ? s.theme : DEFAULT_SETTINGS.theme,
     desire: s.desire === true,
+    free: s.free === true,
   };
 }
 
@@ -185,7 +186,7 @@ export function buildView({ chatOpen, chatId = null, chat, meta, unsupported, se
     conflicts: [],
     data: viewData(unsupported ? null : meta, s),
     templates: s.templates,
-    settings: { enabled: s.enabled, depth: s.depth, theme: s.theme, desire: s.desire },
+    settings: { enabled: s.enabled, depth: s.depth, theme: s.theme, desire: s.desire, free: s.free },
   };
   if (!chatOpen || !isObject(meta)) return base;
   base.hasProfile = hasProfile(meta);

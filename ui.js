@@ -1,12 +1,12 @@
 // Панель «Последних чар» — том заклинаний со свечой. Разметка строками от view, события через
 // data-act / data-bind. Правил здесь нет: можно ли, сколько стоит и что предупредить —
 // говорит actions.preview. Весь текст из чата, профиля и метаданных — только через esc().
-import { MASTERIES, THRESHOLDS, DIFFICULTIES, discountUseful, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.7';
-import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.7';
-import SHORT from './core/data/short.mjs?v=0.1.7';
-import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.7';
-import { candleSvg, candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.7';
-import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.7';
+import { MASTERIES, THRESHOLDS, DIFFICULTIES, discountUseful, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.8';
+import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.8';
+import SHORT from './core/data/short.mjs?v=0.1.8';
+import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.8';
+import { candleSvg, candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.8';
+import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.8';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"'`]/g, (ch) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;',
@@ -101,11 +101,12 @@ export function giftOption(source, spell) {
 
 // Каст одним нажатием. «Сюжет» — всегда успех, «Кубик» — обычная сложность. Скидка дара
 // (знание, кровь) и долг договора — только по явному выбору (opts.gift, opts.loan). Согласие цели не утверждается: панель его не знает.
-export function quickPayload(spell, { mode, source, giftUsed }, opts = {}) {
+export function quickPayload(spell, { mode, source, giftUsed, free }, opts = {}) {
   const payload = { spell: castCard(spell) };
   const gift = giftOption(source, spell);
-  if (!giftUsed && gift === 'discount' && opts.gift) payload.gift = true;
-  if (!giftUsed && gift === 'loan' && opts.loan) {
+  if (free) payload.free = true;
+  if (!free && !giftUsed && gift === 'discount' && opts.gift) payload.gift = true;
+  if (!free && !giftUsed && gift === 'loan' && opts.loan) {
     payload.gift = true;
     payload.debt = clean(opts.debt);
   }
@@ -252,6 +253,7 @@ function headHtml(view, ui) {
   const soon = !spent && st.giftUsed;
   flags.push(`<span class="cc-flag${spent ? ' cc-off' : ''}" title="${esc(src?.gift ?? 'Дар источника')}">${STAR}<span>${spent ? 'дар потрачен' : soon ? 'дар потратится с сообщением' : 'дар доступен'}</span></span>`);
   if (st.debts?.length) flags.push(`<span class="cc-flag cc-warnflag">долгов: ${esc(st.debts.length)}</span>`);
+  if (view.settings?.free === true) flags.push('<span class="cc-flag cc-warnflag" title="Касты не тратят напряжение и дар">режим бога</span>');
   if (view.settings && view.settings.enabled === false) flags.push('<span class="cc-flag cc-warnflag">не передаётся модели</span>');
   return `<header class="cc-pagehead">
     <div class="cc-title"><i>✦</i><span>Последние чары</span><i>✦</i></div>
@@ -393,7 +395,7 @@ export function leafHtml(view, ui, preview, spell) {
   const src = st.profile.source;
   const queued = queuedCast(view, spell.id);
   const opts = ui.opts;
-  const payload = queued?.payload ?? quickPayload(spell, { mode: view.mode, source: src, giftUsed: confirmed?.giftUsed }, opts);
+  const payload = queued?.payload ?? quickPayload(spell, { mode: view.mode, source: src, giftUsed: confirmed?.giftUsed, free: view.settings?.free === true }, opts);
   // Прогноз: если каст уже в очереди, он учтён в forecast; иначе считаем поверх.
   let costLine = '';
   let problems = '';
@@ -409,7 +411,8 @@ export function leafHtml(view, ui, preview, spell) {
       problems = list(r.warnings).map((w) => warnBox(w)).join('');
     } else problems = warnBox(r.reason ?? 'так не выйдет', 'cc-bad');
   }
-  const gift = giftOption(src, spell);
+  if (payload.free) costLine = 'Цена 0 · режим бога: без напряжения и надломов';
+  const gift = payload.free ? null : giftOption(src, spell);
   const extra = [];
   if (view.mode === 'dice' && rollsAgainst(spell)) {
     extra.push(`<div class="cc-field"><span>Сложность цели</span>${seg('difficulty', DIFFICULTIES.map((d) => [d, `${DIFFICULTY_RU[d]} · ${THRESHOLDS[spell.resist][d]}`]), queued?.payload?.difficulty ?? opts.difficulty)}</div>`);
@@ -703,6 +706,7 @@ function settingsHtml(view) {
   return `<div class="cc-field"><span>Оформление</span>${seg('theme', Object.entries(THEME_RU), s.theme ?? 'amethyst')}</div>
     <label class="cc-check"><input type="checkbox" data-act="enabled"${attr('checked', s.enabled !== false)}> Передавать магию модели</label>
     <label class="cc-check"><input type="checkbox" data-act="desire"${attr('checked', s.desire === true)}> Чары влечения (18+)</label>
+    <label class="cc-check"><input type="checkbox" data-act="free"${attr('checked', s.free === true)}> Режим бога (каст без цены)</label>
     <label class="cc-field cc-row-field"><span>Глубина блока состояния</span><input type="number" class="cc-input cc-num" id="cc-depth-in" min="0" max="10" step="1" data-act="depth" value="${esc(s.depth ?? 1)}"></label>
     <div class="cc-inline">${btn('prof-template', 'Сохранить профиль как шаблон', { cls: 'cc-ghost' })}</div>`;
 }
@@ -763,6 +767,8 @@ const tome = (view, inner, { side = '', spread = false, selected = false, layout
   </div>`;
 };
 
+const layoutBtn = (ui) => { const c = ui.layout === 'compact'; return `<button type="button" class="cc-layoutbtn" data-act="layout" data-v="${c ? 'spread' : 'compact'}" aria-label="${c ? 'Показать разворот' : 'Компактный режим'}" aria-pressed="${c}">${c ? 'Разворот' : 'Компактно'}</button>`; };
+
 const blankPage = (text) => `<section class="cc-page"><header class="cc-pagehead"><div class="cc-title"><i>✦</i><span>Последние чары</span><i>✦</i></div></header><div class="cc-pagebody">${text}</div>${closeBtn}</section>`;
 
 export function panelHtml(view, ui, preview) {
@@ -775,10 +781,10 @@ export function panelHtml(view, ui, preview) {
   else if (ui.tab === 'more') main = morePage(view, ui);
   else ({ main, side } = castPage(view, ui, preview));
   const page = `<section class="cc-page">
-    ${closeBtn}
+    ${closeBtn}${layoutBtn(ui)}
     ${headHtml(view, ui)}
     ${ui.tab === 'cast' ? `<div class="cc-queue-slot">${queueHtml(view)}</div>` : ''}
-    ${ui.tab === 'cast' ? `<div class="cc-toolbar"><button type="button" data-act="layout" data-v="${ui.layout === 'compact' ? 'spread' : 'compact'}" aria-label="${ui.layout === 'compact' ? 'Показать разворот' : 'Компактный режим'}">${ui.layout === 'compact' ? 'Разворот' : 'Компактно'}</button>${ui.spellId ? btn('unpick', 'К каталогу', { cls: 'cc-back' }) : ''}</div>` : ''}
+    ${ui.tab === 'cast' && ui.spellId ? `<div class="cc-toolbar">${btn('unpick', 'К каталогу', { cls: 'cc-back' })}</div>` : ''}
     <div class="cc-pagebody">${main}</div>
   </section>`;
   const casting = ui.tab === 'cast';
@@ -807,7 +813,7 @@ export function createPanel(actions) {
   reset.textContent = ':host { all: initial; }';
   const sheet = document.createElement('link');
   sheet.rel = 'stylesheet';
-  sheet.href = new URL('./style.css?v=0.1.7', import.meta.url).href;
+  sheet.href = new URL('./style.css?v=0.1.8', import.meta.url).href;
   const root = document.createElement('div');
   root.id = 'cc-panel';
   root.className = 'cc-panel';
@@ -889,7 +895,7 @@ export function createPanel(actions) {
     const old = queuedCast(view, spellId);
     if (old && !replace) return old;
     if (old) actions.dequeue(old.id);
-    const payload = quickPayload(spell, { mode: view.mode, source: s.profile.source, giftUsed: view.state?.giftUsed }, ui.opts);
+    const payload = quickPayload(spell, { mode: view.mode, source: s.profile.source, giftUsed: view.state?.giftUsed, free: view.settings?.free === true }, ui.opts);
     if (!old) ui.castFx = { id: spellId, at: Date.now(), kind: castFxKind(ui.spellId, spellId) };
     return enqueue('cast', payload);
   }
@@ -1078,6 +1084,7 @@ export function createPanel(actions) {
       case 'prof-vow': ensureDraft(); ui.profileDraft.vows = el.checked ? [...ui.profileDraft.vows, v] : ui.profileDraft.vows.filter((x) => x !== v); paint(); return;
       case 'enabled': actions.setEnabled(el.checked); return;
       case 'desire': actions.setDesire?.(el.checked); return;
+      case 'free': actions.setFree?.(el.checked); return;
       case 'depth': {
         const n = Number(el.value);
         if (Number.isInteger(n) && n >= 0) actions.setDepth(n);

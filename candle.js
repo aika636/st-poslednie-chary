@@ -1,7 +1,7 @@
 // Свеча — шкала напряжения. Чистая функция: число → SVG-строка (без пользовательского текста).
 // Чем выше напряжение, тем ниже воск, длиннее потёки и выше пламя. Надломы — трещины на воске:
 // временные тёмные, принятые навсегда — золотые швы. Прогноз очереди — пунктирная кромка.
-import { SCALE, SCALE_MAX } from './core/rules.mjs?v=0.1.7';
+import { SCALE, SCALE_MAX } from './core/rules.mjs?v=0.1.8';
 
 const clampScale = (n) => (Number.isFinite(n) ? Math.max(3, Math.min(SCALE_MAX, Math.round(n))) : SCALE);
 const clampLevel = (n, scale) => Math.max(0, Math.min(scale, Number.isFinite(n) ? Math.round(n) : 0));
@@ -14,19 +14,36 @@ const BOTTOM_Y = 80;
 const LEFT_X = 23;
 const RIGHT_X = 41;
 
-// Потёки: [x, длина] — с ростом уровня добавляются и удлиняются.
+// Потёки: [x, длина, снаружи]. Крайние свисают за кромку воска (рисуются под ним), средние лежат на боку.
 const DRIPS = [
-  [26, 6], [38, 9], [31, 5], [35, 13], [28, 11],
+  [24.2, 8, 1], [39.8, 11, 1], [31, 5, 0], [35, 13, 0], [28, 11, 0],
 ];
 
+// Неровный край воска: смещение по высоте, детерминированное.
+const wob = (y, k) => +(0.5 * Math.sin(y * 0.37 + k) + 0.3 * Math.sin(y * 0.93 + k * 2.1)).toFixed(2);
+
+function waxPath(top) {
+  const ys = [];
+  for (let y = top + 7; y < BOTTOM_Y - 3; y += 6) ys.push(y);
+  const side = (xs, k, dir) => ys.map((y) => `${(xs + dir * wob(y, k)).toFixed(2)} ${y}`);
+  const L = side(LEFT_X, 0.4, 1);
+  const R = side(RIGHT_X, 2.3, -1);
+  let d = `M${LEFT_X} ${top + 3.5} C${LEFT_X - 0.2} ${top - 0.6} ${LEFT_X + 3.5} ${top - 1} ${LEFT_X + 7} ${top - 0.3} S${RIGHT_X - 8} ${top + 1.6} ${RIGHT_X - 4} ${top + 1.3} S${RIGHT_X + 0.3} ${top + 0.8} ${RIGHT_X} ${top + 3.5}`;
+  for (const p of R) d += ` L${p}`;
+  d += ` L${RIGHT_X} ${BOTTOM_Y} H${LEFT_X}`;
+  for (const p of [...L].reverse()) d += ` L${p}`;
+  return d + ' Z';
+}
+
 // level — «четвертной» уровень 0…4: рисунок потёков, пламени и цвета не зависит от размера шкалы.
-function dripPaths(level, top) {
+function dripPaths(level, top, outer) {
   const n = Math.min(DRIPS.length, level + (level >= 3 ? 1 : 0));
   let out = '';
   for (let i = 0; i < n; i++) {
-    const [x, base] = DRIPS[i];
-    const len = Math.min(BOTTOM_Y - top - 3, base + level * 2);
-    out += `<path class="cc-c-drip" d="M${x - 1.6} ${top + 1} v${len} a1.6 1.6 0 0 0 3.2 0 v-${len} z"/>`;
+    const [x, base, edge] = DRIPS[i];
+    if (Boolean(edge) !== outer) continue;
+    const len = Math.min(BOTTOM_Y - top - 4, base + level * 2);
+    out += `<path class="cc-c-drip" d="M${x - 1.7} ${top + 1} v${len} a1.7 1.7 0 0 0 3.4 0 v-${len}"/>`;
   }
   return out;
 }
@@ -85,9 +102,12 @@ export function candleSvg({ level = 0, forecast = null, scale = SCALE, temporary
     <ellipse class="cc-c-dish-top" cx="32" cy="83.5" rx="16" ry="3.2"/>${gem}
     ${lv >= cap ? '<ellipse class="cc-c-puddle" cx="32" cy="82" rx="12" ry="2.4"/>' : ''}
     <circle class="cc-c-glow" cx="32" cy="${top - 9}" r="${(12 + heat * 3).toFixed(0)}" fill="url(#${id('glow')})"/>
-    <path class="cc-c-wax" fill="url(#${id('wax')})" d="M${LEFT_X} ${top + 2} Q${LEFT_X} ${top} ${LEFT_X + 3} ${top} H${RIGHT_X - 3} Q${RIGHT_X} ${top} ${RIGHT_X} ${top + 2} V${BOTTOM_Y} H${LEFT_X} Z"/>
-    <ellipse class="cc-c-pool" cx="32" cy="${top + 1}" rx="8" ry="1.6"/>
-    ${dripPaths(heat, top)}
+    ${dripPaths(heat, top, true)}
+    <path class="cc-c-wax" fill="url(#${id('wax')})" d="${waxPath(top)}"/>
+    ${dripPaths(heat, top, false)}
+    <ellipse class="cc-c-pool" cx="32" cy="${top + 1.2}" rx="9" ry="2.3"/>
+    <ellipse class="cc-c-pool-in" cx="32" cy="${top + 1.5}" rx="5.2" ry="1.3"/>
+    <path class="cc-c-pool-lip" d="M24.4 ${top + 1.4} Q32 ${top + 4.6} 39.6 ${top + 1.4}"/>
     <path class="cc-c-fall" style="--cc-fall:${BOTTOM_Y - top - 12}px" d="M38.4 ${top + 2} c1.3 2.2 1.8 3.2 1.8 4.2 a1.8 1.8 0 0 1 -3.6 0 c0 -1 .5 -2 1.8 -4.2z"/>
     ${crackPaths(top, temporary, permanent)}
     ${ghost}

@@ -1,4 +1,4 @@
-import { L, F, E } from './kit.js?v=0.1.7';
+import { L, F, E } from './kit.js?v=0.1.8';
 
 // Спиритизм: нить, дух, голос.
 export default {
