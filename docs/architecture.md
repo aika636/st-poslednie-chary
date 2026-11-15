@@ -5,7 +5,7 @@
 
 ## Слои
 - `core/` — чистая логика без DOM и ST (время, rng и id приходят параметрами):
-  - `rules.mjs` — шкала, пороги, цена каста; `state.mjs` — профиль и снимок состояния;
+  - `rules.mjs` — шкала (`scaleFor`), пороги, цена каста; ступень мастерства лежит в профиле (`profile.mastery`), шкалу считают из профиля, отдельно она не хранится; `state.mjs` — профиль и снимок состояния;
   - `journal.mjs` — события (`cast`, `rest`, `breather`, `effect_end`, `fracture_*`, `debt_settle`,
     `note_*`, `trait_*`, `faith_pray`, `nature_gift`, `scene_end`, `environment_set`, `profile_patch`…)
     и пересчёт состояния от снимка (`replay`); каст несёт копию карточки;

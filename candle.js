@@ -1,11 +1,15 @@
 // Свеча — шкала напряжения. Чистая функция: число → SVG-строка (без пользовательского текста).
 // Чем выше напряжение, тем ниже воск, длиннее потёки и выше пламя. Надломы — трещины на воске:
 // временные тёмные, принятые навсегда — золотые швы. Прогноз очереди — пунктирная кромка.
-import { SCALE } from './core/rules.mjs?v=0.1.6';
+import { SCALE, SCALE_MAX } from './core/rules.mjs?v=0.1.7';
 
-const clampLevel = (n) => Math.max(0, Math.min(SCALE, Number.isFinite(n) ? Math.round(n) : 0));
+const clampScale = (n) => (Number.isFinite(n) ? Math.max(3, Math.min(SCALE_MAX, Math.round(n))) : SCALE);
+const clampLevel = (n, scale) => Math.max(0, Math.min(scale, Number.isFinite(n) ? Math.round(n) : 0));
 
-const TOP_Y = [22, 31, 40, 49, 58]; // верх воска по уровню 0…4
+// Верх воска: от 22 (полная свеча) до 58 (на пределе) равными шагами по числу делений шкалы.
+const TOP_FULL = 22;
+const TOP_LOW = 58;
+const topY = (lv, scale) => +(TOP_FULL + (lv * (TOP_LOW - TOP_FULL)) / scale).toFixed(1);
 const BOTTOM_Y = 80;
 const LEFT_X = 23;
 const RIGHT_X = 41;
@@ -15,6 +19,7 @@ const DRIPS = [
   [26, 6], [38, 9], [31, 5], [35, 13], [28, 11],
 ];
 
+// level — «четвертной» уровень 0…4: рисунок потёков, пламени и цвета не зависит от размера шкалы.
 function dripPaths(level, top) {
   const n = Math.min(DRIPS.length, level + (level >= 3 ? 1 : 0));
   let out = '';
@@ -47,16 +52,18 @@ function crackPaths(top, temporary, permanent) {
 
 // level — текущее напряжение (со всеми надломами), forecast — после очереди.
 // temporary / permanent — сколько трещин и золотых швов рисовать.
-export function candleSvg({ level = 0, forecast = null, temporary = 0, permanent = 0, mini = false, uid = 'm' } = {}) {
+export function candleSvg({ level = 0, forecast = null, scale = SCALE, temporary = 0, permanent = 0, mini = false, uid = 'm' } = {}) {
   const id = (n) => `cc-${n}-${String(uid).replace(/[^a-z0-9]/gi, '')}`;
-  const lv = clampLevel(level);
-  const top = TOP_Y[lv];
-  const fc = forecast === null || forecast === undefined ? null : clampLevel(forecast);
-  const flameScale = (1 + lv * 0.16).toFixed(2);
+  const cap = clampScale(scale);
+  const lv = clampLevel(level, cap);
+  const heat = Math.round((lv * 4) / cap);
+  const top = topY(lv, cap);
+  const fc = forecast === null || forecast === undefined ? null : clampLevel(forecast, cap);
+  const flameScale = (1 + heat * 0.16).toFixed(2);
   const ghost = fc !== null && fc !== lv
-    ? `<path class="cc-c-ghost" d="M${LEFT_X} ${TOP_Y[fc]} H${RIGHT_X}"/>`
+    ? `<path class="cc-c-ghost" d="M${LEFT_X} ${topY(fc, cap)} H${RIGHT_X}"/>`
     : '';
-  const label = `Напряжение ${lv} из ${SCALE}${fc !== null && fc !== lv ? `, после очереди ${fc}` : ''}`;
+  const label = `Напряжение ${lv} из ${cap}${fc !== null && fc !== lv ? `, после очереди ${fc}` : ''}`;
   const holder = mini ? '' : `
     <path class="cc-c-moon" fill="url(#${id('gold')})" d="M16 86 C2 70 4 40 22 26 C12 44 13 66 26 84 Z"/>
     <path class="cc-c-moon-edge" d="M19.5 30.5 C11 44 11.5 66 22 81"/>
@@ -64,7 +71,7 @@ export function candleSvg({ level = 0, forecast = null, temporary = 0, permanent
   const gem = mini ? '' : `
     <ellipse class="cc-c-dish-rim" cx="32" cy="88.6" rx="19" ry="2.4"/>
     <circle class="cc-c-gem" cx="32" cy="88.4" r="2.6" fill="url(#${id('gem')})"/>`;
-  return `<svg class="cc-candle${mini ? ' cc-candle-mini' : ''}" data-level="${lv}" viewBox="0 0 64 96" role="img" aria-label="${label}">
+  return `<svg class="cc-candle${mini ? ' cc-candle-mini' : ''}" data-level="${lv}" data-scale="${cap}" data-heat="${heat}" viewBox="0 0 64 96" role="img" aria-label="${label}">
     <title>${label}</title>
     <defs>
       <radialGradient id="${id('glow')}" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="var(--cc-flame-glow)" stop-opacity=".55"/><stop offset="1" stop-color="var(--cc-flame-glow)" stop-opacity="0"/></radialGradient>
@@ -76,11 +83,11 @@ export function candleSvg({ level = 0, forecast = null, temporary = 0, permanent
     ${holder}
     <ellipse class="cc-c-dish" cx="32" cy="86" rx="21" ry="5"/>
     <ellipse class="cc-c-dish-top" cx="32" cy="83.5" rx="16" ry="3.2"/>${gem}
-    ${lv >= 4 ? '<ellipse class="cc-c-puddle" cx="32" cy="82" rx="12" ry="2.4"/>' : ''}
-    <circle class="cc-c-glow" cx="32" cy="${top - 9}" r="${(12 + lv * 3).toFixed(0)}" fill="url(#${id('glow')})"/>
+    ${lv >= cap ? '<ellipse class="cc-c-puddle" cx="32" cy="82" rx="12" ry="2.4"/>' : ''}
+    <circle class="cc-c-glow" cx="32" cy="${top - 9}" r="${(12 + heat * 3).toFixed(0)}" fill="url(#${id('glow')})"/>
     <path class="cc-c-wax" fill="url(#${id('wax')})" d="M${LEFT_X} ${top + 2} Q${LEFT_X} ${top} ${LEFT_X + 3} ${top} H${RIGHT_X - 3} Q${RIGHT_X} ${top} ${RIGHT_X} ${top + 2} V${BOTTOM_Y} H${LEFT_X} Z"/>
     <ellipse class="cc-c-pool" cx="32" cy="${top + 1}" rx="8" ry="1.6"/>
-    ${dripPaths(lv, top)}
+    ${dripPaths(heat, top)}
     <path class="cc-c-fall" style="--cc-fall:${BOTTOM_Y - top - 12}px" d="M38.4 ${top + 2} c1.3 2.2 1.8 3.2 1.8 4.2 a1.8 1.8 0 0 1 -3.6 0 c0 -1 .5 -2 1.8 -4.2z"/>
     ${crackPaths(top, temporary, permanent)}
     ${ghost}

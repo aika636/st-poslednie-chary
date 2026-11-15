@@ -3,10 +3,10 @@
 // (payload.spell), поэтому пересчёт не обращается к каталогу и не меняется при его обновлении.
 // Кубик здесь не бросается: бросок приходит в событии уже готовым.
 import {
-  SCALE, SOURCES, ENVIRONMENTS, OUTCOMES, LASTING, PRAYER_THRESHOLD, castCost, payStrain, severityOf,
+  MASTERIES, scaleFor, SOURCES, ENVIRONMENTS, OUTCOMES, LASTING, PRAYER_THRESHOLD, castCost, payStrain, severityOf,
   rollsAgainst, threshold, judgeRoll, fractureLoad,
-} from './rules.mjs?v=0.1.6';
-import { initialState, cloneState, createProfile } from './state.mjs?v=0.1.6';
+} from './rules.mjs?v=0.1.7';
+import { initialState, cloneState, createProfile } from './state.mjs?v=0.1.7';
 
 export const EFFECT_END_REASONS = ['done', 'broke', 'escaped', 'consent', 'scene', 'removed'];
 
@@ -205,10 +205,19 @@ function fractureManifest(d, a) {
 // Снятие и принятие надлома освобождают закреплённое напряжение: оно становится обычным
 // и уходит со следующим отдыхом. Шкала в момент снятия не меняется.
 function removeFracture(d, index) {
-  const before = Math.min(SCALE, fractureLoad(d.fractures));
+  const cap = scaleFor(d.profile);
+  const before = Math.min(cap, fractureLoad(d.fractures));
   const [f] = d.fractures.splice(index, 1);
-  d.strain += before - Math.min(SCALE, fractureLoad(d.fractures));
+  d.strain += before - Math.min(cap, fractureLoad(d.fractures));
   return f;
+}
+
+// Шкала стала меньше (ступень понижена, принятое свойство убрано): обычное напряжение, которое
+// не помещается рядом с надломами, срезается. Шкала и так показана полной, отдых обнулил бы его
+// в любом случае; сами надломы не теряются.
+function fitStrain(d) {
+  const cap = scaleFor(d.profile);
+  d.strain = Math.min(d.strain, cap - Math.min(cap, fractureLoad(d.fractures)));
 }
 
 function fractureHeal(d, a) {
@@ -269,6 +278,7 @@ function traitRemove(d, a) {
   const i = findIndex(d.profile.traits, a.payload?.traitId);
   if (i < 0) return 'такого свойства нет';
   d.profile.traits.splice(i, 1);
+  fitStrain(d);
   return null;
 }
 
@@ -279,14 +289,16 @@ function environmentSet(d, a) {
   return null;
 }
 
-const PATCHABLE = ['name', 'source', 'signature', 'expression', 'vows', 'patron', 'favorites'];
+const PATCHABLE = ['name', 'source', 'mastery', 'signature', 'expression', 'vows', 'patron', 'favorites'];
 
 function profilePatch(d, a) {
   const p = a.payload ?? {};
   if (p.source !== undefined && !SOURCES.includes(p.source)) return `неизвестный источник «${p.source}»`;
+  if (p.mastery !== undefined && !MASTERIES.includes(p.mastery)) return `неизвестная ступень «${p.mastery}»`;
   const next = { ...d.profile };
   for (const key of PATCHABLE) if (p[key] !== undefined) next[key] = p[key];
   d.profile = { ...createProfile(next), traits: d.profile.traits };
+  fitStrain(d);
   return null;
 }
 

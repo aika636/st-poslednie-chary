@@ -1,12 +1,12 @@
 // Панель «Последних чар» — том заклинаний со свечой. Разметка строками от view, события через
 // data-act / data-bind. Правил здесь нет: можно ли, сколько стоит и что предупредить —
 // говорит actions.preview. Весь текст из чата, профиля и метаданных — только через esc().
-import { SCALE, THRESHOLDS, DIFFICULTIES, discountUseful, fractureLoad, scaleOf, rollsAgainst } from './core/rules.mjs?v=0.1.6';
-import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.6';
-import SHORT from './core/data/short.mjs?v=0.1.6';
-import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.6';
-import { candleSvg, candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.6';
-import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.6';
+import { MASTERIES, THRESHOLDS, DIFFICULTIES, discountUseful, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.7';
+import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.7';
+import SHORT from './core/data/short.mjs?v=0.1.7';
+import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.7';
+import { candleSvg, candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.7';
+import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.7';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"'`]/g, (ch) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;',
@@ -36,14 +36,16 @@ const KIND_RU = {
 };
 const PROFILE_FIELDS_RU = {
   name: 'имя', source: 'источник', signature: 'сигнатура', expression: 'выражение', vows: 'обеты',
-  patron: 'покровитель', favorites: 'избранное',
+  patron: 'покровитель', favorites: 'избранное', mastery: 'ступень',
 };
+const MASTERY_RU = { novice: 'Новичок', adept: 'Умелый', master: 'Мастер' };
+const MASTERY_TITLE = { novice: 'Шкала 3', adept: 'Шкала 4', master: 'Шкала 5' };
 
 // ---------- состояние панели ----------
 
 const emptyOpts = () => ({ difficulty: 'normal', gift: false, loan: false, debt: '' });
 const emptyCustom = () => ({ name: '', cost: 1, resist: 'none', duration: 'instant', target: '', limit: '', success: '', failure: '' });
-const emptyDraft = () => ({ name: '', source: 'knowledge', signature: '', expression: '', vows: [], patron: '' });
+const emptyDraft = () => ({ name: '', source: 'knowledge', mastery: 'adept', signature: '', expression: '', vows: [], patron: '' });
 
 export function initialUi() {
   return {
@@ -184,7 +186,9 @@ const closeBtn = '<button type="button" class="cc-close" data-act="close" title=
 export function scaleText(st, confirmed) {
   const now = scaleOf(st);
   const was = confirmed ? scaleOf(confirmed) : now;
-  return was !== now ? `${was}/${SCALE} → ${now}/${SCALE}` : `${now}/${SCALE}`;
+  const capNow = scaleFor(st.profile);
+  const capWas = confirmed ? scaleFor(confirmed.profile) : capNow;
+  return was !== now || capWas !== capNow ? `${was}/${capWas} → ${now}/${capNow}` : `${now}/${capNow}`;
 }
 
 // Свеча на томе: уровень — подтверждённое состояние, прогноз — с очередью.
@@ -196,10 +200,11 @@ export function candleHtml(view, { mini = false, uid = 'p', bare = false } = {})
   const marks = candleMarks(confirmed ?? st);
   const level = scaleOf(confirmed ?? st);
   const forecast = scaleOf(st);
-  const load = Math.min(SCALE, fractureLoad(list(st.fractures)));
+  const cap = scaleFor(st.profile);
+  const load = Math.min(cap, fractureLoad(list(st.fractures)));
   const title = `Напряжение ${scaleText(st, confirmed)}${load ? ` · надломы держат ${load}` : ''}`;
   return `<div class="cc-candle-box${mini ? ' cc-mini' : ''}" title="${esc(title)}">
-    ${candleSvg({ level, forecast, temporary: marks.temporary, permanent: marks.permanent, mini, uid })}
+    ${candleSvg({ level, forecast, scale: cap, temporary: marks.temporary, permanent: marks.permanent, mini, uid })}
     <span class="cc-candle-n">${esc(scaleText(st, confirmed))}</span>
     ${mini ? '' : '<span class="cc-candle-cap">напряжение</span>'}
   </div>`;
@@ -400,7 +405,7 @@ export function leafHtml(view, ui, preview, spell) {
     if (r.ok && r.state) {
       const c = r.state.casts?.__preview__;
       const f = list(r.state.fractures).find((x) => x.castId === '__preview__');
-      costLine = `Цена ${esc(c?.cost ?? spell.cost)} · свеча ${esc(`${scaleOf(st)}/${SCALE} → ${scaleOf(r.state)}/${SCALE}`)}${f ? ` · <b class="cc-bad-text">надлом ${esc(f.weight)}</b>` : ''}`;
+      costLine = `Цена ${esc(c?.cost ?? spell.cost)} · свеча ${esc(`${scaleOf(st)}/${scaleFor(st.profile)} → ${scaleOf(r.state)}/${scaleFor(r.state.profile)}`)}${f ? ` · <b class="cc-bad-text">надлом ${esc(f.weight)}</b>` : ''}`;
       problems = list(r.warnings).map((w) => warnBox(w)).join('');
     } else problems = warnBox(r.reason ?? 'так не выйдет', 'cc-bad');
   }
@@ -587,8 +592,15 @@ function recoveryHtml(view, preview) {
   return `${rule('Восстановление')}${out.join('')}`;
 }
 
+// Откуда шкала: ступень и бонус за принятые надломы.
+export function scaleNote(profile) {
+  const { mastery, base, bonus, scale } = scaleParts(profile);
+  const extra = bonus ? `, +${bonus} за ${bonus === 1 ? 'принятый надлом' : 'принятые надломы'}` : '';
+  return `Шкала ${scale}: ${MASTERY_RU[mastery]}${extra}${base + bonus > scale ? ', потолок' : ''}`;
+}
+
 function statePage(view, ui, preview) {
-  return [effectsHtml(view), fracturesHtml(view, ui), debtsHtml(view), recoveryHtml(view, preview)].join('');
+  return [`<p class="cc-small cc-scale-note">${esc(scaleNote(current(view).profile))}</p>`, effectsHtml(view), fracturesHtml(view, ui), debtsHtml(view), recoveryHtml(view, preview)].join('');
 }
 
 // ---------- страница «Ещё» ----------
@@ -596,6 +608,7 @@ function statePage(view, ui, preview) {
 function profileFields(d, data) {
   const parts = [];
   parts.push(`<div class="cc-field"><span>Источник силы</span><div class="cc-sources cc-sources-sm">${sourcesOf(data).map((s) => `<button type="button" class="cc-source" data-act="prof-source" data-v="${esc(s.id)}" aria-pressed="${d.source === s.id}" data-src="${esc(s.id)}">${SOURCE_GLYPH[s.id] ?? ''}<b>${esc(s.name)}</b></button>`).join('')}</div></div>`);
+  parts.push(`<div class="cc-field"><span>Ступень мастерства</span>${seg('prof-mastery', MASTERIES.map((m) => [m, MASTERY_RU[m], MASTERY_TITLE[m]]), d.mastery)}<small>Чем выше ступень, тем длиннее шкала напряжения; каждый принятый навсегда надлом добавляет ещё одно деление (до шести).</small></div>`);
   parts.push(field('Имя', textInput('prof.name', d.name, 'Как зовут персону', { maxlength: 80, id: 'cc-prof-name' })));
   parts.push(field('Как выглядит её магия', textInput('prof.signature', d.signature, 'Серебряные строки, запах грозы… (необязательно)', { area: true, id: 'cc-prof-sig' })));
   parts.push(field('Способ выражения', textInput('prof.expression', d.expression, 'Жест, песня, формула шёпотом… (необязательно)', { id: 'cc-prof-expr' })));
@@ -607,7 +620,7 @@ function profileFields(d, data) {
 }
 
 const profileFromDraft = (d) => ({
-  name: clean(d.name), source: d.source, signature: clean(d.signature), expression: clean(d.expression),
+  name: clean(d.name), source: d.source, mastery: d.mastery, signature: clean(d.signature), expression: clean(d.expression),
   vows: d.source === 'faith' ? [...d.vows] : [], patron: d.source === 'pact' ? clean(d.patron) : '',
 });
 
@@ -794,7 +807,7 @@ export function createPanel(actions) {
   reset.textContent = ':host { all: initial; }';
   const sheet = document.createElement('link');
   sheet.rel = 'stylesheet';
-  sheet.href = new URL('./style.css?v=0.1.6', import.meta.url).href;
+  sheet.href = new URL('./style.css?v=0.1.7', import.meta.url).href;
   const root = document.createElement('div');
   root.id = 'cc-panel';
   root.className = 'cc-panel';
@@ -996,6 +1009,7 @@ export function createPanel(actions) {
       }
       case 'trait-remove': enqueue('trait_remove', { traitId: v }); return;
       case 'prof-source': ensureDraft(); ui.profileDraft.source = v; break;
+      case 'prof-mastery': ensureDraft(); ui.profileDraft.mastery = v; break;
       case 'prof-reset': ui.profileDraft = null; break;
       case 'prof-save': {
         const prof = s.profile;

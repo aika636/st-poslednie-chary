@@ -1,7 +1,12 @@
 // Числа правил: шкала напряжения, пороги броска, цена каста с даром и средой.
 // Чистые функции без состояния журнала.
 
-export const SCALE = 4;
+// Шкала растёт со ступенью мастерства и принятыми надломами: scale = min(SCALE_MAX, база + принятые).
+export const SCALE = 4; // шкала Умелого: значение по умолчанию (профили без ступени)
+export const SCALE_MAX = 6;
+export const MASTERIES = ['novice', 'adept', 'master'];
+export const DEFAULT_MASTERY = 'adept';
+export const MASTERY_BASE = { novice: 3, adept: 4, master: 5 };
 export const SOURCES = ['knowledge', 'blood', 'faith', 'pact', 'nature'];
 export const ENVIRONMENTS = ['unspecified', 'living', 'lifeless'];
 export const OUTCOMES = ['success', 'complication', 'failure'];
@@ -42,8 +47,21 @@ export function judgeRoll(d20, limit) {
 
 export const fractureLoad = (fractures) => fractures.reduce((sum, f) => sum + f.weight, 0);
 
-// Заполненность шкалы: обычное напряжение плюс надломы, не больше SCALE.
-export const scaleOf = (state) => Math.min(SCALE, state.strain + Math.min(SCALE, fractureLoad(state.fractures)));
+// Из чего сложена шкала профиля: база ступени, бонус за принятые надломы (постоянные свойства
+// с fractureId), итог не выше SCALE_MAX. Профиль без ступени — Умелый.
+export function scaleParts(profile) {
+  const mastery = MASTERIES.includes(profile?.mastery) ? profile.mastery : DEFAULT_MASTERY;
+  const base = MASTERY_BASE[mastery];
+  const bonus = (profile?.traits ?? []).filter((t) => t?.fractureId).length;
+  return { mastery, base, bonus, scale: Math.min(SCALE_MAX, base + bonus) };
+}
+export const scaleFor = (profile) => scaleParts(profile).scale;
+
+// Заполненность шкалы: обычное напряжение плюс надломы, не больше шкалы персоны.
+export function scaleOf(state) {
+  const cap = scaleFor(state.profile);
+  return Math.min(cap, state.strain + Math.min(cap, fractureLoad(state.fractures)));
+}
 
 // Тяжесть надлома: вес, но не выше трёх.
 export const severityOf = (weight) => Math.min(3, weight);
@@ -74,12 +92,13 @@ export function castCost({ spell, source, environment, giftUsed, gift }) {
 }
 
 // Оплата напряжением. Переполнение становится надломом такого же веса.
-// H = N + min(C, B); W = max(0, H + P − C); H′ = min(C, H + P); N′ = H′ − min(C, B + W).
+// C — шкала персоны. H = N + min(C, B); W = max(0, H + P − C); H′ = min(C, H + P); N′ = H′ − min(C, B + W).
 export function payStrain(state, price) {
+  const cap = scaleFor(state.profile);
   const load = fractureLoad(state.fractures);
-  const filled = state.strain + Math.min(SCALE, load);
-  const overflow = Math.max(0, filled + price - SCALE);
-  const after = Math.min(SCALE, filled + price);
-  const strain = Math.max(0, after - Math.min(SCALE, load + overflow));
+  const filled = state.strain + Math.min(cap, load);
+  const overflow = Math.max(0, filled + price - cap);
+  const after = Math.min(cap, filled + price);
+  const strain = Math.max(0, after - Math.min(cap, load + overflow));
   return { strain, overflow };
 }

@@ -1,7 +1,7 @@
 // Профиль персоны, начальный снимок и состояние. Снимок — состояние до журнала:
 // его не перезаписывают, иначе удаление старого сообщения не отменит последствий.
-import { SCALE, SOURCES, ENVIRONMENTS, fractureLoad } from './rules.mjs?v=0.1.6';
-import { canonicalFavorites } from './data/spell-replacements.mjs?v=0.1.6';
+import { SOURCES, ENVIRONMENTS, MASTERIES, DEFAULT_MASTERY, scaleFor, fractureLoad } from './rules.mjs?v=0.1.7';
+import { canonicalFavorites } from './data/spell-replacements.mjs?v=0.1.7';
 
 export const cloneState = (s) => structuredClone(s);
 
@@ -15,6 +15,7 @@ export function createProfile(input = {}) {
   return {
     name: text(input.name),
     source,
+    mastery: MASTERIES.includes(input.mastery) ? input.mastery : DEFAULT_MASTERY,
     signature: text(input.signature),
     expression: text(input.expression),
     vows: list(input.vows).filter((t) => typeof t === 'string'),
@@ -28,11 +29,13 @@ export function createProfile(input = {}) {
 // начатую без расширения.
 export function createSnapshot(input = {}) {
   const strain = input.strain ?? 0;
-  if (!Number.isInteger(strain) || strain < 0 || strain > SCALE) throw new Error(`напряжение должно быть от 0 до ${SCALE}`);
+  const profile = createProfile(input.profile);
+  const cap = scaleFor(profile);
+  if (!Number.isInteger(strain) || strain < 0 || strain > cap) throw new Error(`напряжение должно быть от 0 до ${cap}`);
   const environment = input.environment ?? 'unspecified';
   if (!ENVIRONMENTS.includes(environment)) throw new Error(`неизвестная среда «${environment}»`);
   return {
-    profile: createProfile(input.profile),
+    profile,
     strain,
     fractures: list(input.fractures).map((f) => ({ ...f })),
     giftUsed: Boolean(input.giftUsed),
@@ -63,7 +66,8 @@ export function initialState(snapshot) {
 export function checkInvariants(state) {
   const problems = [];
   if (!Number.isInteger(state.strain) || state.strain < 0) problems.push('обычное напряжение отрицательно или дробно');
-  if (state.strain + Math.min(SCALE, fractureLoad(state.fractures)) > SCALE) problems.push('шкала больше максимума');
+  const cap = scaleFor(state.profile);
+  if (state.strain + Math.min(cap, fractureLoad(state.fractures)) > cap) problems.push('шкала больше максимума');
   if (state.fractures.some((f) => !Number.isInteger(f.weight) || f.weight < 1)) problems.push('надлом с весом меньше 1');
   const ids = [...state.effects, ...state.fractures, ...state.debts, ...state.notes].map((x) => x.id);
   if (new Set(ids).size !== ids.length) problems.push('повторяющиеся id');

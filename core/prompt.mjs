@@ -1,12 +1,13 @@
 // Тексты для модели: блок состояния (каждый ход) и факт хода (только для ответа на сообщение).
 // Только проза: никаких чисел механики, ID, цен, бросков и порогов.
-import { SCALE, scaleOf, fractureLoad } from './rules.mjs?v=0.1.6';
+import { scaleFor, scaleOf, fractureLoad } from './rules.mjs?v=0.1.7';
 
 const SOURCE_GEN = { knowledge: 'знания', blood: 'крови', faith: 'веры', pact: 'договора', nature: 'природы' };
 
 // Как магия устроена в мире — для рассказчика и остальных персонажей.
 const WORLD_TEXT = 'Магия реальна и требует сил. Колдовство обычно заметно окружающим; свидетели помнят замеченные проявления. Накопившаяся магическая усталость видна со стороны. Надлом — след колдовства сверх сил; он не проходит сам и не снимается обычным отдыхом.';
 
+// Ступени заполнения шкалы любого размера: свободно, лёгкая, заметная, почти на исходе, предел.
 const STRAIN_TEXT = [
   'Силы свободны: магия даётся легко.',
   'Лёгкая усталость: колдовство уже ощущается, но пока не тяготит.',
@@ -21,11 +22,20 @@ const LIMIT_FRACTURES_TEXT = {
   all: 'Силы на пределе: их целиком держат надломы, и обычный отдых их не вернёт. Колдовать ещё можно, но каждое чудо возьмёт плату с самой персоны и оставит новый надлом.',
 };
 
+// Ступень по доле шкалы: последняя клетка перед пределом — «почти на исходе».
+function strainTier(filled, cap) {
+  if (filled <= 0) return 0;
+  if (filled >= cap) return 4;
+  if (filled === cap - 1) return 3;
+  return filled / (cap - 1) < 0.5 ? 1 : 2;
+}
+
 function strainText(state) {
-  const scale = scaleOf(state);
+  const cap = scaleFor(state.profile);
+  const filled = scaleOf(state);
   const load = fractureLoad(state.fractures ?? []);
-  if (scale < SCALE || load === 0) return STRAIN_TEXT[scale];
-  return load >= SCALE ? LIMIT_FRACTURES_TEXT.all : LIMIT_FRACTURES_TEXT.part;
+  if (filled < cap || load === 0) return STRAIN_TEXT[strainTier(filled, cap)];
+  return load >= cap ? LIMIT_FRACTURES_TEXT.all : LIMIT_FRACTURES_TEXT.part;
 }
 
 const SEVERITY_TEXT = {
