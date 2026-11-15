@@ -71,12 +71,22 @@ export const discountUseful = (source, baseCost) => DISCOUNT_SOURCES.has(source)
 
 // Цена каста. gift — игрок хочет применить дар своего источника к этому касту.
 // Возвращает итоговую цену, применён ли дар и предупреждения. Ничего не запрещает.
-export function castCost({ spell, source, environment, giftUsed, gift }) {
+// mode — новый дар по виду: repeat (знание, повтор последнего платного чуда), blood (кровь, чудо ценой 2–3 за лёгкий надлом).
+export function castCost({ spell, source, environment, giftUsed, gift, mode, lastPaid }) {
   const warnings = [];
   let cost = spell.cost;
   if (source === 'nature' && environment === 'lifeless') cost += 1;
   let giftApplied = null;
-  if (gift) {
+  if (mode) {
+    if (giftUsed) warnings.push('дар уже использован до отдыха: заклинание стоит обычную цену');
+    else if (mode === 'repeat' && source === 'knowledge' && lastPaid === spell.id && cost > 0) {
+      cost -= 1;
+      giftApplied = 'repeat';
+    } else if (mode === 'blood' && source === 'blood' && (spell.cost === 2 || spell.cost === 3)) {
+      cost = 0;
+      giftApplied = 'blood';
+    } else if (mode !== 'mercy') warnings.push('дар сейчас не применим: заклинание стоит обычную цену');
+  } else if (gift) {
     if (giftUsed) warnings.push('дар уже использован до отдыха: заклинание стоит обычную цену');
     else if (DISCOUNT_SOURCES.has(source)) {
       if (cost > 0) {

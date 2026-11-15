@@ -5,8 +5,8 @@
 import {
   MASTERIES, scaleFor, SOURCES, ENVIRONMENTS, OUTCOMES, LASTING, PRAYER_THRESHOLD, castCost, payStrain, severityOf,
   rollsAgainst, threshold, judgeRoll, fractureLoad,
-} from './rules.mjs?v=0.1.8';
-import { initialState, cloneState, createProfile } from './state.mjs?v=0.1.8';
+} from './rules.mjs?v=0.1.9';
+import { initialState, cloneState, createProfile } from './state.mjs?v=0.1.9';
 
 export const EFFECT_END_REASONS = ['done', 'broke', 'escaped', 'consent', 'scene', 'removed'];
 
@@ -84,17 +84,30 @@ function cast(d, a, ctx) {
   else outcome = 'success';
 
   const { source } = d.profile;
-  const price = p.free === true ? { cost: 0, giftApplied: null, warnings: [] } : castCost({ spell, source, environment: d.environment, giftUsed: d.giftUsed, gift: Boolean(p.gift) });
+  const price = p.free === true ? { cost: 0, giftApplied: null, warnings: [] } : castCost({ spell, source, environment: p.env === false ? 'unspecified' : d.environment, giftUsed: d.giftUsed, gift: Boolean(p.gift), mode: p.giftMode, lastPaid: d.lastPaid });
   const violations = violationsOf(d, spell);
   ctx.warnings.push(...price.warnings, ...violations.map(violationWarning));
-  if (source === 'nature' && d.environment === 'unspecified') ctx.warnings.push('среда не отмечена: надбавка природы не учтена');
   if (spell.resist === 'consent' && p.consent === false) ctx.warnings.push('цель не согласна: связь держится только на согласии');
   if (price.giftApplied) d.giftUsed = true;
 
-  const { strain, overflow } = p.free === true ? { strain: d.strain, overflow: 0 } : payStrain(d, price.cost);
+  let { strain, overflow } = p.free === true ? { strain: d.strain, overflow: 0 } : payStrain(d, price.cost);
+  let gift = price.giftApplied;
+  // Милость веры: первый перегруз до отдыха заполняет шкалу, но не оставляет надлома.
+  if (p.free !== true && p.giftMode === 'mercy' && source === 'faith' && !d.giftUsed && overflow > 0) {
+    const cap = scaleFor(d.profile);
+    strain = cap - Math.min(cap, fractureLoad(d.fractures));
+    overflow = 0;
+    gift = 'mercy';
+    d.giftUsed = true;
+  }
   d.strain = strain;
   let fractureId = null;
-  if (overflow > 0) {
+  if (gift === 'blood') {
+    fractureId = `${a.id}:f`;
+    d.fractures.push({ id: fractureId, castId: a.id, source, weight: 1, severity: 1, manifest: null });
+    fitStrain(d);
+    ctx.warnings.push(`надлом ${SOURCE_NAMES[source]} весом 1 вместо усталости`);
+  } else if (overflow > 0) {
     fractureId = `${a.id}:f`;
     d.fractures.push({ id: fractureId, castId: a.id, source, weight: overflow, severity: severityOf(overflow), manifest: null });
     ctx.warnings.push(`перегруз: надлом ${SOURCE_NAMES[source]} весом ${overflow}`);
@@ -112,12 +125,13 @@ function cast(d, a, ctx) {
     outcome,
     roll,
     cost: price.cost,
-    gift: price.giftApplied,
+    gift,
     fractureId,
     violations,
     consent: p.consent ?? null,
     prayer: null,
   };
+  if (price.cost > 0) d.lastPaid = spell.id;
   createEffect(d, a.id);
   ctx.note = outcome;
   return null;
@@ -153,11 +167,16 @@ function natureGift(d, a, ctx) {
   return null;
 }
 
-function breather(d) {
+// root — укоренение природы: при обычном напряжении от 2 передышка снимает 2 и тратит дар.
+function breather(d, a, ctx) {
   if (d.breatherUsed) return 'передышка уже была до отдыха';
   if (d.strain === 0) return 'обычного напряжения нет: снимать нечего';
   d.breatherUsed = true;
-  d.strain -= 1;
+  if (a.payload?.root === true && d.profile.source === 'nature' && !d.giftUsed && d.strain >= 2) {
+    d.strain -= 2;
+    d.giftUsed = true;
+    ctx.note = 'root';
+  } else d.strain -= 1;
   return null;
 }
 
@@ -165,6 +184,7 @@ function rest(d) {
   d.strain = 0;
   d.giftUsed = false;
   d.breatherUsed = false;
+  d.lastPaid = null;
   return null;
 }
 

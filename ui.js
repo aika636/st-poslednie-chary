@@ -1,12 +1,12 @@
 // Панель «Последних чар» — том заклинаний со свечой. Разметка строками от view, события через
 // data-act / data-bind. Правил здесь нет: можно ли, сколько стоит и что предупредить —
 // говорит actions.preview. Весь текст из чата, профиля и метаданных — только через esc().
-import { MASTERIES, THRESHOLDS, DIFFICULTIES, discountUseful, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.8';
-import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.8';
-import SHORT from './core/data/short.mjs?v=0.1.8';
-import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.8';
-import { candleSvg, candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.8';
-import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.8';
+import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.9';
+import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.9';
+import SHORT from './core/data/short.mjs?v=0.1.9';
+import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.9';
+import { candleSvg, candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.9';
+import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.9';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"'`]/g, (ch) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;',
@@ -43,7 +43,7 @@ const MASTERY_TITLE = { novice: 'Шкала 3', adept: 'Шкала 4', master: '
 
 // ---------- состояние панели ----------
 
-const emptyOpts = () => ({ difficulty: 'normal', gift: false, loan: false, debt: '' });
+const emptyOpts = () => ({ difficulty: 'normal', gift: false, debt: '' });
 const emptyCustom = () => ({ name: '', cost: 1, resist: 'none', duration: 'instant', target: '', limit: '', success: '', failure: '' });
 const emptyDraft = () => ({ name: '', source: 'knowledge', mastery: 'adept', signature: '', expression: '', vows: [], patron: '' });
 
@@ -91,24 +91,40 @@ const current = (view) => view.forecast ?? view.state;
 
 export const shortLine = (spell) => clean(spell?.short) || SHORT[spell?.id] || clean(String(spell?.limit ?? '').split(/[.;]/)[0]).slice(0, 40);
 
-// Какой дар у источника относится к цене каста: скидка (знание, кровь — при ненулевой цене),
-// заём (договор) или ничего (у веры и природы дар не про цену каста).
-export function giftOption(source, spell) {
-  if (source === 'knowledge' || source === 'blood') return discountUseful(source, spell.cost) ? 'discount' : null;
+// Дар, который игрок включает кнопкой на листе: знание — повтор последнего платного чуда,
+// кровь — надлом вместо цены 2–3, договор — долг. Милость веры и укоренение природы срабатывают сами.
+export function giftOption(source, spell, { giftUsed = false, free = false, lastPaid = null } = {}) {
+  if (free || giftUsed) return null;
+  if (source === 'knowledge') return lastPaid === spell.id && spell.cost > 0 ? 'repeat' : null;
+  if (source === 'blood') return spell.cost === 2 || spell.cost === 3 ? 'blood' : null;
   if (source === 'pact') return 'loan';
   return null;
 }
 
-// Каст одним нажатием. «Сюжет» — всегда успех, «Кубик» — обычная сложность. Скидка дара
-// (знание, кровь) и долг договора — только по явному выбору (opts.gift, opts.loan). Согласие цели не утверждается: панель его не знает.
-export function quickPayload(spell, { mode, source, giftUsed, free }, opts = {}) {
-  const payload = { spell: castCard(spell) };
-  const gift = giftOption(source, spell);
+// Условие долга по умолчанию: из набора источника, по кругу от числа прошлых кастов.
+export function debtDefault(view) {
+  const conds = list(sourceById(view?.data, 'pact')?.conditions);
+  return conds.length ? conds[Object.keys((view?.state ?? {}).casts ?? {}).length % conds.length] : '';
+}
+
+const castCtx = (view, source) => ({
+  mode: view.mode, source, giftUsed: view.state?.giftUsed, lastPaid: view.state?.lastPaid ?? null,
+  free: view.settings?.free === true, debtDefault: debtDefault(view),
+});
+
+// Каст одним нажатием. «Сюжет» — всегда успех, «Кубик» — обычная сложность. Дар кнопкой (opts.gift):
+// повтор знания, кровь, долг договора. Милость веры просится всегда: журнал применит её сам при перегрузе.
+// Согласие цели не утверждается: панель его не знает.
+export function quickPayload(spell, { mode, source, giftUsed, free, lastPaid = null, debtDefault: dd = '' }, opts = {}) {
+  const payload = { spell: castCard(spell), env: false };
+  const gift = giftOption(source, spell, { giftUsed, free, lastPaid });
   if (free) payload.free = true;
-  if (!free && !giftUsed && gift === 'discount' && opts.gift) payload.gift = true;
-  if (!free && !giftUsed && gift === 'loan' && opts.loan) {
+  if (!free && !giftUsed && source === 'faith') payload.giftMode = 'mercy';
+  if (opts.gift && gift === 'repeat') payload.giftMode = 'repeat';
+  if (opts.gift && gift === 'blood') payload.giftMode = 'blood';
+  if (opts.gift && gift === 'loan') {
     payload.gift = true;
-    payload.debt = clean(opts.debt);
+    payload.debt = clean(opts.debt) || clean(dd);
   }
   if (mode === 'story') payload.outcome = 'success';
   else if (rollsAgainst(spell)) payload.difficulty = DIFFICULTIES.includes(opts.difficulty) ? opts.difficulty : 'normal';
@@ -140,11 +156,13 @@ export function describe(kind, payload, st) {
       if (p.outcome && p.outcome !== 'success') parts.push(`· ${OUTCOME_RU[p.outcome] ?? p.outcome}`);
       else if (p.difficulty && p.difficulty !== 'normal') parts.push(`· сложность ${DIFFICULTY_RU[p.difficulty] ?? p.difficulty}`);
       if (p.gift) parts.push(p.debt !== undefined ? '· в долг' : '· с даром');
+      else if (p.giftMode === 'repeat') parts.push('· повтор по записи');
+      else if (p.giftMode === 'blood') parts.push('· через кровь');
       return parts.join(' ');
     }
     case 'faith_pray': return `Молитва за «${castName(p.castId) ?? 'чудо'}»`;
     case 'nature_gift': return 'Дар природы';
-    case 'breather': return 'Передышка';
+    case 'breather': return p.root ? 'Передышка · укоренение' : 'Передышка';
     case 'rest': return 'Отдых';
     case 'scene_end': return 'Конец сцены';
     case 'effect_end': return `Завершить «${effect(p.effectId)?.spell?.name ?? 'чары'}»`;
@@ -389,40 +407,39 @@ export function spellChapters(spells, directions) {
 }
 
 // Парящий лист выбранного заклинания: подробности, прогноз, необязательные настройки.
+const MERCY_NOTE = ' · <b class="cc-ok-text">Милость: перегруз не оставит надлома</b>';
+
 export function leafHtml(view, ui, preview, spell) {
   const st = current(view);
   const confirmed = view.state;
   const src = st.profile.source;
   const queued = queuedCast(view, spell.id);
   const opts = ui.opts;
-  const payload = queued?.payload ?? quickPayload(spell, { mode: view.mode, source: src, giftUsed: confirmed?.giftUsed, free: view.settings?.free === true }, opts);
+  const payload = queued?.payload ?? quickPayload(spell, castCtx(view, src), opts);
   // Прогноз: если каст уже в очереди, он учтён в forecast; иначе считаем поверх.
   let costLine = '';
   let problems = '';
   if (queued) {
     const f = list(st.fractures).find((x) => x.castId === queued.id);
-    costLine = `Цена ${esc(st.casts?.[queued.id]?.cost ?? spell.cost)} · свеча ${esc(scaleText(st, confirmed))}${f ? ` · <b class="cc-bad-text">надлом ${esc(f.weight)}</b>` : ''}`;
+    costLine = `Цена ${esc(st.casts?.[queued.id]?.cost ?? spell.cost)} · свеча ${esc(scaleText(st, confirmed))}${f ? ` · <b class="cc-bad-text">надлом ${esc(f.weight)}</b>` : ''}${st.casts?.[queued.id]?.gift === 'mercy' ? MERCY_NOTE : ''}`;
   } else {
     const r = safePreview(preview, 'cast', payload);
     if (r.ok && r.state) {
       const c = r.state.casts?.__preview__;
       const f = list(r.state.fractures).find((x) => x.castId === '__preview__');
-      costLine = `Цена ${esc(c?.cost ?? spell.cost)} · свеча ${esc(`${scaleOf(st)}/${scaleFor(st.profile)} → ${scaleOf(r.state)}/${scaleFor(r.state.profile)}`)}${f ? ` · <b class="cc-bad-text">надлом ${esc(f.weight)}</b>` : ''}`;
+      costLine = `Цена ${esc(c?.cost ?? spell.cost)} · свеча ${esc(`${scaleOf(st)}/${scaleFor(st.profile)} → ${scaleOf(r.state)}/${scaleFor(r.state.profile)}`)}${f ? ` · <b class="cc-bad-text">надлом ${esc(f.weight)}</b>` : ''}${c?.gift === 'mercy' ? MERCY_NOTE : ''}`;
       problems = list(r.warnings).map((w) => warnBox(w)).join('');
     } else problems = warnBox(r.reason ?? 'так не выйдет', 'cc-bad');
   }
   if (payload.free) costLine = 'Цена 0 · режим бога: без напряжения и надломов';
-  const gift = payload.free ? null : giftOption(src, spell);
+  const gift = payload.free ? null : giftOption(src, spell, castCtx(view, src));
   const extra = [];
   if (view.mode === 'dice' && rollsAgainst(spell)) {
     extra.push(`<div class="cc-field"><span>Сложность цели</span>${seg('difficulty', DIFFICULTIES.map((d) => [d, `${DIFFICULTY_RU[d]} · ${THRESHOLDS[spell.resist][d]}`]), queued?.payload?.difficulty ?? opts.difficulty)}</div>`);
   }
-  if (gift === 'discount' && !confirmed?.giftUsed) {
-    extra.push(`<label class="cc-check"><input type="checkbox" data-act="opt-gift"${attr('checked', opts.gift)}> Дар: на 1 дешевле (тратится до отдыха)</label>`);
-  } else if (gift === 'loan' && !confirmed?.giftUsed) {
-    extra.push(`<label class="cc-check"><input type="checkbox" data-act="opt-loan"${attr('checked', opts.loan)}> В долг: за 0, покровитель потребует своё</label>`);
-    if (opts.loan) extra.push(field('Условие долга', textInput('opts.debt', opts.debt, 'Что персона будет должна', { area: true, id: 'cc-debt' })));
-  }
+  const dd = debtDefault(view);
+  if (gift === 'loan') extra.push(field('Своё условие долга (необязательно)', textInput('opts.debt', opts.debt, dd || 'Что персона будет должна', { area: true, id: 'cc-debt' })));
+  const giftLabel = { repeat: `Повторить по записи — цена ${Math.max(0, spell.cost - 1)}`, blood: 'Через кровь — надлом вместо усталости', loan: `В долг — условие: ${clean(opts.debt) || dd || 'назовёт покровитель'}` }[gift];
   const fav = st.profile.favorites.includes(spell.id);
   const rolls = view.mode === 'dice' && rollsAgainst(spell);
   return `<article class="cc-leaf" data-direction="${esc(spell.direction ?? 'custom')}" data-queued="${Boolean(queued)}">
@@ -446,7 +463,7 @@ export function leafHtml(view, ui, preview, spell) {
     ${extra.length ? `<details class="cc-leaf-settings" data-leaf-detail="settings"${attr('open', ui.leafSettingsOpen)}><summary>Настройки каста</summary><div class="cc-leaf-extra">${extra.join('')}</div></details>` : ''}
     <div class="cc-leaf-go">${queued
     ? `<span class="cc-ok-text">✦ В очереди — уйдёт с вашим сообщением</span>${btn('dequeue', 'Убрать', { v: queued.id, cls: 'cc-ghost' })}`
-    : btn('cast', 'В очередь', { v: spell.id, cls: 'cc-primary' })}</div>
+    : `${btn('cast', 'В очередь', { v: spell.id, cls: 'cc-primary' })}${gift ? btn('cast-gift', giftLabel, { v: spell.id, cls: 'cc-ghost cc-gift' }) : ''}`}</div>
   </article>`;
 }
 
@@ -574,24 +591,14 @@ function recoveryHtml(view, preview) {
     const r = pv(kind, payload);
     return btn(act, label, { disabled: !r.ok, title: r.ok ? '' : capFirst(r.reason ?? ''), cls: 'cc-ghost' });
   };
+  const confirmed = view.state ?? st;
+  const root = src === 'nature' && view.settings?.free !== true && !confirmed.giftUsed && !confirmed.breatherUsed && confirmed.strain >= 2;
   const out = [`<div class="cc-actions">
-    ${action('breather', 'breather', 'Передышка')}
+    ${root ? action('breather-root', 'breather', 'Передышка — снимет 2 (укоренение)', { root: true }) : action('breather', 'breather', 'Передышка')}
     ${action('rest', 'rest', 'Отдых')}
     ${btn('scene-end', 'Конец сцены', { cls: 'cc-ghost' })}
   </div>
-  <p class="cc-small">Передышка снимает одно напряжение раз до отдыха. Отдых возвращает силы, дар и передышку — надломы остаются. Конец сцены завершает чары, кроме связей по согласию.</p>`];
-  if (src === 'nature') {
-    out.push(`<div class="cc-field"><span>Среда вокруг</span>${seg('env', [['living', 'живая'], ['lifeless', 'без жизни'], ['unspecified', 'не отмечена']], st.environment)}</div>`);
-    out.push(`<div class="cc-actions">${action('nature-gift', 'nature_gift', 'Дар природы: снять напряжение')}</div>`);
-  }
-  if (src === 'faith') {
-    const failed = Object.entries(st.casts ?? {}).filter(([, c]) => c.outcome === 'failure' && !c.prayer);
-    const pray = failed.map(([id, c]) => {
-      const r = pv('faith_pray', { castId: id });
-      return `<div class="cc-row"><div><b>«${esc(c.spell?.name)}»</b><span>${esc(r.ok ? 'провал — можно помолиться' : capFirst(r.reason ?? ''))}</span></div>${btn('pray', 'Молиться', { v: id, disabled: !r.ok })}</div>`;
-    }).join('');
-    out.push(`${rule('Молитва после провала')}<p class="cc-small">d20 при отправке: на 11+ провал станет успехом.</p>${pray || '<p class="cc-small">Проваленных кастов без молитвы нет.</p>'}`);
-  }
+  <p class="cc-small">Передышка снимает одно напряжение раз до отдыха${src === 'nature' ? '; при двух и больше — два, и это дар природы' : ''}. Отдых возвращает силы, дар и передышку — надломы остаются. Конец сцены завершает чары, кроме связей по согласию.</p>`];
   return `${rule('Восстановление')}${out.join('')}`;
 }
 
@@ -813,7 +820,7 @@ export function createPanel(actions) {
   reset.textContent = ':host { all: initial; }';
   const sheet = document.createElement('link');
   sheet.rel = 'stylesheet';
-  sheet.href = new URL('./style.css?v=0.1.8', import.meta.url).href;
+  sheet.href = new URL('./style.css?v=0.1.9', import.meta.url).href;
   const root = document.createElement('div');
   root.id = 'cc-panel';
   root.className = 'cc-panel';
@@ -895,7 +902,7 @@ export function createPanel(actions) {
     const old = queuedCast(view, spellId);
     if (old && !replace) return old;
     if (old) actions.dequeue(old.id);
-    const payload = quickPayload(spell, { mode: view.mode, source: s.profile.source, giftUsed: view.state?.giftUsed, free: view.settings?.free === true }, ui.opts);
+    const payload = quickPayload(spell, castCtx(view, s.profile.source), ui.opts);
     if (!old) ui.castFx = { id: spellId, at: Date.now(), kind: castFxKind(ui.spellId, spellId) };
     return enqueue('cast', payload);
   }
@@ -960,7 +967,8 @@ export function createPanel(actions) {
         ui.spellId = v;
         break;
       }
-      case 'cast': castSpell(v); return;
+      case 'cast': ui.opts.gift = false; castSpell(v); return;
+      case 'cast-gift': ui.opts.gift = true; castSpell(v, { replace: true }); return;
       case 'unpick': ui.spellId = null; break;
       case 'fav': patchList('favorites', v); return;
       case 'difficulty': ui.opts.difficulty = v; if (queuedCast(view, ui.spellId)) { castSpell(ui.spellId, { replace: true }); return; } break;
@@ -994,9 +1002,7 @@ export function createPanel(actions) {
       case 'debt-settle': enqueue('debt_settle', { debtId: v }); return;
       case 'breather': enqueue('breather', {}); return;
       case 'rest': enqueue('rest', {}); return;
-      case 'nature-gift': enqueue('nature_gift', {}); return;
-      case 'env': enqueue('environment_set', { environment: v }); return;
-      case 'pray': enqueue('faith_pray', { castId: v }); return;
+      case 'breather-root': enqueue('breather', { root: true }); return;
       // ещё
       case 'note-add': {
         const text = clean(ui.noteText);
@@ -1079,8 +1085,6 @@ export function createPanel(actions) {
       return;
     }
     switch (act) {
-      case 'opt-gift': ui.opts.gift = el.checked; if (queuedCast(view, ui.spellId)) castSpell(ui.spellId, { replace: true }); else paint(); return;
-      case 'opt-loan': ui.opts.loan = el.checked; if (queuedCast(view, ui.spellId)) castSpell(ui.spellId, { replace: true }); else paint(); return;
       case 'prof-vow': ensureDraft(); ui.profileDraft.vows = el.checked ? [...ui.profileDraft.vows, v] : ui.profileDraft.vows.filter((x) => x !== v); paint(); return;
       case 'enabled': actions.setEnabled(el.checked); return;
       case 'desire': actions.setDesire?.(el.checked); return;

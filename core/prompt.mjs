@@ -1,6 +1,6 @@
 // Тексты для модели: блок состояния (каждый ход) и факт хода (только для ответа на сообщение).
 // Только проза: никаких чисел механики, ID, цен, бросков и порогов.
-import { scaleFor, scaleOf, fractureLoad } from './rules.mjs?v=0.1.8';
+import { scaleFor, scaleOf, fractureLoad } from './rules.mjs?v=0.1.9';
 
 const SOURCE_GEN = { knowledge: 'знания', blood: 'крови', faith: 'веры', pact: 'договора', nature: 'природы' };
 
@@ -222,8 +222,6 @@ export function statusBlock(state, { sources = {}, tags = null, recentNotes = 3,
     }));
   }
 
-  if (p.source === 'nature' && ENVIRONMENT_TEXT[state.environment]) out.push(ENVIRONMENT_TEXT[state.environment]);
-
   const skip = new Set(skipNotes);
   const active = new Set((state.effects ?? []).map((e) => e.spell?.id).filter(Boolean));
   const again = (n) => n.kind === 'effect-end' && n.spell?.id && active.has(n.spell.id);
@@ -249,9 +247,9 @@ function castLines(row, last, { sources, tags }) {
   const named = clean(card.name) ? ` «${clean(card.name)}»` : '';
   lines.push(`The persona ${named ? `cast${named}` : 'worked a miracle'}${label ? ` (target: ${label})` : ''}${aim ? `, intent: ${stripEnd(aim)}` : ''}.`);
 
-  if (c.gift === 'discount' && sources?.[row.after.profile.source]?.giftFact) {
-    lines.push(sentence(sources[row.after.profile.source].giftFact));
-  }
+  const srcInfo = sources?.[row.after.profile.source];
+  const giftFact = c.gift === 'discount' ? srcInfo?.legacyFact : ['repeat', 'blood', 'mercy'].includes(c.gift) ? srcInfo?.giftFact : '';
+  if (giftFact) lines.push(sentence(giftFact));
 
   if (c.outcome === 'failure') {
     const fail = clean(t.failure);
@@ -276,7 +274,7 @@ function castLines(row, last, { sources, tags }) {
   if (c.fractureId) {
     const f = (last.after.fractures ?? []).find((x) => x.id === c.fractureId);
     const sev = { 1: 'лёгкий', 2: 'серьёзный', 3: 'тяжёлый' }[Math.min(3, f?.severity ?? 1)];
-    let line = `Магия взяла больше, чем было сил: остался ${sev} надлом.`;
+    let line = c.gift === 'blood' ? `Остался ${sev} надлом.` : `Магия взяла больше, чем было сил: остался ${sev} надлом.`;
     if (f?.manifest?.text) line += ` ${sentence(f.manifest.text)}`;
     lines.push(line);
   }
@@ -322,9 +320,10 @@ function rowLines(row, rows, opts) {
         ? 'Персона отдохнула: обычная усталость от магии ушла, но надломы по-прежнему держат часть сил.'
         : 'Персона отдохнула: силы восстановились полностью.'];
     case 'breather':
+      if (after.giftUsed && !before.giftUsed && sentence(opts.sources?.nature?.giftFact)) return [sentence(opts.sources.nature.giftFact)];
       return ['Персона перевела дух: напряжение немного отпустило.'];
     case 'nature_gift':
-      return [sentence(opts.sources?.nature?.giftFact) || 'Персона приняла силу живой среды и восстановилась.'];
+      return [sentence(opts.sources?.nature?.legacyFact) || 'Персона приняла силу живой среды и восстановилась.'];
     case 'fracture_manifest': {
       // Проявление надлома, полученного в этом же ходе, уже сказано в строке каста.
       if (rows.some((r) => r.event.kind === 'cast' && r.ok && `${r.event.id}:f` === p.fractureId)) return [];

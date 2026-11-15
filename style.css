@@ -725,6 +725,7 @@
 #cc-panel .cc-dl dt { color: var(--cc-muted); font-style: italic; }
 #cc-panel .cc-leaf-extra { display: grid; gap: 8px; padding-top: 6px; border-top: 1px solid var(--cc-line); }
 #cc-panel .cc-leaf-go { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; padding-top: 4px; }
+#cc-panel .cc-btn.cc-gift { white-space: normal; text-align: center; max-width: 100%; line-height: 1.3; }
 
 /* ---------- состояние, ещё ---------- */
 
