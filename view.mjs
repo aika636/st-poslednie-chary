@@ -1,20 +1,23 @@
 // Чистые части слоя SillyTavern: чтение метаданных без записи, сборка view для панели,
 // тексты для промпта по типу генерации, настройки, шаблоны и свои заклинания.
 // Без DOM и без SillyTavern: всё нужное приходит параметрами.
-import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.5';
-import { statusBlock, turnFact, notesOfRows, fracturesOfRows } from './core/prompt.mjs?v=0.1.5';
-import { createProfile } from './core/state.mjs?v=0.1.5';
-import { customSpell, validateSpell } from './core/catalog.mjs?v=0.1.5';
-import SPELLS from './core/data/spells.mjs?v=0.1.5';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.5';
-import TAGS from './core/data/tags.mjs?v=0.1.5';
-import DIRECTIONS from './core/data/directions.mjs?v=0.1.5';
-import SOURCES from './core/data/sources.mjs?v=0.1.5';
+import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.6';
+import { statusBlock, turnFact, notesOfRows, fracturesOfRows } from './core/prompt.mjs?v=0.1.6';
+import { createProfile } from './core/state.mjs?v=0.1.6';
+import { customSpell, validateSpell } from './core/catalog.mjs?v=0.1.6';
+import SPELLS from './core/data/spells.mjs?v=0.1.6';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.6';
+import TAGS from './core/data/tags.mjs?v=0.1.6';
+import DIRECTIONS from './core/data/directions.mjs?v=0.1.6';
+import SOURCES from './core/data/sources.mjs?v=0.1.6';
 
 export const DEPTH_MIN = 0;
 export const DEPTH_MAX = 10;
 export const THEMES = ['amethyst', 'tavern'];
-export const DEFAULT_SETTINGS = Object.freeze({ enabled: true, depth: 1, templates: [], theme: 'amethyst' });
+export const DEFAULT_SETTINGS = Object.freeze({ enabled: true, depth: 1, templates: [], theme: 'amethyst', desire: false });
+
+// Школа, выключенная по умолчанию: её чары и вкладка видны только при включённой настройке.
+export const OPTIONAL_SCHOOL = 'desire';
 
 // Генерации, которым факт хода не нужен.
 const NO_FACT_TYPES = new Set(['quiet', 'impersonate']);
@@ -86,10 +89,10 @@ export function customSpellsOf(meta) {
   return list.map(withoutLegacy).filter((card) => validateSpell(card).length === 0);
 }
 
-export function allSpells(meta, builtin = SPELLS) {
+export function allSpells(meta, builtin = SPELLS, { desire = false } = {}) {
   const custom = customSpellsOf(meta);
   const ids = new Set(custom.map((s) => s.id));
-  return [...builtin.filter((s) => !ids.has(s.id)), ...custom];
+  return [...builtin.filter((s) => !ids.has(s.id) && (desire || s.direction !== OPTIONAL_SCHOOL)), ...custom];
 }
 
 // Своё заклинание в метаданные (мутирует meta): с тем же id — заменяется.
@@ -115,6 +118,7 @@ export function normalizeSettings(raw) {
     depth: clampDepth(s.depth ?? DEFAULT_SETTINGS.depth),
     templates: Array.isArray(s.templates) ? s.templates.filter((t) => isObject(t) && isText(t.name)) : [],
     theme: THEMES.includes(s.theme) ? s.theme : DEFAULT_SETTINGS.theme,
+    desire: s.desire === true,
   };
 }
 
@@ -158,8 +162,9 @@ export function promptTexts({ chat, meta, unsupported, enabled, type = 'normal',
 }
 
 // Данные каталога для панели.
-export function viewData(meta) {
-  return { spells: allSpells(meta), fractures: FRACTURES, tags: TAGS, directions: DIRECTIONS, sources: SOURCES };
+export function viewData(meta, { desire = false } = {}) {
+  const directions = desire ? DIRECTIONS : DIRECTIONS.filter((d) => d.id !== OPTIONAL_SCHOOL);
+  return { spells: allSpells(meta, SPELLS, { desire }), fractures: FRACTURES, tags: TAGS, directions, sources: SOURCES };
 }
 
 // View для панели (форма — в договоре ui-contract).
@@ -178,9 +183,9 @@ export function buildView({ chatOpen, chatId = null, chat, meta, unsupported, se
     pendingRows: [],
     rows: [],
     conflicts: [],
-    data: viewData(unsupported ? null : meta),
+    data: viewData(unsupported ? null : meta, s),
     templates: s.templates,
-    settings: { enabled: s.enabled, depth: s.depth, theme: s.theme },
+    settings: { enabled: s.enabled, depth: s.depth, theme: s.theme, desire: s.desire },
   };
   if (!chatOpen || !isObject(meta)) return base;
   base.hasProfile = hasProfile(meta);

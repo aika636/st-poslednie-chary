@@ -1,7 +1,7 @@
 // Свеча — шкала напряжения. Чистая функция: число → SVG-строка (без пользовательского текста).
 // Чем выше напряжение, тем ниже воск, длиннее потёки и выше пламя. Надломы — трещины на воске:
 // временные тёмные, принятые навсегда — золотые швы. Прогноз очереди — пунктирная кромка.
-import { SCALE } from './core/rules.mjs?v=0.1.5';
+import { SCALE } from './core/rules.mjs?v=0.1.6';
 
 const clampLevel = (n) => Math.max(0, Math.min(SCALE, Number.isFinite(n) ? Math.round(n) : 0));
 
@@ -81,6 +81,7 @@ export function candleSvg({ level = 0, forecast = null, temporary = 0, permanent
     <path class="cc-c-wax" fill="url(#${id('wax')})" d="M${LEFT_X} ${top + 2} Q${LEFT_X} ${top} ${LEFT_X + 3} ${top} H${RIGHT_X - 3} Q${RIGHT_X} ${top} ${RIGHT_X} ${top + 2} V${BOTTOM_Y} H${LEFT_X} Z"/>
     <ellipse class="cc-c-pool" cx="32" cy="${top + 1}" rx="8" ry="1.6"/>
     ${dripPaths(lv, top)}
+    <path class="cc-c-fall" style="--cc-fall:${BOTTOM_Y - top - 12}px" d="M38.4 ${top + 2} c1.3 2.2 1.8 3.2 1.8 4.2 a1.8 1.8 0 0 1 -3.6 0 c0 -1 .5 -2 1.8 -4.2z"/>
     ${crackPaths(top, temporary, permanent)}
     ${ghost}
     <path class="cc-c-wick" d="M32 ${top} v-4"/>
@@ -97,4 +98,25 @@ export function candleMarks(state) {
   const fractures = Array.isArray(state?.fractures) ? state.fractures.length : 0;
   const traits = Array.isArray(state?.profile?.traits) ? state.profile.traits.filter((t) => t?.fractureId).length : 0;
   return { temporary: fractures, permanent: traits };
+}
+
+// Напряжение выросло по сравнению с прошлой отрисовкой (первая отрисовка и смена чата — null).
+export const castFxKind = (openId, spellId) => (openId && openId === spellId ? 'leaf' : 'row');
+export const levelGrew = (prev, next) => Number.isFinite(prev) && Number.isFinite(next) && next > prev;
+
+// Короткий эффект переживает перерисовку innerHTML: класс вешается на уже прошедшую долю анимации
+// и снимается по её окончанию. at — время старта (мс), ms — длительность, endName — последняя анимация.
+export function playFx(el, cls, at, ms, endName, now = Date.now()) {
+  if (!el || !at) return false;
+  const age = now - at;
+  if (age < 0 || age >= ms) return false;
+  el.style.setProperty('--cc-fx-delay', `-${Math.round(age)}ms`);
+  el.classList.add(cls);
+  const done = (e) => {
+    if (e.animationName !== endName) return;
+    el.classList.remove(cls);
+    el.removeEventListener('animationend', done);
+  };
+  el.addEventListener('animationend', done);
+  return true;
 }

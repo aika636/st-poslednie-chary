@@ -401,7 +401,17 @@
   60% { transform: scale(calc(var(--cc-flame-scale, 1) * .97), calc(var(--cc-flame-scale, 1) * 1.04)) rotate(1.5deg); }
 }
 @keyframes cc-glow { 0%, 100% { opacity: .85; } 50% { opacity: 1; } }
-.cc-candle-box.cc-flare .cc-candle { animation: cc-flare .9s ease-out; }
+.cc-candle-box.cc-drop .cc-candle { animation: cc-flare .9s ease-out var(--cc-fx-delay, 0ms) both; }
+.cc-candle .cc-c-fall { opacity: 0; fill: var(--cc-wax-shade); stroke: color-mix(in srgb, var(--cc-wax-shade) 50%, #5a4326); stroke-width: .9; transform-box: fill-box; transform-origin: 50% 100%; }
+.cc-candle-box.cc-drop .cc-c-fall { animation: cc-drop-fall 1.4s cubic-bezier(.4, 0, .8, .6) var(--cc-fx-delay, 0ms) both; }
+@keyframes cc-drop-fall {
+  0% { opacity: 0; transform: translateY(0) scale(.4); }
+  12% { opacity: 1; transform: translateY(0) scale(1.15, 1.3); }
+  22% { opacity: 1; transform: translateY(0) scale(1); }
+  72% { opacity: 1; transform: translateY(var(--cc-fall, 40px)) scale(.9, 1.15); }
+  86% { opacity: .9; transform: translateY(var(--cc-fall, 40px)) scale(1.5, .45); }
+  100% { opacity: 0; transform: translateY(var(--cc-fall, 40px)) scale(1.7, .2); }
+}
 @keyframes cc-flare {
   0% { filter: drop-shadow(0 0 0 transparent) brightness(1); transform: scale(1); }
   30% { filter: drop-shadow(0 0 18px var(--cc-flame-glow)) brightness(1.5); transform: scale(1.08); }
@@ -1329,3 +1339,185 @@
 @media (max-width: 700px) { #cc-panel .cc-marks { display: none; } }
 @media (prefers-reduced-motion: reduce) { #cc-panel .cc-mark { transition: none; } }
 @media (forced-colors: active) { #cc-panel .cc-marks { display: none; } }
+
+/* ---------- материалы: кожа, пергамент, тушь ---------- */
+#cc-panel {
+  --cc-ci: color-mix(in srgb, var(--cc-ink) 62%, transparent);
+  --cc-corners:
+    linear-gradient(var(--cc-ci), var(--cc-ci)) 0 0 / 7px 1px, linear-gradient(var(--cc-ci), var(--cc-ci)) 0 0 / 1px 7px,
+    linear-gradient(var(--cc-ci), var(--cc-ci)) 100% 0 / 7px 1px, linear-gradient(var(--cc-ci), var(--cc-ci)) 100% 0 / 1px 7px,
+    linear-gradient(var(--cc-ci), var(--cc-ci)) 0 100% / 7px 1px, linear-gradient(var(--cc-ci), var(--cc-ci)) 0 100% / 1px 7px,
+    linear-gradient(var(--cc-ci), var(--cc-ci)) 100% 100% / 7px 1px, linear-gradient(var(--cc-ci), var(--cc-ci)) 100% 100% / 1px 7px;
+}
+#cc-panel:not(:has(.cc-tome[data-theme="tavern"])) {
+  --cc-page: #f2e4c2;
+  --cc-page-2: #e3cfa3;
+  --cc-page-edge: #bfa676;
+  --cc-ink: #2c1a33;
+  --cc-muted: #523e4d;
+  --cc-line: rgba(60, 36, 52, .3);
+  --cc-glow: rgba(255, 247, 218, .42);
+}
+/* Кожа таверны: коричневая основа, смешанная с цветом темы. */
+#cc-panel:has(.cc-tome[data-theme="tavern"]) {
+  --cc-glow: transparent;
+  --cc-cover-1: color-mix(in srgb, #7a5230 55%, color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 45%, var(--SmartThemeBlurTintColor, #1d1a22)));
+  --cc-cover-2: color-mix(in srgb, #52341c 55%, color-mix(in srgb, var(--SmartThemeQuoteColor, #7c4ccc) 22%, var(--SmartThemeBlurTintColor, #1d1a22)));
+  --cc-cover-3: color-mix(in srgb, #2a180c 60%, color-mix(in srgb, black 35%, var(--SmartThemeBlurTintColor, #1d1a22)));
+}
+#cc-panel .cc-tome {
+  background:
+    radial-gradient(ellipse 130% 120% at 50% 50%, transparent 50%, rgba(6, 2, 12, .5) 100%),
+    radial-gradient(circle 70px at 0 0, rgba(225, 195, 150, .2), transparent), radial-gradient(circle 70px at 100% 0, rgba(225, 195, 150, .18), transparent),
+    radial-gradient(circle 70px at 0 100%, rgba(225, 195, 150, .2), transparent), radial-gradient(circle 70px at 100% 100%, rgba(225, 195, 150, .22), transparent),
+    linear-gradient(90deg, rgba(15, 5, 31, .4), transparent 7%, transparent 94%, rgba(15, 5, 31, .2)),
+    url("assets/leather.webp") 0 0 / 400px 400px repeat,
+    linear-gradient(110deg, var(--cc-cover-1), var(--cc-cover-2) 72%, var(--cc-cover-3));
+  background-blend-mode: normal, normal, normal, normal, normal, normal, overlay, normal;
+  box-shadow: 0 16px 32px rgba(7, 2, 18, .45), inset 0 0 0 1px rgba(235, 205, 160, .16), inset 0 0 18px rgba(225, 195, 150, .1), inset 0 0 3px 2px rgba(0, 0, 0, .35), 0 0 0 2px var(--cc-cover-3), 0 0 0 3px var(--cc-gold-3);
+}
+#cc-panel .cc-tome::before {
+  border-color: rgba(0, 0, 0, .5);
+  box-shadow: 0 1px 0 rgba(235, 205, 160, .16), inset 0 1px 2px rgba(0, 0, 0, .55), inset 0 -1px 0 rgba(235, 205, 160, .1);
+}
+#cc-panel .cc-tome::after {
+  background:
+    radial-gradient(ellipse 100% 40% at 50% 0, rgba(225, 195, 150, .16), transparent), radial-gradient(ellipse 100% 40% at 50% 100%, rgba(225, 195, 150, .16), transparent),
+    url("assets/leather.webp") 60px 0 / 400px 400px repeat,
+    linear-gradient(90deg, var(--cc-cover-3) 0%, color-mix(in srgb, var(--cc-cover-1) 75%, var(--cc-cover-3)) 38%, var(--cc-cover-2) 74%, var(--cc-cover-3) 100%);
+  background-blend-mode: normal, normal, overlay, normal;
+}
+#cc-panel .cc-spine::before { background: linear-gradient(90deg, #26262b, #55555c 38%, #3f3f45 62%, #26262b); }
+
+#cc-panel .cc-page, #cc-panel .cc-side {
+  background-color: var(--cc-page);
+  background-size: auto, auto, auto, auto, 520px 520px;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+  background-blend-mode: normal, normal, normal, normal, multiply;
+}
+#cc-panel .cc-page {
+  background-image:
+    linear-gradient(270deg, rgba(40, 20, 6, .3), rgba(40, 20, 6, .08) 4%, transparent 9%),
+    radial-gradient(ellipse 80% 75% at 50% 45%, var(--cc-glow), transparent 72%),
+    radial-gradient(ellipse 115% 110% at 50% 45%, transparent 40%, rgba(120, 78, 22, .36) 100%),
+    radial-gradient(circle 90px at 0 100%, rgba(70, 38, 10, .2), transparent),
+    url("assets/parchment.webp");
+  box-shadow: 1px 1px 0 var(--cc-page-edge), 3px 3px 0 var(--cc-page-2), 4px 4px 0 var(--cc-page-edge), 6px 6px 0 var(--cc-page-2);
+}
+#cc-panel .cc-side {
+  background-image:
+    linear-gradient(90deg, rgba(40, 20, 6, .34), rgba(40, 20, 6, .1) 4%, transparent 9%),
+    radial-gradient(ellipse 80% 75% at 50% 45%, var(--cc-glow), transparent 72%),
+    radial-gradient(ellipse 115% 110% at 50% 45%, transparent 40%, rgba(120, 78, 22, .36) 100%),
+    radial-gradient(circle 90px at 100% 0, rgba(70, 38, 10, .2), transparent),
+    url("assets/parchment.webp");
+  background-position: 0 0, 0 0, 0 0, 0 0, 200px 130px;
+}
+#cc-panel .cc-page::before { border-color: color-mix(in srgb, var(--cc-ink) 38%, transparent); box-shadow: 0 0 0 3px transparent, 0 0 0 4px color-mix(in srgb, var(--cc-ink) 16%, transparent); }
+#cc-panel .cc-pagehead::after { background: radial-gradient(circle at 50% 50%, var(--cc-ink) 0 2.5px, transparent 3px), linear-gradient(90deg, transparent, var(--cc-ci) 18%, var(--cc-ci) 82%, transparent) center / 100% 1px no-repeat; opacity: .75; }
+#cc-panel .cc-title i { color: var(--cc-ink); opacity: .7; }
+
+/* Тушь вместо плашек и таблеток. */
+#cc-panel .cc-pill { padding: 2px 8px; border-radius: 2px; border: 1px solid color-mix(in srgb, var(--cc-ink) 50%, transparent); background: transparent; }
+#cc-panel .cc-pill.cc-src { background: color-mix(in srgb, var(--cc-ink) 11%, transparent); color: var(--cc-ink); border: 1px solid var(--cc-ci); }
+#cc-panel .cc-tog { padding: 4px 8px; border: 0; border-bottom: 1px dotted var(--cc-ci); border-radius: 0; background: transparent; }
+#cc-panel .cc-tog[aria-pressed="true"] { border-bottom: 1px solid var(--cc-ci); background: linear-gradient(transparent 52%, color-mix(in srgb, var(--cc-ink) 22%, transparent) 52% 90%, transparent 90%); color: var(--cc-ink); font-weight: 700; }
+#cc-panel .cc-school-nav { background: transparent; }
+#cc-panel .cc-school-nav button { border-radius: 0; }
+#cc-panel .cc-school-nav button:hover { background: color-mix(in srgb, var(--cc-ink) 7%, transparent); }
+#cc-panel .cc-school-nav button[aria-pressed="true"] { border-color: transparent; border-bottom: 2px solid var(--cc-ci); background: linear-gradient(transparent 55%, color-mix(in srgb, var(--cc-ink) 14%, transparent) 55% 92%, transparent 92%); color: var(--cc-ink); }
+#cc-panel .cc-toolbar button, #cc-panel .cc-btn.cc-ghost { border: 1px solid color-mix(in srgb, var(--cc-ink) 50%, transparent); border-radius: 2px; background: transparent; color: var(--cc-ink); }
+#cc-panel .cc-toolbar button:hover, #cc-panel .cc-btn.cc-ghost:hover:not(:disabled) { background: color-mix(in srgb, var(--cc-ink) 9%, transparent); border-color: var(--cc-ci); }
+#cc-panel .cc-btn { border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25), inset 0 0 0 3px color-mix(in srgb, var(--cc-gold) 22%, transparent); background: color-mix(in srgb, var(--cc-accent) 92%, black); }
+#cc-panel .cc-btn.cc-ghost { box-shadow: none; }
+#cc-panel .cc-seg { border-radius: 2px; border-color: var(--cc-ci); background: transparent; }
+#cc-panel .cc-seg button { border-radius: 0; }
+#cc-panel .cc-seg button.cc-on { background: linear-gradient(transparent 50%, color-mix(in srgb, var(--cc-ink) 20%, transparent) 50%); color: var(--cc-ink); box-shadow: inset 0 -2px 0 var(--cc-ci); }
+#cc-panel .cc-input { background-color: transparent; border-radius: 2px; border-color: color-mix(in srgb, var(--cc-ink) 42%, transparent); }
+#cc-panel .cc-search .cc-input { border-radius: 0; border-width: 0 0 1px; border-bottom-color: var(--cc-ci); padding-left: 28px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23665050' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='6'/%3E%3Cpath d='m20 20-4.5-4.5'/%3E%3C/svg%3E") 6px 50% / 16px no-repeat; }
+#cc-panel:has(.cc-tome[data-theme="tavern"]) .cc-search .cc-input { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='6'/%3E%3Cpath d='m20 20-4.5-4.5'/%3E%3C/svg%3E"); }
+#cc-panel .cc-cost-h::after, #cc-panel .cc-rule::after { height: 1px; background: linear-gradient(90deg, var(--cc-ci), transparent); opacity: .8; }
+#cc-panel .cc-cost-h::before { content: "◆"; font-size: 7px; opacity: .6; }
+#cc-panel .cc-chapter-h { border-bottom-color: var(--cc-ci); }
+
+/* Рамки тушью с уголками: выбор источника, ответы, «Сейчас», очередь. */
+#cc-panel .cc-source, #cc-panel .cc-opt, #cc-panel .cc-now-calm, #cc-panel .cc-q-item, #cc-panel .cc-leaf-cost {
+  border-radius: 1px;
+  border: 1px solid color-mix(in srgb, var(--cc-ink) 40%, transparent);
+  background: var(--cc-corners), color-mix(in srgb, var(--cc-ink) 4%, transparent);
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 3px transparent, inset 0 0 0 4px color-mix(in srgb, var(--cc-ink) 16%, transparent);
+}
+#cc-panel .cc-source { transition: background-color .15s; }
+#cc-panel .cc-source:hover, #cc-panel .cc-source[aria-pressed="true"], #cc-panel .cc-opt:hover, #cc-panel .cc-opt[aria-pressed="true"] {
+  transform: none;
+  border-color: var(--cc-ci);
+  background: var(--cc-corners), color-mix(in srgb, var(--cc-ink) 11%, transparent);
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 3px transparent, inset 0 0 0 4px color-mix(in srgb, var(--cc-ink) 38%, transparent);
+}
+#cc-panel .cc-now-calm { border-radius: 1px; background-image: var(--cc-corners); }
+#cc-panel .cc-leaf-summary { background: color-mix(in srgb, var(--cc-ink) 5%, transparent); border-radius: 0; }
+#cc-panel .cc-hand-slot { --cc-m: var(--cc-ci); background-color: color-mix(in srgb, var(--cc-ink) 3%, transparent); }
+#cc-panel .cc-source .cc-glyph, #cc-panel .cc-front-mark .cc-glyph { filter: drop-shadow(0 .5px 0 rgba(255, 245, 220, .35)); }
+
+/* Печатка цены: круглая тушь. */
+#cc-panel .cc-coin { border: 2px solid color-mix(in srgb, var(--cc-ink) 78%, transparent); background: radial-gradient(circle, color-mix(in srgb, var(--cc-ink) 6%, transparent) 55%, color-mix(in srgb, var(--cc-ink) 16%, transparent)); box-shadow: inset 0 0 0 2px transparent, inset 0 0 0 3px color-mix(in srgb, var(--cc-ink) 40%, transparent); }
+#cc-panel .cc-coin.cc-coin-on { border-color: var(--cc-accent); box-shadow: inset 0 0 0 2px transparent, inset 0 0 0 3px var(--cc-accent), 0 0 8px var(--cc-gold); }
+
+/* Буквица. */
+#cc-panel .cc-front-trait::first-letter { float: left; margin: 2px 6px 0 0; font: 700 2.5em/.8 var(--cc-display); color: var(--cc-accent); }
+
+#cc-panel .cc-btn:focus-visible, #cc-panel .cc-source:focus-visible, #cc-panel .cc-opt:focus-visible, #cc-panel .cc-tog:focus-visible, #cc-panel .cc-toolbar button:focus-visible { outline: 2px solid var(--cc-accent-2); outline-offset: 2px; }
+
+@media (max-width: 700px) {
+  #cc-panel .cc-tome { background-size: auto, 0 0, 0 0, 0 0, 0 0, auto, 300px 300px, auto; }
+  #cc-panel .cc-page, #cc-panel .cc-side { background-size: auto, auto, auto, auto, 400px 400px; }
+}
+@media (forced-colors: active) {
+  #cc-panel .cc-tome, #cc-panel .cc-page, #cc-panel .cc-side { background-image: none; }
+  #cc-panel .cc-tome::after { background: none; }
+  #cc-panel .cc-source, #cc-panel .cc-opt, #cc-panel .cc-now-calm, #cc-panel .cc-q-item, #cc-panel .cc-leaf-cost { background-image: none; border-color: CanvasText; }
+  #cc-panel .cc-pill, #cc-panel .cc-tog, #cc-panel .cc-toolbar button { border-color: CanvasText; }
+  #cc-panel .cc-tog[aria-pressed="true"], #cc-panel .cc-school-nav button[aria-pressed="true"] { background: Canvas; color: CanvasText; border-bottom: 3px solid CanvasText; }
+  #cc-panel .cc-seg button.cc-on { background: Canvas; color: CanvasText; box-shadow: none; border-bottom: 3px solid CanvasText; }
+}
+
+/* ---------- анимации: каст и подпись свечи ---------- */
+#cc-panel .cc-leaf.cc-cast-fx { animation: cc-lift .7s cubic-bezier(.3, .7, .3, 1) var(--cc-fx-delay, 0ms) both; }
+#cc-panel .cc-leaf.cc-cast-fx .cc-leaf-g { animation: cc-sigil .7s ease-out var(--cc-fx-delay, 0ms) both; }
+@keyframes cc-lift {
+  0% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(-5px) scale(1.012); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes cc-sigil {
+  0% { filter: none; transform: scale(1); box-shadow: 0 0 0 0 transparent; }
+  25% { filter: drop-shadow(0 0 8px var(--cc-gold-2)) saturate(1.5); transform: scale(1.16); box-shadow: 0 0 22px 8px color-mix(in srgb, var(--cc-gold-2) 75%, transparent), 0 0 0 4px var(--cc-accent-2); }
+  100% { filter: none; transform: scale(1); box-shadow: 0 0 0 0 transparent; }
+}
+#cc-panel .cc-spell-row.cc-row-fx, #cc-panel .cc-hand-card.cc-row-fx { animation: cc-row-lift .6s ease-out var(--cc-fx-delay, 0ms) both; }
+#cc-panel .cc-row-fx .cc-spell-g { animation: cc-row-sigil .6s ease-out var(--cc-fx-delay, 0ms) both; }
+@keyframes cc-row-lift {
+  0% { transform: translateY(0); background-color: transparent; }
+  30% { transform: translateY(-2px); background-color: color-mix(in srgb, var(--cc-gold-2) 22%, transparent); }
+  100% { transform: translateY(0); background-color: transparent; }
+}
+@keyframes cc-row-sigil {
+  0% { filter: none; transform: scale(1); }
+  25% { filter: drop-shadow(0 0 5px var(--cc-gold-2)) saturate(1.5); transform: scale(1.14); }
+  100% { filter: none; transform: scale(1); }
+}
+#cc-panel .cc-tome[data-theme="tavern"] .cc-candle-cap { font-size: 8.5px; letter-spacing: 0; max-width: none; overflow: visible; }
+@media (max-width: 700px) { #cc-panel .cc-tome[data-theme="tavern"] .cc-candle-cap { font-size: 8px; } #cc-panel .cc-tome-candle .cc-candle-cap { max-width: 60px; } }
+@media (prefers-reduced-motion: reduce) {
+  .cc-candle-box.cc-drop .cc-candle, .cc-candle-box.cc-drop .cc-c-fall,
+  #cc-panel .cc-leaf.cc-cast-fx, #cc-panel .cc-leaf.cc-cast-fx .cc-leaf-g, #cc-panel .cc-row-fx, #cc-panel .cc-row-fx .cc-spell-g { animation: none !important; }
+}
+@media (forced-colors: active) {
+  .cc-candle-box.cc-drop .cc-candle { animation: none !important; }
+  #cc-panel .cc-leaf.cc-cast-fx .cc-leaf-g { animation: none !important; }
+  #cc-panel .cc-row-fx, #cc-panel .cc-row-fx .cc-spell-g { animation: none !important; }
+}
+/* школа влечения: акцент */
+#cc-panel .cc-spell-row[data-direction="desire"], #cc-panel .cc-leaf[data-direction="desire"], #cc-panel .cc-chapter[data-direction="desire"] { --school-accent:#b3395e; }

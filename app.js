@@ -2,18 +2,20 @@
 import {
   META_KEY, MODES, previewCommand, enqueue as coreEnqueue, dequeue as coreDequeue, commitPending,
   updateEvent as coreUpdateEvent, toggleEvent as coreToggleEvent, computeChat,
-} from './core/chat-journal.mjs?v=0.1.5';
-import { createSnapshot } from './core/state.mjs?v=0.1.5';
-import { statusBlock } from './core/prompt.mjs?v=0.1.5';
+} from './core/chat-journal.mjs?v=0.1.6';
+import { createSnapshot } from './core/state.mjs?v=0.1.6';
+import { statusBlock } from './core/prompt.mjs?v=0.1.6';
 import {
   readMeta, worthWarning, hasProfile, hasHistory, canSwitchMode, buildView, promptTexts, normalizeSettings, clampDepth,
   upsertTemplate, removeTemplate, addCustomSpell as addCustomSpellTo, PROMPT_OPTIONS, DEPTH_MIN, DEPTH_MAX,
-} from './view.mjs?v=0.1.5';
-import { createPanel, candleHtml } from './ui.js?v=0.1.5';
-import { clampOffset } from './view.mjs?v=0.1.5';
-import { createDicePresenter } from './dice.js?v=0.1.5';
-import { buildMatchers, findSpell } from './hint.js?v=0.1.5';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.5';
+} from './view.mjs?v=0.1.6';
+import { createPanel, candleHtml } from './ui.js?v=0.1.6';
+import { levelGrew, playFx } from './candle.js?v=0.1.6';
+import { scaleOf } from './core/rules.mjs?v=0.1.6';
+import { clampOffset } from './view.mjs?v=0.1.6';
+import { createDicePresenter } from './dice.js?v=0.1.6';
+import { buildMatchers, findSpell } from './hint.js?v=0.1.6';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.6';
 
 const MODULE = 'cena-chuda';
 const SETTINGS_KEY = 'cenaChuda';
@@ -253,6 +255,12 @@ const actions = {
     refresh();
   },
 
+  setDesire(on) {
+    writeSettings({ desire: Boolean(on) });
+    syncSettingsDrawer();
+    refresh();
+  },
+
   setTheme(theme) {
     writeSettings({ theme });
     refresh();
@@ -329,8 +337,15 @@ function updateButton(cur, view) {
   btn.style.display = readSettings().enabled ? '' : 'none';
   btn.dataset.theme = readSettings().theme;
   btn.innerHTML = view?.hasProfile && view.state ? candleHtml(view, { mini: true, uid: 'mini' }) : candleHtml(null, { mini: true, uid: 'mini', bare: true });
+  const level = view?.hasProfile && view.state ? scaleOf(view.state) : null;
+  const same = miniFx.chat === (view?.chatId ?? null);
+  if (same && levelGrew(miniFx.level, level)) miniFx.at = Date.now();
+  Object.assign(miniFx, { chat: view?.chatId ?? null, level });
+  if (!same) miniFx.at = 0;
+  playFx(btn.querySelector('.cc-candle-box'), 'cc-drop', miniFx.at, 1500, 'cc-drop-fall');
   placeButton();
 }
+const miniFx = { chat: null, level: null, at: 0 };
 
 const BTN_KEY = 'cena-chuda:btn';
 const BTN_SIZE = 44;
@@ -446,7 +461,7 @@ function mountFonts() {
   const link = document.createElement('link');
   link.id = 'cc-fonts';
   link.rel = 'stylesheet';
-  link.href = new URL('./fonts/fonts.css?v=0.1.5', import.meta.url).href;
+  link.href = new URL('./fonts/fonts.css?v=0.1.6', import.meta.url).href;
   document.head.append(link);
 }
 
@@ -455,7 +470,7 @@ function mountStyle() {
   const link = document.createElement('link');
   link.id = 'cc-style';
   link.rel = 'stylesheet';
-  link.href = new URL('./style.css?v=0.1.5', import.meta.url).href;
+  link.href = new URL('./style.css?v=0.1.6', import.meta.url).href;
   document.head.append(link);
 }
 
@@ -464,7 +479,7 @@ function mountDiceStyles() {
   const link = document.createElement('link');
   link.id = 'cc-dice-style';
   link.rel = 'stylesheet';
-  link.href = new URL('./dice.css?v=0.1.5', import.meta.url).href;
+  link.href = new URL('./dice.css?v=0.1.6', import.meta.url).href;
   document.head.append(link);
 }
 
@@ -540,6 +555,7 @@ function mountSettings() {
   const host = document.getElementById('extensions_settings2') ?? document.getElementById('extensions_settings');
   if (!host || document.getElementById('cc-settings')) return;
   const enabled = el('input', { type: 'checkbox', id: 'cc-enabled' });
+  const desire = el('input', { type: 'checkbox', id: 'cc-desire' });
   const depth = el('input', { type: 'number', id: 'cc-depth', className: 'text_pole', min: String(DEPTH_MIN), max: String(DEPTH_MAX) });
   const box = el('div', { id: 'cc-settings' }, [
     el('div', { className: 'inline-drawer' }, [
@@ -549,6 +565,7 @@ function mountSettings() {
       ]),
       el('div', { className: 'inline-drawer-content' }, [
         el('label', { className: 'checkbox_label' }, [enabled, el('span', { textContent: 'Включено' })]),
+        el('label', { className: 'checkbox_label' }, [desire, el('span', { textContent: 'Чары влечения (18+)' })]),
         el('label', { htmlFor: 'cc-depth', textContent: 'Глубина блока состояния' }),
         depth,
         el('small', { textContent: 'Факт хода всегда идёт сразу после сообщения игрока.' }),
@@ -557,6 +574,7 @@ function mountSettings() {
   ]);
   host.append(box);
   enabled.addEventListener('change', () => actions.setEnabled(enabled.checked));
+  desire.addEventListener('change', () => actions.setDesire(desire.checked));
   depth.addEventListener('change', () => actions.setDepth(depth.value));
   syncSettingsDrawer();
 }
@@ -566,6 +584,8 @@ function syncSettingsDrawer() {
   const enabled = document.getElementById('cc-enabled');
   const depth = document.getElementById('cc-depth');
   if (enabled) enabled.checked = s.enabled;
+  const desire = document.getElementById('cc-desire');
+  if (desire) desire.checked = s.desire;
   if (depth) depth.value = String(s.depth);
 }
 

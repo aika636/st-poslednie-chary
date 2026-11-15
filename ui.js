@@ -1,12 +1,12 @@
 // Панель «Последних чар» — том заклинаний со свечой. Разметка строками от view, события через
 // data-act / data-bind. Правил здесь нет: можно ли, сколько стоит и что предупредить —
 // говорит actions.preview. Весь текст из чата, профиля и метаданных — только через esc().
-import { SCALE, THRESHOLDS, DIFFICULTIES, discountUseful, fractureLoad, scaleOf, rollsAgainst } from './core/rules.mjs?v=0.1.5';
-import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.5';
-import SHORT from './core/data/short.mjs?v=0.1.5';
-import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.5';
-import { candleSvg, candleMarks } from './candle.js?v=0.1.5';
-import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.5';
+import { SCALE, THRESHOLDS, DIFFICULTIES, discountUseful, fractureLoad, scaleOf, rollsAgainst } from './core/rules.mjs?v=0.1.6';
+import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.6';
+import SHORT from './core/data/short.mjs?v=0.1.6';
+import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.6';
+import { candleSvg, candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.6';
+import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.6';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"'`]/g, (ch) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;',
@@ -344,11 +344,11 @@ function spellListHtml(view, ui) {
 }
 
 // Короткие имена школ для вкладок: полное имя — в подсказке и заголовке главы.
-const SCHOOL_SHORT = { matter: 'Стихии', body: 'Тело', mind: 'Разум', images: 'Иллюзии', bonds: 'Духи', bounds: 'Пространство' };
+const SCHOOL_SHORT = { matter: 'Стихии', body: 'Тело', mind: 'Разум', images: 'Иллюзии', bonds: 'Духи', bounds: 'Пространство', desire: 'Влечение' };
 
 // Открытая вкладка: выбранная, иначе «Избранное», если оно есть, иначе первая школа.
 export function schoolTab(ui, profile, directions) {
-  if (ui.school) return ui.school;
+  if (ui.school && (['all', 'fav', 'custom'].includes(ui.school) || directions.some((d) => d.id === ui.school))) return ui.school;
   return list(profile?.favorites).length ? 'fav' : (directions[0]?.id ?? 'custom');
 }
 
@@ -689,6 +689,7 @@ function settingsHtml(view) {
   const s = view.settings ?? {};
   return `<div class="cc-field"><span>Оформление</span>${seg('theme', Object.entries(THEME_RU), s.theme ?? 'amethyst')}</div>
     <label class="cc-check"><input type="checkbox" data-act="enabled"${attr('checked', s.enabled !== false)}> Передавать магию модели</label>
+    <label class="cc-check"><input type="checkbox" data-act="desire"${attr('checked', s.desire === true)}> Чары влечения (18+)</label>
     <label class="cc-field cc-row-field"><span>Глубина блока состояния</span><input type="number" class="cc-input cc-num" id="cc-depth-in" min="0" max="10" step="1" data-act="depth" value="${esc(s.depth ?? 1)}"></label>
     <div class="cc-inline">${btn('prof-template', 'Сохранить профиль как шаблон', { cls: 'cc-ghost' })}</div>`;
 }
@@ -793,7 +794,7 @@ export function createPanel(actions) {
   reset.textContent = ':host { all: initial; }';
   const sheet = document.createElement('link');
   sheet.rel = 'stylesheet';
-  sheet.href = new URL('./style.css?v=0.1.5', import.meta.url).href;
+  sheet.href = new URL('./style.css?v=0.1.6', import.meta.url).href;
   const root = document.createElement('div');
   root.id = 'cc-panel';
   root.className = 'cc-panel';
@@ -834,10 +835,18 @@ export function createPanel(actions) {
     ui.flipTo = null;
     const body = root.querySelector('.cc-pagebody');
     if (body) body.scrollTop = resetScroll ? 0 : (ui.tab === 'cast' ? ui.listScroll : 0);
-    // Короткая вспышка свечи, когда напряжение выросло (после отправки).
-    const level = view?.state ? scaleOf(view.state) : null;
-    if (lastLevel !== null && level !== null && level > lastLevel) root.querySelector('.cc-candle-box')?.classList.add('cc-flare');
-    lastLevel = level;
+    // Короткие эффекты: капля воска при росте напряжения и каст на листе.
+    playFx(root.querySelector('.cc-candle-box'), 'cc-drop', ui.dropAt, 1500, 'cc-drop-fall');
+    if (ui.castFx?.kind === 'leaf' && ui.castFx.id !== ui.spellId) ui.castFx = null;
+    if (ui.castFx?.kind === 'leaf') playFx(root.querySelector('.cc-leaf'), 'cc-cast-fx', ui.castFx.at, 800, 'cc-lift');
+    else if (ui.castFx) {
+      for (const b of root.querySelectorAll('.cc-quickcast[data-act="cast"]')) {
+        if (b.dataset.v !== ui.castFx.id) continue;
+        const card = b.closest('.cc-spell-row, .cc-hand-card');
+        playFx(card, 'cc-row-fx', ui.castFx.at, 700, 'cc-row-lift');
+        playFx(card?.querySelector('.cc-spell-g'), 'cc-row-sigil-fx', ui.castFx.at, 700, 'cc-row-sigil');
+      }
+    }
     if (focusKey) {
       const el = [...root.querySelectorAll('[data-bind]')].find((x) => x.dataset.bind === focusKey);
       if (el) {
@@ -868,6 +877,7 @@ export function createPanel(actions) {
     if (old && !replace) return old;
     if (old) actions.dequeue(old.id);
     const payload = quickPayload(spell, { mode: view.mode, source: s.profile.source, giftUsed: view.state?.giftUsed }, ui.opts);
+    if (!old) ui.castFx = { id: spellId, at: Date.now(), kind: castFxKind(ui.spellId, spellId) };
     return enqueue('cast', payload);
   }
 
@@ -1053,6 +1063,7 @@ export function createPanel(actions) {
       case 'opt-loan': ui.opts.loan = el.checked; if (queuedCast(view, ui.spellId)) castSpell(ui.spellId, { replace: true }); else paint(); return;
       case 'prof-vow': ensureDraft(); ui.profileDraft.vows = el.checked ? [...ui.profileDraft.vows, v] : ui.profileDraft.vows.filter((x) => x !== v); paint(); return;
       case 'enabled': actions.setEnabled(el.checked); return;
+      case 'desire': actions.setDesire?.(el.checked); return;
       case 'depth': {
         const n = Number(el.value);
         if (Number.isInteger(n) && n >= 0) actions.setDepth(n);
@@ -1182,8 +1193,11 @@ export function createPanel(actions) {
       return castSpell(spellId);
     },
     render(next) {
-      if (switchChat(ui, view?.chatId, next?.chatId)) { scrollTop = true; lastLevel = null; }
+      if (switchChat(ui, view?.chatId, next?.chatId)) { scrollTop = true; lastLevel = null; ui.dropAt = 0; ui.castFx = null; }
       view = next;
+      const level = view?.state ? scaleOf(view.state) : null;
+      if (levelGrew(lastLevel, level)) ui.dropAt = Date.now();
+      lastLevel = level;
       if (ui.spellId && !spellById(ui.spellId)) ui.spellId = null;
       if (ui.lastSpellId && !spellById(ui.lastSpellId)) ui.lastSpellId = null;
       paint();

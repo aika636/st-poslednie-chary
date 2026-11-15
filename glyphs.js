@@ -1,5 +1,7 @@
 // Знаки: пять источников и шесть направлений магии. Только константная разметка SVG, без
 // пользовательского текста. Цвет — currentColor и переменные темы.
+import { SPELL_ICONS } from './spell-icons/index.js?v=0.1.6';
+
 const svg = (body, cls = '') => `<svg class="cc-glyph ${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${body}</svg>`;
 
 export const SOURCE_GLYPH = {
@@ -28,6 +30,8 @@ export const DIRECTION_GLYPH = {
   bonds: svg('<path d="M4 16c3 0 4-8 8-8s5 8 8 8M4 8c3 0 4 8 8 8s5-8 8-8" class="cc-g-line"/>'),
   // границы и перемещение — арка с шагом
   bounds: svg('<path d="M6 21V10a6 6 0 0 1 12 0v11" class="cc-g-line"/><path d="M10 15h6m-2.5-2.5L16 15l-2.5 2.5" class="cc-g-line"/>'),
+  // влечение — сердце с язычком пламени над ним
+  desire: svg('<path d="M12 21.5S3.5 16.5 3.5 11A4.2 4.2 0 0 1 12 10.5 4.2 4.2 0 0 1 20.5 11c0 5.5-8.5 10.5-8.5 10.5z" class="cc-g-line"/><path d="M12 9.5c-2.4-1-3-3.5-1.6-6.5.4 1.5 1.2 2.2 2.1 2.6.1-.8 0-1.6-.3-2.2 2.4 1.8 2.4 4.9-.2 6.1z" class="cc-g-fill"/>'),
 };
 
 export const STAR = svg('<path d="M12 3.2l2.5 5.6 6.1.6-4.6 4.1 1.3 6-5.3-3.1-5.3 3.1 1.3-6-4.6-4.1 6.1-.6z" class="cc-g-line"/>', 'cc-star-g');
@@ -53,8 +57,8 @@ const rivet = (x, y) => `<g class="cc-rivet" transform="translate(${x} ${y})">
 
 export const RING = `<svg class="cc-ring" viewBox="0 0 150 70" aria-hidden="true" focusable="false">
   <defs>
-    <linearGradient id="cc-ring-gold" gradientUnits="userSpaceOnUse" x1="30" y1="8" x2="84" y2="62"><stop offset="0" stop-color="#d9bb78"/><stop offset=".35" stop-color="#e6bb5c"/><stop offset=".7" stop-color="#b07f2e"/><stop offset="1" stop-color="#7a5219"/></linearGradient>
-    <linearGradient id="cc-ring-steel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b4b8c2"/><stop offset=".5" stop-color="#8a8e9a"/><stop offset="1" stop-color="#5c606b"/></linearGradient>
+    <linearGradient id="cc-ring-gold" gradientUnits="userSpaceOnUse" x1="30" y1="8" x2="84" y2="62"><stop offset="0" stop-color="#b79c63"/><stop offset=".35" stop-color="#a8863f"/><stop offset=".7" stop-color="#85632a"/><stop offset="1" stop-color="#5a3f18"/></linearGradient>
+    <linearGradient id="cc-ring-steel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7d7d80"/><stop offset=".5" stop-color="#5f5f64"/><stop offset="1" stop-color="#3e3e43"/></linearGradient>
     <radialGradient id="cc-ring-pit" cx=".42" cy=".38" r=".7"><stop offset="0" stop-color="#05010c"/><stop offset=".7" stop-color="#2a1a14"/><stop offset="1" stop-color="#5a4630"/></radialGradient>
     <clipPath id="cc-ring-behind"><rect x="0" y="0" width="60" height="70"/></clipPath>
   </defs>
@@ -90,7 +94,14 @@ export const BRACKET = `<svg class="cc-bracket" viewBox="0 0 60 70" aria-hidden=
   <circle cx="46" cy="56" r="2.6" class="cc-bracket-rivet"/>
 </svg>`;
 
-export const glyphFor = (spell) => DIRECTION_GLYPH[spell?.direction] ?? DIRECTION_GLYPH.matter;
+const spellGlyphs = new Map();
+// Знак чары: по id из spell-icons, иначе знак школы; свои чары — знак школы или стихий.
+export const glyphFor = (spell) => {
+  const body = SPELL_ICONS[spell?.id];
+  if (!body) return DIRECTION_GLYPH[spell?.direction] ?? DIRECTION_GLYPH.matter;
+  if (!spellGlyphs.has(spell.id)) spellGlyphs.set(spell.id, svg(body));
+  return spellGlyphs.get(spell.id);
+};
 
 // Вышивка на декоративных закладках сверху: мотылёк и веточка лаванды, стежки одной нитью.
 export const STITCH_MOTH = `<svg class="cc-stitch" viewBox="0 0 16 14" aria-hidden="true" focusable="false">

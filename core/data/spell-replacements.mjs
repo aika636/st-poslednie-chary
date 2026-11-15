@@ -5,6 +5,7 @@ export const SPELL_REPLACEMENTS = Object.freeze({
   M27: 'M05', // Обезболивание → первая помощь
   M33: 'M15', // Приживление → сильное исцеление
   M40: 'M41', // Звуковой фон → малый морок
+  M115: 'M111', // Томление → Приворот
 });
 
 export function canonicalFavorites(ids) {
