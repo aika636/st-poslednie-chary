@@ -1,12 +1,12 @@
 // Панель «Последних чар» — том заклинаний со свечой. Разметка строками от view, события через
 // data-act / data-bind. Правил здесь нет: можно ли, сколько стоит и что предупредить —
 // говорит actions.preview. Весь текст из чата, профиля и метаданных — только через esc().
-import { SCALE, THRESHOLDS, DIFFICULTIES, discountUseful, fractureLoad, scaleOf, rollsAgainst } from './core/rules.mjs?v=0.1.4';
-import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.4';
-import SHORT from './core/data/short.mjs?v=0.1.4';
-import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.4';
-import { candleSvg, candleMarks } from './candle.js?v=0.1.4';
-import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.4';
+import { SCALE, THRESHOLDS, DIFFICULTIES, discountUseful, fractureLoad, scaleOf, rollsAgainst } from './core/rules.mjs?v=0.1.5';
+import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.5';
+import SHORT from './core/data/short.mjs?v=0.1.5';
+import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.5';
+import { candleSvg, candleMarks } from './candle.js?v=0.1.5';
+import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.5';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"'`]/g, (ch) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;',
@@ -793,7 +793,7 @@ export function createPanel(actions) {
   reset.textContent = ':host { all: initial; }';
   const sheet = document.createElement('link');
   sheet.rel = 'stylesheet';
-  sheet.href = new URL('./style.css?v=0.1.4', import.meta.url).href;
+  sheet.href = new URL('./style.css?v=0.1.5', import.meta.url).href;
   const root = document.createElement('div');
   root.id = 'cc-panel';
   root.className = 'cc-panel';

@@ -1,15 +1,15 @@
 // Чистые части слоя SillyTavern: чтение метаданных без записи, сборка view для панели,
 // тексты для промпта по типу генерации, настройки, шаблоны и свои заклинания.
 // Без DOM и без SillyTavern: всё нужное приходит параметрами.
-import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.4';
-import { statusBlock, turnFact, notesOfRows } from './core/prompt.mjs?v=0.1.4';
-import { createProfile } from './core/state.mjs?v=0.1.4';
-import { customSpell, validateSpell } from './core/catalog.mjs?v=0.1.4';
-import SPELLS from './core/data/spells.mjs?v=0.1.4';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.4';
-import TAGS from './core/data/tags.mjs?v=0.1.4';
-import DIRECTIONS from './core/data/directions.mjs?v=0.1.4';
-import SOURCES from './core/data/sources.mjs?v=0.1.4';
+import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.5';
+import { statusBlock, turnFact, notesOfRows, fracturesOfRows } from './core/prompt.mjs?v=0.1.5';
+import { createProfile } from './core/state.mjs?v=0.1.5';
+import { customSpell, validateSpell } from './core/catalog.mjs?v=0.1.5';
+import SPELLS from './core/data/spells.mjs?v=0.1.5';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.5';
+import TAGS from './core/data/tags.mjs?v=0.1.5';
+import DIRECTIONS from './core/data/directions.mjs?v=0.1.5';
+import SOURCES from './core/data/sources.mjs?v=0.1.5';
 
 export const DEPTH_MIN = 0;
 export const DEPTH_MAX = 10;
@@ -153,7 +153,7 @@ export function promptTexts({ chat, meta, unsupported, enabled, type = 'normal',
   // Сказанное в факте хода не повторяется в «недавних последствиях» блока состояния,
   // а устаревшие заметки об окончании чар туда больше не попадают.
   const skipNotes = [...(fact ? notesOfRows(rows) : []), ...staleNoteIds(chat ?? [], view.rows)];
-  const status = statusBlock(view.state, { ...options, skipNotes });
+  const status = statusBlock(view.state, { ...options, skipNotes, skipFractures: fact ? fracturesOfRows(rows) : [] });
   return { status: status ?? '', fact: fact ?? '' };
 }
 

@@ -1,6 +1,6 @@
 // Тексты для модели: блок состояния (каждый ход) и факт хода (только для ответа на сообщение).
 // Только проза: никаких чисел механики, ID, цен, бросков и порогов.
-import { SCALE, scaleOf, fractureLoad } from './rules.mjs?v=0.1.4';
+import { SCALE, scaleOf, fractureLoad } from './rules.mjs?v=0.1.5';
 
 const SOURCE_GEN = { knowledge: 'знания', blood: 'крови', faith: 'веры', pact: 'договора', nature: 'природы' };
 
@@ -49,6 +49,9 @@ const END_TEXT = {
   scene: 'Сцена закончилась, и {чары} угасли. Само окончание не подтверждает, что задуманное исполнено.',
   removed: '{Чары} сняты. Само окончание не подтверждает, что задуманное исполнено.',
 };
+
+// Поручение модели: колдовство надо показать в ответе, даже если игрок его не описал.
+const SHOW_TEXT = 'Show this magic in your reply as onlookers see and hear it, even if the player\'s message does not describe it; leave the persona\'s words, thoughts and decisions to the player.';
 
 const clean = (v) => (typeof v === 'string' ? v.trim() : '');
 const upperFirst = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
@@ -124,12 +127,13 @@ function vowText(tagId, tags) {
   return vow ? `«${vow.replace(/^«|»$/gu, '')}»` : `не творить магию вида «${tagId.replace(/_/g, ' ')}»`;
 }
 
-function fractureLine(f) {
+function fractureLine(f, skip = false) {
   const kind = SOURCE_GEN[f.source] ? `Надлом ${SOURCE_GEN[f.source]}` : 'Надлом';
   const sev = SEVERITY_TEXT[Math.min(3, Math.max(1, f.severity ?? 1))];
   const m = f.manifest;
   if (m?.text) {
     const name = clean(m.name) ? ` «${clean(m.name)}»` : '';
+    if (skip) return `${kind}${name} (${sev}).`;
     return `${kind}${name} (${sev}): ${sentence(lowerFirst(clean(m.text)))}`;
   }
   return `${kind} (${sev}): надлом ещё не проявился.`;
@@ -144,7 +148,7 @@ function effectLine(e, state) {
   if (e.detail === 'compact') return aim ? `${name} (${aim})` : name;
   const parts = [aim ? `${name}, замысел: ${aim}.` : `${name}.`];
   const limit = clean(card?.limit);
-  if (limit) parts.push(`Предел чар: ${sentence(fill(lowerFirst(limit), e))}`);
+  if (limit) parts.push(`Spell limit: ${sentence(fill(lowerFirst(limit), e))}`);
   if (e.complication) parts.push('Сотворено с осложнением.');
   if (e.spell?.duration === 'bond') parts.push('Связь держится на согласии.');
   return parts.join(' ');
@@ -171,37 +175,37 @@ function effectsSection(state) {
 
 // Блок состояния: кто персона, как выглядит её магия, сколько осталось сил и что действует.
 // skipNotes — id заметок, которые уже сказаны в факте этого хода: в «недавних» их не повторяем.
-export function statusBlock(state, { sources = {}, tags = null, recentNotes = 3, skipNotes = [] } = {}) {
+export function statusBlock(state, { sources = {}, tags = null, recentNotes = 3, skipNotes = [], skipFractures = [] } = {}) {
   const p = state.profile ?? {};
   const src = sources[p.source];
-  const out = ['[Магия персоны]', WORLD_TEXT];
+  const out = ["[Persona's magic]", WORLD_TEXT];
 
   const who = clean(p.name) ? `Персона — ${clean(p.name)}.` : 'Персона игрока владеет магией.';
   out.push(src ? `${who} Источник магии — ${src.name.toLowerCase()}. ${sentence(src.trait)}` : who);
   const look = [];
-  if (clean(p.signature)) look.push(`Как выглядит и ощущается её магия: ${sentence(lowerFirst(clean(p.signature)))}`);
-  if (clean(p.expression)) look.push(`Способ выражения: ${sentence(lowerFirst(clean(p.expression)))}`);
+  if (clean(p.signature)) look.push(`How her magic looks and feels: ${sentence(lowerFirst(clean(p.signature)))}`);
+  if (clean(p.expression)) look.push(`Expression: ${sentence(lowerFirst(clean(p.expression)))}`);
   if (look.length) out.push(look.join(' '));
-  if (p.source === 'pact' && clean(p.patron)) out.push(`Покровитель: ${sentence(p.patron)}`);
+  if (p.source === 'pact' && clean(p.patron)) out.push(`Patron: ${sentence(p.patron)}`);
 
   out.push(strainText(state));
 
   const fractures = state.fractures ?? [];
-  if (fractures.length) out.push('Надломы:', ...fractures.map((f) => `— ${fractureLine(f)}`));
+  if (fractures.length) out.push('Fractures:', ...fractures.map((f) => `— ${fractureLine(f, skipFractures.includes(f.id))}`));
 
   const traits = (p.traits ?? []).map((t) => clean(t.text)).filter(Boolean);
-  if (traits.length) out.push(`Постоянные свойства: ${traits.map((t, i) => sentence(i ? t : lowerFirst(t))).join(' ')}`);
+  if (traits.length) out.push(`Permanent traits: ${traits.map((t, i) => sentence(i ? t : lowerFirst(t))).join(' ')}`);
 
   if (p.source === 'faith' && p.vows?.length) {
-    out.push(`Обеты: ${p.vows.map((v) => vowText(v, tags)).join('; ')}.`);
+    out.push(`Vows: ${p.vows.map((v) => vowText(v, tags)).join('; ')}.`);
   }
 
   const effects = effectsSection(state);
-  if (effects.length) out.push('Действующая магия (поддержание чар не расходует силы персоны):', ...effects);
+  if (effects.length) out.push('Active magic (sustaining spells costs the persona no strength):', ...effects);
 
   const debts = state.debts ?? [];
   if (debts.length) {
-    out.push('Непогашенные долги:', ...debts.map((d) => {
+    out.push('Unpaid debts:', ...debts.map((d) => {
       const whom = clean(d.patron) ? `покровителю (${clean(d.patron)})` : 'покровителю';
       const cond = clean(d.condition) ? `условие — ${stripEnd(clean(d.condition))}` : 'условие ещё не названо';
       return `— Долг ${whom}: ${cond}.`;
@@ -213,7 +217,7 @@ export function statusBlock(state, { sources = {}, tags = null, recentNotes = 3,
   const skip = new Set(skipNotes);
   const notes = recentNotes > 0 ? (state.notes ?? []).filter((n) => !skip.has(n.id)).slice(-recentNotes) : [];
   const noteLines = notes.map((n) => noteText(n, state)).filter(Boolean);
-  if (noteLines.length) out.push('Недавние последствия магии:', ...noteLines.map((n) => `— ${n}`));
+  if (noteLines.length) out.push('Recent magical consequences:', ...noteLines.map((n) => `— ${n}`));
 
   return out.join('\n');
 }
@@ -231,7 +235,7 @@ function castLines(row, last, { sources, tags }) {
   const label = targetLabel(c.target);
   const aim = clean(c.intent);
   const named = clean(card.name) ? ` «${clean(card.name)}»` : '';
-  lines.push(`Персона сотворила чудо${named}${label ? ` (цель — ${label})` : ''}${aim ? `, замысел: ${stripEnd(aim)}` : ''}.`);
+  lines.push(`The persona ${named ? `cast${named}` : 'worked a miracle'}${label ? ` (target: ${label})` : ''}${aim ? `, intent: ${stripEnd(aim)}` : ''}.`);
 
   if (c.gift === 'discount' && sources?.[row.after.profile.source]?.giftFact) {
     lines.push(sentence(sources[row.after.profile.source].giftFact));
@@ -248,8 +252,8 @@ function castLines(row, last, { sources, tags }) {
   }
 
   // Заметность и память описывают удавшийся эффект; при провале всё нужное говорит текст провала.
-  if (c.outcome !== 'failure' && clean(card.visibility)) lines.push(`Заметность: ${sentence(fill(lowerFirst(card.visibility), ctx))}`);
-  if (c.outcome !== 'failure' && clean(t.memory)) lines.push(`Память: ${sentence(fill(lowerFirst(t.memory), ctx))}`);
+  if (c.outcome !== 'failure' && clean(card.visibility)) lines.push(`Visibility: ${sentence(fill(lowerFirst(card.visibility), ctx))}`);
+  if (c.outcome !== 'failure' && clean(t.memory)) lines.push(`Memory: ${sentence(fill(lowerFirst(t.memory), ctx))}`);
 
   if (c.gift === 'loan') {
     const debt = (row.after.debts ?? []).find((d) => d.castId === row.event.id);
@@ -348,9 +352,26 @@ export function notesOfRows(rows) {
   return ids;
 }
 
+// Надломы, проявление которых уже сказано фактом этих строк: в блоке состояния без повтора текста.
+export function fracturesOfRows(rows) {
+  const ids = new Set();
+  for (const r of rows ?? []) {
+    if (!r?.ok) continue;
+    const id = r.event?.kind === 'cast' ? r.after?.casts?.[r.event.id]?.fractureId
+      : r.event?.kind === 'fracture_manifest' ? r.event.payload?.fractureId : null;
+    if (id) ids.add(id);
+  }
+  return [...ids];
+}
+
 // Факт хода по строкам журнала одного сообщения. Пустая строка — сказать нечего.
 export function turnFact(rows, { sources = {}, tags = null } = {}) {
   const done = (rows ?? []).filter((r) => r?.ok);
-  const lines = done.flatMap((r) => rowLines(r, done, { sources, tags })).filter(Boolean);
-  return lines.length ? ['[Магия в этом ходе]', ...lines].join('\n') : '';
+  let show = false;
+  const lines = done.flatMap((r) => {
+    const l = rowLines(r, done, { sources, tags }).filter(Boolean);
+    if (l.length && (r.event.kind === 'cast' || r.event.kind === 'faith_pray')) show = true;
+    return l;
+  });
+  return lines.length ? ['[Magic this turn]', ...lines, ...(show ? [SHOW_TEXT] : [])].join('\n') : '';
 }
