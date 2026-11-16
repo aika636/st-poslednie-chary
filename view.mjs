@@ -1,23 +1,25 @@
 // Чистые части слоя SillyTavern: чтение метаданных без записи, сборка view для панели,
 // тексты для промпта по типу генерации, настройки, шаблоны и свои заклинания.
 // Без DOM и без SillyTavern: всё нужное приходит параметрами.
-import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.10';
-import { statusBlock, turnFact, notesOfRows, fracturesOfRows } from './core/prompt.mjs?v=0.1.10';
-import { createProfile } from './core/state.mjs?v=0.1.10';
-import { customSpell, validateSpell } from './core/catalog.mjs?v=0.1.10';
-import SPELLS from './core/data/spells.mjs?v=0.1.10';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.10';
-import TAGS from './core/data/tags.mjs?v=0.1.10';
-import DIRECTIONS from './core/data/directions.mjs?v=0.1.10';
-import SOURCES from './core/data/sources.mjs?v=0.1.10';
+import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.11';
+import { statusBlock, turnFact, notesOfRows, fracturesOfRows } from './core/prompt.mjs?v=0.1.11';
+import { createProfile } from './core/state.mjs?v=0.1.11';
+import { customSpell, customId, validateSpell } from './core/catalog.mjs?v=0.1.11';
+import SPELLS from './core/data/spells.mjs?v=0.1.11';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.11';
+import TAGS from './core/data/tags.mjs?v=0.1.11';
+import DIRECTIONS from './core/data/directions.mjs?v=0.1.11';
+import SOURCES from './core/data/sources.mjs?v=0.1.11';
 
 export const DEPTH_MIN = 0;
 export const DEPTH_MAX = 10;
 export const THEMES = ['amethyst', 'tavern'];
-export const DEFAULT_SETTINGS = Object.freeze({ enabled: true, depth: 1, templates: [], theme: 'amethyst', desire: false, free: false });
+export const DEFAULT_SETTINGS = Object.freeze({ enabled: true, depth: 1, templates: [], theme: 'amethyst', desire: false, free: false, customSpells: [], customDeleted: [] });
 
 // Школа, выключенная по умолчанию: её чары и вкладка видны только при включённой настройке.
 export const OPTIONAL_SCHOOL = 'desire';
+// Тег, доступный только вместе с этой школой.
+export const OPTIONAL_TAG = 'навязанное_влечение';
 
 // Генерации, которым факт хода не нужен.
 const NO_FACT_TYPES = new Set(['quiet', 'impersonate']);
@@ -83,31 +85,73 @@ const withoutLegacy = (card) => {
   return rest;
 };
 
-// Свои заклинания из метаданных: только годные карточки (данные могли быть испорчены руками).
-export function customSpellsOf(meta) {
-  const list = Array.isArray(meta?.customSpells) ? meta.customSpells : [];
-  return list.map(withoutLegacy).filter((card) => validateSpell(card).length === 0);
+// Годные карточки из списка (данные могли быть испорчены руками); повтор id — первая побеждает.
+function validCards(raw) {
+  const seen = new Set();
+  return (Array.isArray(raw) ? raw : []).map(withoutLegacy).filter((card) => {
+    if (validateSpell(card).length || seen.has(card.id)) return false;
+    seen.add(card.id);
+    return true;
+  });
 }
 
-export function allSpells(meta, builtin = SPELLS, { desire = false } = {}) {
-  const custom = customSpellsOf(meta);
+const textIds = (raw) => [...new Set((Array.isArray(raw) ? raw : []).filter(isText))];
+
+// Свои заклинания: общие из настроек, затем (для старых чатов) такие же из метаданных чата,
+// которых нет среди общих и которые не удалены. Общие по id главнее.
+export function customSpellsOf(meta, settings = null) {
+  const own = validCards(meta?.customSpells);
+  if (!settings) return own;
+  const shared = validCards(settings.customSpells);
+  const skip = new Set([...shared.map((s) => s.id), ...textIds(settings.customDeleted)]);
+  return [...shared, ...own.filter((s) => !skip.has(s.id))];
+}
+
+export function allSpells(meta, builtin = SPELLS, { desire = false, settings = null } = {}) {
+  const custom = customSpellsOf(meta, settings);
   const ids = new Set(custom.map((s) => s.id));
   return [...builtin.filter((s) => !ids.has(s.id) && (desire || s.direction !== OPTIONAL_SCHOOL)), ...custom];
 }
 
-// Своё заклинание в метаданные (мутирует meta): с тем же id — заменяется.
-export function addCustomSpell(meta, input) {
+// Своё заклинание из старых метаданных чата — в общие настройки. Возвращает patch для настроек или null;
+// метаданные не меняются.
+export function migrateCustom(settings, meta) {
+  const s = normalizeSettings(settings);
+  const have = new Set(s.customSpells.map((c) => c.id));
+  const gone = new Set(s.customDeleted);
+  const add = validCards(meta?.customSpells).filter((c) => !have.has(c.id) && !gone.has(c.id) && !SPELLS.some((b) => b.id === c.id));
+  return add.length ? { customSpells: [...s.customSpells, ...add] } : null;
+}
+
+// Сохранение своего заклинания в общие настройки: без editId — новое (id по названию, занятый получает
+// суффикс), с editId — правка, id не меняется. Возвращает { ok, errors, card, patch }.
+export function saveCustomSpell(settings, meta, input, { editId = null } = {}) {
+  const fail = (msg) => ({ ok: false, errors: [msg], card: null, patch: null });
+  const s = normalizeSettings(settings);
+  const shared = s.customSpells;
+  const known = customSpellsOf(meta, s);
+  if (editId !== null && !known.some((c) => c.id === editId)) return fail('такого заклинания уже нет');
+  if (!s.desire && (input?.direction === OPTIONAL_SCHOOL || (input?.tags ?? []).includes(OPTIONAL_TAG))) {
+    return fail('школа «Чары влечения» выключена в настройках');
+  }
+  const taken = [...SPELLS.map((c) => c.id), ...known.map((c) => c.id), ...s.customDeleted];
   let card;
   try {
-    card = customSpell(input);
+    card = customSpell({ ...input, id: editId ?? customId(input?.name ?? '', taken) });
   } catch (err) {
-    return { ok: false, errors: [String(err?.message ?? err)], card: null };
+    return fail(String(err?.message ?? err));
   }
-  if (SPELLS.some((s) => s.id === card.id)) return { ok: false, errors: ['такой id уже занят встроенным заклинанием'], card: null };
-  const list = Array.isArray(meta.customSpells) ? meta.customSpells.filter((s) => s?.id !== card.id) : [];
-  list.push(card);
-  meta.customSpells = list;
-  return { ok: true, errors: [], card };
+  const customSpells = editId !== null && shared.some((c) => c.id === editId)
+    ? shared.map((c) => (c.id === editId ? card : c))
+    : [...shared, card];
+  return { ok: true, errors: [], card, patch: { customSpells } };
+}
+
+// Удаление: из общих настроек, id запоминается, чтобы перенос из метаданных его не вернул.
+export function deleteCustomSpell(settings, id) {
+  const s = normalizeSettings(settings);
+  if (!isText(id) || !String(id).startsWith('custom:')) return null;
+  return { customSpells: s.customSpells.filter((c) => c.id !== id), customDeleted: [...new Set([...s.customDeleted, id])] };
 }
 
 export function normalizeSettings(raw) {
@@ -120,6 +164,8 @@ export function normalizeSettings(raw) {
     theme: THEMES.includes(s.theme) ? s.theme : DEFAULT_SETTINGS.theme,
     desire: s.desire === true,
     free: s.free === true,
+    customSpells: validCards(s.customSpells),
+    customDeleted: textIds(s.customDeleted),
   };
 }
 
@@ -158,14 +204,15 @@ export function promptTexts({ chat, meta, unsupported, enabled, type = 'normal',
   // Сказанное в факте хода не повторяется в «недавних последствиях» блока состояния,
   // а устаревшие заметки об окончании чар туда больше не попадают.
   const skipNotes = [...(fact ? notesOfRows(rows) : []), ...staleNoteIds(chat ?? [], view.rows)];
-  const status = statusBlock(view.state, { ...options, skipNotes, skipFractures: fact ? fracturesOfRows(rows) : [] });
+  const status = statusBlock(view.state, { ...options, skipNotes, skipFractures: fact ? fracturesOfRows(rows) : [], brief: !fact });
   return { status: status ?? '', fact: fact ?? '' };
 }
 
 // Данные каталога для панели.
-export function viewData(meta, { desire = false } = {}) {
+export function viewData(meta, settings = {}) {
+  const desire = settings?.desire === true;
   const directions = desire ? DIRECTIONS : DIRECTIONS.filter((d) => d.id !== OPTIONAL_SCHOOL);
-  return { spells: allSpells(meta, SPELLS, { desire }), fractures: FRACTURES, tags: TAGS, directions, sources: SOURCES };
+  return { spells: allSpells(meta, SPELLS, { desire, settings }), fractures: FRACTURES, tags: TAGS, directions, allDirections: DIRECTIONS, sources: SOURCES };
 }
 
 // View для панели (форма — в договоре ui-contract).

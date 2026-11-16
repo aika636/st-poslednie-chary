@@ -1,6 +1,6 @@
 // Тексты для модели: блок состояния (каждый ход) и факт хода (только для ответа на сообщение).
 // Только проза: никаких чисел механики, ID, цен, бросков и порогов.
-import { scaleFor, scaleOf, fractureLoad } from './rules.mjs?v=0.1.10';
+import { scaleFor, scaleOf, fractureLoad } from './rules.mjs?v=0.1.11';
 
 const SOURCE_GEN = { knowledge: 'знания', blood: 'крови', faith: 'веры', pact: 'договора', nature: 'природы' };
 
@@ -50,6 +50,8 @@ function strainText(state, { free = false } = {}) {
   if (state.profile?.source === 'faith' && !state.giftUsed) return LIMIT_SAFE_TEXT[kind] + MERCY_TEXT;
   return kind === 'none' ? STRAIN_TEXT[4] : LIMIT_FRACTURES_TEXT[kind];
 }
+
+const CALM_TEXT = 'Сейчас никакая магия не действует, силы персоны свободны.';
 
 const SEVERITY_TEXT = {
   1: 'лёгкий, проявляется время от времени',
@@ -200,18 +202,36 @@ function effectsSection(state) {
 
 // Блок состояния: кто персона, как выглядит её магия, сколько осталось сил и что действует.
 // skipNotes — id заметок, которые уже сказаны в факте этого хода: в «недавних» их не повторяем.
-export function statusBlock(state, { sources = {}, tags = null, recentNotes = 3, skipNotes = [], skipFractures = [], free = false } = {}) {
+// brief — в покое (ничего не занято и не действует) отдаёт короткий блок без общего описания мира.
+export function statusBlock(state, { sources = {}, tags = null, recentNotes = 3, skipNotes = [], skipFractures = [], free = false, brief = false } = {}) {
   const p = state.profile ?? {};
   const src = sources[p.source];
-  const out = ["[Persona's magic]", WORLD_TEXT];
+
+  const skip = new Set(skipNotes);
+  const active = new Set((state.effects ?? []).map((e) => e.spell?.id).filter(Boolean));
+  const again = (n) => n.kind === 'effect-end' && n.spell?.id && active.has(n.spell.id);
+  const notes = recentNotes > 0 ? (state.notes ?? []).filter((n) => !skip.has(n.id) && !again(n)).slice(-recentNotes) : [];
+  const noteLines = notes.map((n) => noteText(n, state)).filter(Boolean);
+
+  const calm = brief && scaleOf(state) === 0 && !(state.fractures ?? []).length && !(state.effects ?? []).length
+    && !(state.debts ?? []).length && !(p.traits ?? []).some((t) => clean(t.text)) && !noteLines.length;
+  const out = ["[Persona's magic]"];
+  if (!calm) out.push(WORLD_TEXT);
 
   const who = clean(p.name) ? `Персона — ${clean(p.name)}.` : 'Персона игрока владеет магией.';
-  out.push(src ? `${who} Источник магии — ${src.name.toLowerCase()}. ${sentence(src.trait)}` : who);
+  if (calm) out.push(`${clean(p.name) ? `Персона — ${clean(p.name)}, владеет магией` : 'Персона игрока владеет магией'}${src ? `; источник — ${src.name.toLowerCase()}` : ''}.`);
+  else out.push(src ? `${who} Источник магии — ${src.name.toLowerCase()}. ${sentence(src.trait)}` : who);
   const look = [];
   if (clean(p.signature)) look.push(`How the persona's magic looks and feels: ${sentence(lowerFirst(clean(p.signature)))}`);
   if (clean(p.expression)) look.push(`Expression: ${sentence(lowerFirst(clean(p.expression)))}`);
   if (look.length) out.push(look.join(' '));
   if (p.source === 'pact' && clean(p.patron)) out.push(`Patron: ${sentence(p.patron)}`);
+
+  if (calm) {
+    if (p.source === 'faith' && p.vows?.length) out.push(`Vows: ${p.vows.map((v) => vowText(v, tags)).join('; ')}.`);
+    out.push(CALM_TEXT);
+    return out.join('\n');
+  }
 
   out.push(strainText(state, { free }));
 
@@ -237,11 +257,6 @@ export function statusBlock(state, { sources = {}, tags = null, recentNotes = 3,
     }));
   }
 
-  const skip = new Set(skipNotes);
-  const active = new Set((state.effects ?? []).map((e) => e.spell?.id).filter(Boolean));
-  const again = (n) => n.kind === 'effect-end' && n.spell?.id && active.has(n.spell.id);
-  const notes = recentNotes > 0 ? (state.notes ?? []).filter((n) => !skip.has(n.id) && !again(n)).slice(-recentNotes) : [];
-  const noteLines = notes.map((n) => noteText(n, state)).filter(Boolean);
   if (noteLines.length) out.push('Recent magical consequences:', ...noteLines.map((n) => `— ${n}`));
 
   return out.join('\n');

@@ -2,20 +2,20 @@
 import {
   META_KEY, MODES, previewCommand, enqueue as coreEnqueue, dequeue as coreDequeue, commitPending,
   toggleEvent as coreToggleEvent, computeChat,
-} from './core/chat-journal.mjs?v=0.1.10';
-import { createSnapshot } from './core/state.mjs?v=0.1.10';
-import { statusBlock } from './core/prompt.mjs?v=0.1.10';
+} from './core/chat-journal.mjs?v=0.1.11';
+import { createSnapshot } from './core/state.mjs?v=0.1.11';
+import { statusBlock } from './core/prompt.mjs?v=0.1.11';
 import {
   readMeta, worthWarning, hasProfile, hasHistory, canSwitchMode, buildView, promptTexts, normalizeSettings, clampDepth,
-  upsertTemplate, removeTemplate, addCustomSpell as addCustomSpellTo, PROMPT_OPTIONS, DEPTH_MIN, DEPTH_MAX,
-} from './view.mjs?v=0.1.10';
-import { createPanel, candleHtml } from './ui.js?v=0.1.10';
-import { levelGrew, playFx } from './candle.js?v=0.1.10';
-import { scaleOf } from './core/rules.mjs?v=0.1.10';
-import { clampOffset } from './view.mjs?v=0.1.10';
-import { createDicePresenter } from './dice.js?v=0.1.10';
-import { buildMatchers, findSpell } from './hint.js?v=0.1.10';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.10';
+  upsertTemplate, removeTemplate, saveCustomSpell as saveCustomSpellTo, deleteCustomSpell as deleteCustomSpellFrom, migrateCustom, PROMPT_OPTIONS, DEPTH_MIN, DEPTH_MAX,
+} from './view.mjs?v=0.1.11';
+import { createPanel, candleHtml } from './ui.js?v=0.1.11';
+import { levelGrew, playFx } from './candle.js?v=0.1.11';
+import { scaleOf } from './core/rules.mjs?v=0.1.11';
+import { clampOffset } from './view.mjs?v=0.1.11';
+import { createDicePresenter } from './dice.js?v=0.1.11';
+import { buildMatchers, findSpell } from './hint.js?v=0.1.11';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.11';
 
 const MODULE = 'cena-chuda';
 const SETTINGS_KEY = 'cenaChuda';
@@ -241,14 +241,21 @@ const actions = {
     mutate((meta, chat) => (coreToggleEvent(chat, meta, eventId) ? { write: true } : {}));
   },
 
-  addCustomSpell(input) {
-    let r = { ok: false, errors: [] };
-    mutate((meta) => {
-      r = addCustomSpellTo(meta, input);
-      return r.ok ? { write: true } : {};
-    });
-    if (!r.ok && !r.errors.length) r.errors = [hasProfile(current().meta) ? 'изменения в этом чате недоступны' : 'сначала создайте профиль'];
-    return { ok: r.ok, errors: r.errors };
+  // Свои чары общие для всех чатов и лежат в настройках, а не в метаданных чата.
+  saveCustomSpell(input, editId = null) {
+    const r = saveCustomSpellTo(readSettings(), current().meta, input, { editId });
+    if (!r.ok) return { ok: false, errors: r.errors };
+    writeSettings(r.patch);
+    refresh();
+    return { ok: true, errors: [], id: r.card.id };
+  },
+
+  deleteCustomSpell(id) {
+    const patch = deleteCustomSpellFrom(readSettings(), id);
+    if (!patch) return { ok: false, errors: ['так не получится удалить'] };
+    writeSettings(patch);
+    refresh();
+    return { ok: true, errors: [] };
   },
 
   setEnabled(on) {
@@ -318,6 +325,8 @@ function refresh() {
     try {
       const cur = current();
       warnUnsupported(cur);
+      const moved = cur.open && !cur.unsupported ? migrateCustom(readSettings(), cur.meta) : null;
+      if (moved) writeSettings(moved);
       const view = buildView({
         chatOpen: cur.open, chatId: chatId(), chat: cur.chat, meta: cur.meta, unsupported: cur.unsupported, settings: readSettings(),
       });
@@ -469,7 +478,7 @@ function mountFonts() {
   const link = document.createElement('link');
   link.id = 'cc-fonts';
   link.rel = 'stylesheet';
-  link.href = new URL('./fonts/fonts.css?v=0.1.10', import.meta.url).href;
+  link.href = new URL('./fonts/fonts.css?v=0.1.11', import.meta.url).href;
   document.head.append(link);
 }
 
@@ -478,7 +487,7 @@ function mountStyle() {
   const link = document.createElement('link');
   link.id = 'cc-style';
   link.rel = 'stylesheet';
-  link.href = new URL('./style.css?v=0.1.10', import.meta.url).href;
+  link.href = new URL('./style.css?v=0.1.11', import.meta.url).href;
   document.head.append(link);
 }
 
@@ -487,7 +496,7 @@ function mountDiceStyles() {
   const link = document.createElement('link');
   link.id = 'cc-dice-style';
   link.rel = 'stylesheet';
-  link.href = new URL('./dice.css?v=0.1.10', import.meta.url).href;
+  link.href = new URL('./dice.css?v=0.1.11', import.meta.url).href;
   document.head.append(link);
 }
 

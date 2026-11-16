@@ -1,9 +1,9 @@
 // Каталог: проверка карточек заклинаний и надломов, поиск, копия карточки для каста,
 // минимальная форма своего заклинания.
-import { RESISTANCES, DURATIONS, SOURCES, rollsAgainst } from './rules.mjs?v=0.1.10';
-import { EFFECT_END_REASONS } from './journal.mjs?v=0.1.10';
-import DIRECTIONS from './data/directions.mjs?v=0.1.10';
-import TAGS from './data/tags.mjs?v=0.1.10';
+import { RESISTANCES, DURATIONS, SOURCES, rollsAgainst } from './rules.mjs?v=0.1.11';
+import { EFFECT_END_REASONS } from './journal.mjs?v=0.1.11';
+import DIRECTIONS from './data/directions.mjs?v=0.1.11';
+import TAGS from './data/tags.mjs?v=0.1.11';
 
 export const LABELS = ['бой', 'быт', 'социалка'];
 export const PLACEHOLDERS = ['цель', 'замысел'];
@@ -186,14 +186,24 @@ export const castCard = (card) => structuredClone(card);
 
 const slug = (name) => fold(name).replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '');
 
-// Своё заклинание из минимальной формы. Недостающее заполняется нейтральными значениями;
-// при ошибке в данных бросает исключение со списком проблем.
+// id по названию; занятый id получает суффикс -2, -3…
+export function customId(name, taken = []) {
+  const base = `custom:${slug(name) || 'чара'}`;
+  const used = new Set(taken);
+  let id = base;
+  for (let n = 2; used.has(id); n += 1) id = `${base}-${n}`;
+  return id;
+}
+
+// Своё заклинание из формы. Недостающее заполняется нейтральными значениями;
+// осложнение хранится только при пороге, заметки окончания — только у длящихся чар.
+// id задаётся при правке; при ошибке в данных бросает исключение со списком проблем.
 export function customSpell({
-  name, cost = 1, resist = 'none', duration = 'instant', target, limit, success, failure,
-  direction = 'matter', labels = [], tags = [], visibility, memory, complication,
+  id: givenId, name, cost = 1, resist = 'none', duration = 'instant', target, limit, success, failure,
+  direction = 'matter', labels = [], tags = [], visibility, memory, complication, end,
 } = {}) {
   if (!isText(name)) throw new Error('у своего заклинания нет названия');
-  const id = `custom:${slug(name)}`;
+  const id = isText(givenId) ? givenId : customId(name);
   const texts = {
     success: isText(success) ? success.trim() : 'Чудо удалось: {замысел}.',
     failure: isText(failure) ? failure.trim() : 'Чудо не удалось: задуманный эффект не наступил.',
@@ -204,13 +214,17 @@ export function customSpell({
       ? complication.trim()
       : 'Чудо удалось, но с малым неудобством: заминка, шум или привлечённый взгляд.';
   }
+  if (duration !== 'instant' && isPlainObject(end)) {
+    const notes = Object.fromEntries(Object.entries(end).filter(([, v]) => isText(v)).map(([k, v]) => [k, v.trim()]));
+    if (Object.keys(notes).length) texts.end = notes;
+  }
   const card = {
     id,
     name: name.trim(),
     direction,
     cost,
-    labels: [...labels],
-    tags: [...tags],
+    labels: [...new Set(labels)],
+    tags: [...new Set(tags)],
     resist,
     duration,
     target: isText(target) ? target.trim() : 'По замыслу игрока',

@@ -1,12 +1,12 @@
 // Панель «Последних чар» — том заклинаний со свечой. Разметка строками от view, события через
 // data-act / data-bind. Правил здесь нет: можно ли, сколько стоит и что предупредить —
 // говорит actions.preview. Весь текст из чата, профиля и метаданных — только через esc().
-import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.10';
-import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.10';
-import SHORT from './core/data/short.mjs?v=0.1.10';
-import { clampOffset, canSwitchMode } from './view.mjs?v=0.1.10';
-import { candleSvg, candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.10';
-import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.10';
+import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.11';
+import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.11';
+import SHORT from './core/data/short.mjs?v=0.1.11';
+import { clampOffset, canSwitchMode, OPTIONAL_TAG } from './view.mjs?v=0.1.11';
+import { candleSvg, candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.11';
+import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.11';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"'`]/g, (ch) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;',
@@ -44,7 +44,23 @@ const MASTERY_TITLE = { novice: 'Шкала 3', adept: 'Шкала 4', master: '
 // ---------- состояние панели ----------
 
 const emptyOpts = () => ({ difficulty: 'normal', gift: false, debt: '' });
-const emptyCustom = () => ({ name: '', cost: 1, resist: 'none', duration: 'instant', target: '', limit: '', success: '', failure: '' });
+const emptyCustom = () => ({
+  name: '', cost: 1, resist: 'none', duration: 'instant', direction: 'matter', target: '', limit: '', success: '', failure: '',
+  labels: [], tags: [], visibility: '', memory: '', complication: '', end: { done: '', removed: '', scene: '' }, endRest: {},
+});
+// Форма по готовой карточке; причины окончания без своего поля уходят в endRest и возвращаются при сохранении.
+const customFromCard = (card) => {
+  const t = card.texts ?? {};
+  const { done = '', removed = '', scene = '', ...endRest } = t.end ?? {};
+  return {
+    name: card.name, cost: card.cost, resist: card.resist, duration: card.duration, direction: card.direction,
+    target: card.target, limit: card.limit, success: t.success ?? '', failure: t.failure ?? '',
+    labels: [...list(card.labels)], tags: [...list(card.tags)], visibility: card.visibility ?? '', memory: t.memory ?? '',
+    complication: t.complication ?? '', end: { done, removed, scene }, endRest,
+  };
+};
+const toggled = (arr, v, on) => (on ? [...new Set([...list(arr), v])] : list(arr).filter((x) => x !== v));
+const isOwn = (spell) => String(spell?.id ?? '').startsWith('custom:');
 const emptyDraft = () => ({ name: '', source: 'knowledge', mastery: 'adept', signature: '', expression: '', vows: [], patron: '' });
 
 export function initialUi() {
@@ -53,7 +69,7 @@ export function initialUi() {
     layout: 'spread', school: '', listScroll: 0,
     q: '', label: '',
     spellId: null, lastSpellId: null, opts: emptyOpts(),
-    custom: emptyCustom(), customErrors: [],
+    custom: emptyCustom(), customErrors: [], customEdit: null, customFrom: false, customDelete: null, customMoreOpen: false,
     manifestFor: null, acceptFor: null, accept: { text: '', tag: '' },
     noteText: '', traitText: '',
     profileDraft: null, createError: '',
@@ -470,6 +486,7 @@ export function leafHtml(view, ui, preview, spell) {
     <div class="cc-leaf-go">${queued
     ? `<span class="cc-ok-text">✦ В очереди — уйдёт с вашим сообщением</span>${btn('dequeue', 'Убрать', { v: queued.id, cls: 'cc-ghost' })}`
     : `${btn('cast', 'В очередь', { v: spell.id, cls: 'cc-primary' })}${gift ? btn('cast-gift', giftLabel, { v: spell.id, cls: 'cc-ghost cc-gift' }) : ''}`}</div>
+    <div class="cc-leaf-own">${isOwn(spell) ? btn('custom-edit', 'Изменить', { v: spell.id, cls: 'cc-ghost' }) : btn('custom-copy', 'Сделать своей', { v: spell.id, cls: 'cc-ghost' })}</div>
   </article>`;
 }
 
@@ -639,12 +656,38 @@ const profileFromDraft = (d) => ({
   vows: d.source === 'faith' ? [...d.vows] : [], patron: d.source === 'pact' ? clean(d.patron) : '',
 });
 
-function customHtml(ui) {
+function customHtml(view, ui) {
   const c = ui.custom;
+  const desire = view.settings?.desire === true;
+  const dirs = list(view.data?.directions);
+  const dirOpts = dirs.some((d) => d.id === c.direction) ? dirs : [...dirs, ...list(view.data?.allDirections).filter((d) => d.id === c.direction)];
+  const tags = list(view.data?.tags).filter((t) => t.id !== OPTIONAL_TAG || desire || c.tags.includes(t.id));
+  const editing = ui.customEdit !== null;
+  const mine = list(view.data?.spells).filter(isOwn);
   const RESIST = { none: 'без сопротивления', consent: 'по согласию', soft: 'мягкое', hard: 'жёсткое' };
   const DURATION = { instant: 'мгновенно', scene: 'до конца сцены', sustained: 'пока держится', bond: 'связь' };
   const opt = (map, value) => Object.entries(map).map(([k, l]) => `<option value="${esc(k)}"${attr('selected', k === value)}>${esc(l)}</option>`).join('');
-  return `${field('Название', textInput('custom.name', c.name, 'Например: Тёплый ветер', { maxlength: 80, id: 'cc-c-name' }))}
+  const ownRow = (s) => {
+    const sure = ui.customDelete === s.id;
+    return `<div class="cc-own" data-editing="${ui.customEdit === s.id}"><span class="cc-own-name">${esc(s.name)}</span><span class="cc-own-btns">${btn('custom-edit', 'Изменить', { v: s.id, cls: 'cc-ghost' })}${sure
+      ? `${btn('custom-del-go', 'Точно удалить?', { v: s.id, cls: 'cc-danger' })}${btn('custom-del-no', 'Не надо', { cls: 'cc-ghost' })}`
+      : btn('custom-del', 'Удалить', { v: s.id, cls: 'cc-ghost' })}</span></div>`;
+  };
+  const checks = (act, items, chosen) => `<div class="cc-picks">${items.map(([id, label, hint]) => `<label class="cc-pick"${hint ? ` title="${esc(hint)}"` : ''}><input type="checkbox" data-act="${act}" data-v="${esc(id)}"${attr('checked', chosen.includes(id))}><span>${esc(label)}</span></label>`).join('')}</div>`;
+  const more = `<details class="cc-more cc-custom-more" data-custom-more${attr('open', ui.customMoreOpen)}><summary>Подробнее</summary><div class="cc-more-body">
+      <div class="cc-field"><span>Метки</span>${checks('custom-label', LABELS.map((l) => [l, capFirst(l)]), c.labels)}</div>
+      <div class="cc-field"><span>Что делает чудо</span>${checks('custom-tag', tags.map((t) => [t.id, t.label, t.when]), c.tags)}<small>Верующая персона с таким обетом получит предупреждение.</small></div>
+      ${field('Как заметно', textInput('custom.visibility', c.visibility, 'Что видят и слышат окружающие', { area: true, id: 'cc-c-vis' }))}
+      ${field('Что помнят свидетели', textInput('custom.memory', c.memory, 'Что остаётся в памяти тех, кто заметил', { area: true, id: 'cc-c-mem' }))}
+      ${rollsAgainst({ resist: c.resist }) ? field('Если вышло с осложнением', textInput('custom.complication', c.complication, 'Чудо удалось, но…', { area: true, id: 'cc-c-comp' })) : ''}
+      ${c.duration !== 'instant' ? `${field('Закончилось само', textInput('custom.end.done', c.end.done, 'Что заметно, когда чары истекли (необязательно)', { area: true, id: 'cc-c-end-done' }))}
+      ${field('Снято', textInput('custom.end.removed', c.end.removed, 'Что заметно, когда чары сняли (необязательно)', { area: true, id: 'cc-c-end-removed' }))}
+      ${field('Конец сцены', textInput('custom.end.scene', c.end.scene, 'Что заметно, когда сцена кончилась (необязательно)', { area: true, id: 'cc-c-end-scene' }))}` : ''}
+    </div></details>`;
+  return `${mine.length ? `<div class="cc-own-list">${mine.map(ownRow).join('')}</div>` : '<p class="cc-small">Своих заклинаний пока нет. Свои чары общие для всех чатов.</p>'}
+    ${editing ? `<p class="cc-small cc-own-now">Правка: «${esc(mine.find((s) => s.id === ui.customEdit)?.name ?? c.name)}»</p>` : ''}
+    ${field('Название', textInput('custom.name', c.name, 'Например: Тёплый ветер', { maxlength: 80, id: 'cc-c-name' }))}
+    ${field('Школа', `<select class="cc-input" data-bind="custom.direction" id="cc-c-dir">${dirOpts.map((d) => `<option value="${esc(d.id)}"${attr('selected', d.id === c.direction)}>${esc(d.name)}</option>`).join('')}</select>`)}
     <div class="cc-grid3">
       ${field('Цена', `<select class="cc-input" data-bind="custom.cost" data-num="1" id="cc-c-cost">${[0, 1, 2, 3].map((n) => `<option value="${n}"${attr('selected', Number(c.cost) === n)}>${n}</option>`).join('')}</select>`)}
       ${field('Сопротивление', `<select class="cc-input" data-bind="custom.resist" id="cc-c-res">${opt(RESIST, c.resist)}</select>`)}
@@ -654,8 +697,9 @@ function customHtml(ui) {
     ${field('Предел', textInput('custom.limit', c.limit, 'Чего чудо не делает', { area: true, id: 'cc-c-limit' }))}
     ${field('Если удалось', textInput('custom.success', c.success, 'Текст для модели', { area: true, id: 'cc-c-ok' }))}
     ${field('Если не вышло', textInput('custom.failure', c.failure, 'Текст для модели: эффект не наступил', { area: true, id: 'cc-c-fail' }))}
+    ${more}
     ${list(ui.customErrors).map((e) => warnBox(e, 'cc-bad')).join('')}
-    <div class="cc-inline">${btn('custom-save', 'Добавить в том')}</div>`;
+    <div class="cc-inline">${btn('custom-save', editing ? 'Сохранить' : 'Добавить в том')}${editing || ui.customFrom ? btn('custom-cancel', 'Отмена', { cls: 'cc-ghost' }) : ''}</div>`;
 }
 
 function notesHtml(view, ui) {
@@ -731,7 +775,7 @@ function morePage(view, ui) {
   const block = (key, title, body) => `<details class="cc-more" data-more="${key}"${attr('open', ui.moreOpen === key)}><summary>${esc(title)}</summary><div class="cc-more-body">${body}</div></details>`;
   return [
     block('profile', 'Профиль персоны', `${profileFields(d, view.data)}<div class="cc-inline">${btn('prof-save', 'Сохранить', { disabled: !changed })}${changed ? btn('prof-reset', 'Как было', { cls: 'cc-ghost' }) : ''}</div><p class="cc-small">Изменения уйдут с вашим следующим сообщением.</p>`),
-    block('custom', 'Своё заклинание', customHtml(ui)),
+    block('custom', 'Своё заклинание', customHtml(view, ui)),
     block('notes', 'Заметки и постоянные свойства', notesHtml(view, ui)),
     block('journal', 'Журнал событий', journalHtml(view)),
     block('settings', 'Настройки', settingsHtml(view)),
@@ -825,7 +869,7 @@ export function createPanel(actions) {
   reset.textContent = ':host { all: initial; }';
   const sheet = document.createElement('link');
   sheet.rel = 'stylesheet';
-  sheet.href = new URL('./style.css?v=0.1.10', import.meta.url).href;
+  sheet.href = new URL('./style.css?v=0.1.11', import.meta.url).href;
   const root = document.createElement('div');
   root.id = 'cc-panel';
   root.className = 'cc-panel';
@@ -941,6 +985,10 @@ export function createPanel(actions) {
     const last = list(view.pending).at(-1);
     if (last?.kind === 'profile_patch' && Object.keys(last.payload ?? {}).length === 1 && fieldName in last.payload) actions.dequeue(last.id);
     enqueue('profile_patch', { [fieldName]: next });
+  }
+
+  function resetCustom() {
+    Object.assign(ui, { custom: emptyCustom(), customErrors: [], customEdit: null, customFrom: false, customDelete: null });
   }
 
   function ensureDraft() {
@@ -1064,13 +1112,35 @@ export function createPanel(actions) {
       }
       case 'prof-template': if (s) actions.saveTemplate(structuredClone(s.profile)); return;
       case 'custom-save': {
-        const r = actions.addCustomSpell({ ...ui.custom, cost: Number(ui.custom.cost) });
+        const c = ui.custom;
+        const input = { ...c, cost: Number(c.cost), end: { ...c.endRest, ...c.end } };
+        const r = actions.saveCustomSpell(input, ui.customEdit);
         Promise.resolve(r).then((res) => {
           if (res?.ok === false) ui.customErrors = list(res.errors).length ? res.errors : ['Не получилось сохранить.'];
-          else { ui.custom = emptyCustom(); ui.customErrors = []; }
+          else { resetCustom(); scrollTop = true; }
           paint();
         }, (err) => { ui.customErrors = [err?.message ?? 'Не получилось сохранить.']; paint(); });
         return;
+      }
+      case 'custom-cancel': resetCustom(); break;
+      case 'custom-edit':
+      case 'custom-copy': {
+        const spell = spellById(v);
+        if (!spell) return;
+        const copy = act === 'custom-copy';
+        ui.custom = customFromCard(spell);
+        if (copy) ui.custom.name = `${spell.name} (своё)`;
+        Object.assign(ui, { customEdit: copy ? null : v, customFrom: copy, customErrors: [], customDelete: null, customMoreOpen: false, tab: 'more', moreOpen: 'custom' });
+        scrollTop = true;
+        break;
+      }
+      case 'custom-del': ui.customDelete = v; break;
+      case 'custom-del-no': ui.customDelete = null; break;
+      case 'custom-del-go': {
+        ui.customDelete = null;
+        if (ui.customEdit === v) resetCustom();
+        actions.deleteCustomSpell(v);
+        break;
       }
       case 'toggle-event': actions.toggleEvent(v); return;
       default: return;
@@ -1119,6 +1189,8 @@ export function createPanel(actions) {
       return;
     }
     switch (act) {
+      case 'custom-label': ui.custom.labels = toggled(ui.custom.labels, v, el.checked); paint(); return;
+      case 'custom-tag': ui.custom.tags = toggled(ui.custom.tags, v, el.checked); paint(); return;
       case 'prof-vow': ensureDraft(); ui.profileDraft.vows = el.checked ? [...ui.profileDraft.vows, v] : ui.profileDraft.vows.filter((x) => x !== v); paint(); return;
       case 'enabled': actions.setEnabled(el.checked); return;
       case 'desire': actions.setDesire?.(el.checked); return;
@@ -1147,6 +1219,7 @@ export function createPanel(actions) {
   root.addEventListener('compositionend', (ev) => { if (ev.target?.dataset?.bind === 'q') paint(); });
   // toggle у <details> не всплывает — ловим на погружении, чтобы перерисовка помнила раскрытое.
   root.addEventListener('toggle', (ev) => {
+    if (ev.target?.dataset?.customMore !== undefined) { ui.customMoreOpen = ev.target.open; return; }
     const key = ev.target?.dataset?.more;
     if (key) {
       if (ev.target.open) ui.moreOpen = key;

@@ -549,6 +549,10 @@
 #cc-panel .cc-num { width: 72px; }
 #cc-panel .cc-row-field { grid-template-columns: 1fr auto; align-items: center; }
 #cc-panel .cc-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+@media (max-width: 520px) {
+  #cc-panel .cc-grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #cc-panel .cc-grid3 > :nth-child(2) { grid-column: 1 / -1; order: 3; }
+}
 #cc-panel .cc-check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; cursor: pointer; }
 #cc-panel .cc-check input { margin-top: 3px; accent-color: var(--cc-accent); }
 #cc-panel .cc-add { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: end; }
@@ -1538,3 +1542,18 @@
 #cc-panel .cc-tome-candle .cc-candle-n { white-space:nowrap; }
 @media (max-width:700px) { #cc-panel .cc-tome-candle .cc-candle-n { font-size:12px; padding:2px 5px; translate:-14px 0; } }
 #cc-open .cc-candle-n { white-space:nowrap; }
+
+/* Редактор своих чар */
+#cc-panel .cc-own-list { display: grid; gap: 6px; }
+#cc-panel .cc-own { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 6px 8px; border: 1px solid var(--cc-line); border-radius: 3px; }
+#cc-panel .cc-own[data-editing="true"] { border-color: var(--cc-accent); }
+#cc-panel .cc-own-name { flex: 1 1 140px; min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+#cc-panel .cc-own-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+#cc-panel .cc-own-btns .cc-btn { padding: 4px 10px; font-size: 13px; }
+#cc-panel .cc-btn.cc-danger { background: var(--cc-bad); color: #fff; }
+#cc-panel .cc-own-now { font-style: italic; }
+#cc-panel .cc-custom-more { border: 1px solid var(--cc-line); border-radius: 3px; padding: 0 8px; }
+#cc-panel .cc-custom-more > summary { padding: 8px 0; }
+#cc-panel .cc-custom-more .cc-more-body { padding-bottom: 10px; }
+#cc-panel .cc-leaf-own { display: flex; justify-content: center; padding-top: 6px; }
+#cc-panel .cc-leaf-own .cc-btn { padding: 4px 12px; font-size: 13px; }
