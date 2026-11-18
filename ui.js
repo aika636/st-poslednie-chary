@@ -498,7 +498,7 @@ export function leafHtml(view, ui, preview, spell) {
     extra.push(`<div class="cc-field"><span>Сложность цели</span>${seg('difficulty', DIFFICULTIES.map((d) => [d, `${DIFFICULTY_RU[d]} · ${THRESHOLDS[spell.resist][d]}`]), queued?.payload?.difficulty ?? opts.difficulty)}</div>`);
   }
   const dd = debtDefault(view);
-  if (gift === 'loan') extra.push(field('Своё условие долга (необязательно)', textInput('opts.debt', opts.debt, dd || 'Что персона будет должна', { area: true, id: 'cc-debt' })));
+  if (gift === 'loan') extra.push(field('Своё условие долга (необязательно)', textInput('opts.debt', opts.debt, dd || 'Что персона будет должна', { area: true, id: 'cc-debt' }) + (queued && !queued.payload?.gift ? '<small class="cc-debt-hint">Применится, если поставить в долг.</small>' : '')));
   const giftLabel = { repeat: `Повторить по записи — цена ${Math.max(0, spell.cost - 1)}`, blood: 'Через кровь — надлом вместо усталости', loan: `В долг — условие: ${clean(opts.debt) || dd || 'назовёт покровитель'}` }[gift];
   const fav = st.profile.favorites.includes(spell.id);
   const rolls = view.mode === 'dice' && rollsAgainst(spell);
@@ -798,7 +798,7 @@ function journalHtml(view) {
   }).join('');
 }
 
-function settingsHtml(view) {
+function settingsHtml(view, bare) {
   const s = view.settings ?? {};
   const phone = s.item === 'phone';
   return `<div class="cc-field"><span>Предмет</span>${seg('item', Object.entries(ITEM_RU), s.item ?? 'tome')}</div>
@@ -807,7 +807,7 @@ function settingsHtml(view) {
     <label class="cc-check"><input type="checkbox" data-act="desire"${attr('checked', s.desire === true)}> Чары влечения (18+)</label>
     <label class="cc-check"><input type="checkbox" data-act="free"${attr('checked', s.free === true)}> Режим бога (каст без цены)</label>
     <label class="cc-field cc-row-field"><span>Глубина блока состояния</span><input type="number" class="cc-input cc-num" id="cc-depth-in" min="0" max="10" step="1" data-act="depth" value="${esc(s.depth ?? 1)}"></label>
-    <div class="cc-inline">${btn('prof-template', 'Сохранить профиль как шаблон', { cls: 'cc-ghost' })}</div>`;
+    ${bare ? '' : `<div class="cc-inline">${btn('prof-template', 'Сохранить профиль как шаблон', { cls: 'cc-ghost' })}</div>`}`;
 }
 
 function morePage(view, ui) {
@@ -835,6 +835,8 @@ export function choiceHtml(view, ui) {
       ${SOURCE_GLYPH[s.id] ?? ''}<b>${esc(s.name)}</b><span>${esc(s.gift)}</span>
     </button>`).join('')}</div>
     ${ui.createError ? warnBox(ui.createError, 'cc-bad') : ''}
+    <p class="cc-small">Свои заклинания и настройки общие для всех чатов — их можно править и без источника.</p>
+    ${[['custom', 'Свои заклинания', () => customHtml(view, ui)], ['settings', 'Настройки', () => settingsHtml(view, true)]].map(([key, title, body]) => `<details class="cc-more" data-more="${key}"${attr('open', ui.moreOpen === key)}><summary>${esc(title)}</summary><div class="cc-more-body">${body()}</div></details>`).join('')}
   </div>`;
 }
 
