@@ -1,6 +1,6 @@
-import { esc, attr, list } from '../esc.js?v=0.1.13';
-import { candleSvg } from '../candle.js?v=0.1.13';
-import { CORNER, RING, BRACKET, STITCH_MOTH, STITCH_LAVENDER } from '../glyphs.js?v=0.1.13';
+import { esc, attr, list } from '../esc.js?v=0.1.14';
+import { candleSvg } from '../candle.js?v=0.1.14';
+import { CORNER, RING, BRACKET, STITCH_MOTH, STITCH_LAVENDER, MOTH_ALT, LAVENDER_ALT } from '../glyphs.js?v=0.1.14';
 
 const CHARM_FACES = {
   story: '<path class="cc-cf-ink" d="M22 14c-3.5-2.6-9-2.8-12.5-.8v16.6c3.500-2 9-1.800 12.500.8 3.500-2.600 9-2.800 12.500-.8V13.200C31 11.200 25.500 11.400 22 14z"/><path class="cc-cf-ink" d="M22 14v16.600"/>',
@@ -47,14 +47,14 @@ const tome = (view, inner, { side = '', spread = false, selected = false, layout
   return `<div class="cc-tome" data-theme="${theme}" data-spread="${spread}" data-selected="${selected}" data-layout="${esc(layout)}">
     ${marks}
     <div class="cc-edges" aria-hidden="true"></div>
-    <div class="cc-lavender" aria-hidden="true"></div>
+    <div class="cc-lavender" aria-hidden="true">${LAVENDER_ALT}</div>
     <div class="cc-corners" aria-hidden="true">${CORNER}${CORNER}${CORNER}${CORNER}</div>
     <div class="cc-spine">${RING}${RING}${RING}</div>
     ${candle ? `<div class="cc-tome-candle">${BRACKET}${candle}</div>` : ''}
     ${ribbons}
     ${inner}
     ${side ? `<div class="cc-side">${side}</div>` : ''}
-    <div class="cc-props" aria-hidden="true"><div class="cc-candlelight"></div><div class="cc-moth"><i class="cc-moth-rest"></i><i class="cc-moth-fly"></i></div></div>
+    <div class="cc-props" aria-hidden="true"><div class="cc-candlelight"></div><div class="cc-moth"><i class="cc-moth-rest"></i><i class="cc-moth-fly"></i>${MOTH_ALT}</div></div>
   </div>`;
 };
 

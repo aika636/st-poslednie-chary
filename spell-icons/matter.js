@@ -1,4 +1,4 @@
-import { L, F, E } from './kit.js?v=0.1.13';
+import { L, F, E } from './kit.js?v=0.1.14';
 
 // Стихийная магия: предмет + след стихии.
 export default {

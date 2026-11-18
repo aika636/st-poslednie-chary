@@ -5,8 +5,8 @@
 import {
   MASTERIES, scaleFor, SOURCES, ENVIRONMENTS, OUTCOMES, LASTING, PRAYER_THRESHOLD, castCost, payStrain, severityOf,
   rollsAgainst, threshold, judgeRoll, fractureLoad,
-} from './rules.mjs?v=0.1.13';
-import { initialState, cloneState, createProfile } from './state.mjs?v=0.1.13';
+} from './rules.mjs?v=0.1.14';
+import { initialState, cloneState, createProfile } from './state.mjs?v=0.1.14';
 
 export const EFFECT_END_REASONS = ['done', 'broke', 'escaped', 'consent', 'scene', 'removed'];
 

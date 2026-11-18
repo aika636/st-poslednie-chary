@@ -1,4 +1,4 @@
-import { L, F, E } from './kit.js?v=0.1.13';
+import { L, F, E } from './kit.js?v=0.1.14';
 
 // Чары влечения: сердце, губы, лента, пламя — намёк, без анатомии.
 export default {

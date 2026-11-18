@@ -1,14 +1,14 @@
 // Панель «Последних чар» — том заклинаний со свечой. Разметка строками от view, события через
 // data-act / data-bind. Правил здесь нет: можно ли, сколько стоит и что предупредить —
 // говорит actions.preview. Весь текст из чата, профиля и метаданных — только через esc().
-import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.13';
-import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.13';
-import SHORT from './core/data/short.mjs?v=0.1.13';
-import { clampOffset, canSwitchMode, OPTIONAL_TAG, SKINS } from './view.mjs?v=0.1.13';
-import { candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.13';
-import { SOURCE_GLYPH, STAR, glyphFor } from './glyphs.js?v=0.1.13';
-import { esc, list, attr } from './esc.js?v=0.1.13';
-import { shellOf } from './shells/index.js?v=0.1.13';
+import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.14';
+import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.14';
+import SHORT from './core/data/short.mjs?v=0.1.14';
+import { clampOffset, canSwitchMode, OPTIONAL_TAG, SKINS } from './view.mjs?v=0.1.14';
+import { candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.14';
+import { SOURCE_GLYPH, STAR, glyphFor } from './glyphs.js?v=0.1.14';
+import { esc, list, attr } from './esc.js?v=0.1.14';
+import { shellOf } from './shells/index.js?v=0.1.14';
 
 export { esc };
 
@@ -695,7 +695,7 @@ const profileFromDraft = (d) => ({
   vows: d.source === 'faith' ? [...d.vows] : [], patron: d.source === 'pact' ? clean(d.patron) : '',
 });
 
-function customHtml(view, ui) {
+function customHtml(view, ui, shared = true) {
   const c = ui.custom;
   const desire = view.settings?.desire === true;
   const dirs = list(view.data?.directions);
@@ -723,7 +723,7 @@ function customHtml(view, ui) {
       ${field('Снято', textInput('custom.end.removed', c.end.removed, 'Что заметно, когда чары сняли (необязательно)', { area: true, id: 'cc-c-end-removed' }))}
       ${field('Конец сцены', textInput('custom.end.scene', c.end.scene, 'Что заметно, когда сцена кончилась (необязательно)', { area: true, id: 'cc-c-end-scene' }))}` : ''}
     </div></details>`;
-  return `${mine.length ? `<div class="cc-own-list">${mine.map(ownRow).join('')}</div>` : '<p class="cc-small">Своих заклинаний пока нет. Свои чары общие для всех чатов.</p>'}
+  return `${mine.length ? `<div class="cc-own-list">${mine.map(ownRow).join('')}</div>` : `<p class="cc-small">Своих заклинаний пока нет.${shared ? ' Свои чары общие для всех чатов.' : ''}</p>`}
     ${editing ? `<p class="cc-small cc-own-now">Правка: «${esc(mine.find((s) => s.id === ui.customEdit)?.name ?? c.name)}»</p>` : ''}
     ${field('Название', textInput('custom.name', c.name, 'Например: Тёплый ветер', { maxlength: 80, id: 'cc-c-name' }))}
     ${field('Школа', `<select class="cc-input" data-bind="custom.direction" id="cc-c-dir">${dirOpts.map((d) => `<option value="${esc(d.id)}"${attr('selected', d.id === c.direction)}>${esc(d.name)}</option>`).join('')}</select>`)}
@@ -836,7 +836,7 @@ export function choiceHtml(view, ui) {
     </button>`).join('')}</div>
     ${ui.createError ? warnBox(ui.createError, 'cc-bad') : ''}
     <p class="cc-small">Свои заклинания и настройки общие для всех чатов — их можно править и без источника.</p>
-    ${[['custom', 'Свои заклинания', () => customHtml(view, ui)], ['settings', 'Настройки', () => settingsHtml(view, true)]].map(([key, title, body]) => `<details class="cc-more" data-more="${key}"${attr('open', ui.moreOpen === key)}><summary>${esc(title)}</summary><div class="cc-more-body">${body()}</div></details>`).join('')}
+    ${[['custom', 'Свои заклинания', () => customHtml(view, ui, false)], ['settings', 'Настройки', () => settingsHtml(view, true)]].map(([key, title, body]) => `<details class="cc-more" data-more="${key}"${attr('open', ui.moreOpen === key)}><summary>${esc(title)}</summary><div class="cc-more-body">${body()}</div></details>`).join('')}
   </div>`;
 }
 
@@ -885,7 +885,7 @@ export function createPanel(actions) {
   const shadow = host.attachShadow({ mode: 'open' });
   const reset = document.createElement('style');
   reset.textContent = ':host { all: initial; }';
-  const sheets = [new URL('./shells/tome.css?v=0.1.13', import.meta.url).href, new URL('./style.css?v=0.1.13', import.meta.url).href, new URL('./shells/phone.css?v=0.1.13', import.meta.url).href].map((href) => {
+  const sheets = [new URL('./shells/tome.css?v=0.1.14', import.meta.url).href, new URL('./style.css?v=0.1.14', import.meta.url).href, new URL('./shells/phone.css?v=0.1.14', import.meta.url).href].map((href) => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = href;

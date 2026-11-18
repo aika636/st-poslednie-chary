@@ -1,6 +1,6 @@
 // Знаки: пять источников и шесть направлений магии. Только константная разметка SVG, без
 // пользовательского текста. Цвет — currentColor и переменные темы.
-import { SPELL_ICONS } from './spell-icons/index.js?v=0.1.13';
+import { SPELL_ICONS } from './spell-icons/index.js?v=0.1.14';
 
 const svg = (body, cls = '') => `<svg class="cc-glyph ${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${body}</svg>`;
 
@@ -118,4 +118,34 @@ export const STITCH_LAVENDER = `<svg class="cc-stitch" viewBox="0 0 14 22" aria-
   <path class="cc-st-alt cc-st-dark" d="M7 1v20M3.500 5h7M5.500 5v-2M8.500 5v-2M5 16.500h4M7 21l-1.500-2.500h3z"/>
   <path class="cc-st-alt cc-st-forest" d="M7 21C6 15 7.500 9 7 3M7 18c-2.500-.5-4-2-4-4 2.500 0 4 1.500 4 4zM7 18c2.500-.5 4-2 4-4-2.500 0-4 1.500-4 4zM7 11c-2-.5-3.200-1.800-3.200-3.500 2 0 3.200 1.300 3.200 3.500zM7 11c2-.5 3.200-1.800 3.200-3.500-2 0-3.200 1.300-3.200 3.500zM7 5.500c-1.200-1-1.500-2.500-.8-3.800.9 1 1.200 2.500.8 3.800zM7 5.500c1.200-1 1.500-2.500.8-3.800-.9 1-1.200 2.500-.8 3.800z"/>
   <path class="cc-st-alt cc-st-temple" d="M3 20h8M4 17.500h6M5 17.500V6.500M9 17.500V6.500M7 17.500V6.500M3.500 6h7M7 1.500l5 3.500H2z"/>
+</svg>`;
+
+// Живые мелочи новых кож вместо мотылька (у свечи) и лаванды (на нижнем поле): ворон и перо, паутинка и травы, лента с печатью и ветвь оливы.
+export const MOTH_ALT = `<svg class="cc-alt cc-alt-dark" viewBox="0 0 62 55" aria-hidden="true" focusable="false">
+  <path class="cc-raven-body" d="M10 51C7 39 15 27 30 25c6-1 11 2 14 6l16 14-13-1-4 7z"/>
+  <path class="cc-raven-wing" d="M16 44c3-8 10-12 19-11"/>
+  <g class="cc-raven-head"><circle class="cc-raven-body" cx="40" cy="22" r="7.500"/><path class="cc-raven-body" d="M46 20l11 3.500-11 3.500z"/><circle class="cc-raven-eye" cx="42" cy="20.500" r="1.400"/></g>
+  <path class="cc-raven-leg" d="M28 52v3M34 52v3"/>
+</svg>
+<svg class="cc-alt cc-alt-forest" viewBox="0 0 62 55" aria-hidden="true" focusable="false">
+  <path class="cc-web" d="M62 0 0 8M62 0 6 30M62 0 22 50M62 0 44 56M2.500 12Q22 10 30 24M14 6Q36 6 44 20M1 22Q16 22 22 34"/>
+  <g class="cc-spider-swing"><path class="cc-web" d="M46 0v31"/><ellipse class="cc-spider" cx="46" cy="36" rx="3.800" ry="4.500"/><circle class="cc-spider" cx="46" cy="30.500" r="2.200"/><path class="cc-web" d="M42.500 34 38 31M42.500 37 37 38M49.500 34 54 31M49.500 37 55 38"/></g>
+</svg>
+<svg class="cc-alt cc-alt-temple" viewBox="0 0 62 55" aria-hidden="true" focusable="false">
+  <g class="cc-ribbon-swing"><path class="cc-rib" d="M24 0h8v34l-4-5-4 5zM31 0h8v36l-4-5-4 5z"/><circle class="cc-seal-disc" cx="31" cy="20" r="10"/><circle class="cc-seal-ring" cx="31" cy="20" r="7"/><path class="cc-seal-cross" d="M31 14.500v11M25.500 20h11"/></g>
+</svg>`;
+export const LAVENDER_ALT = `<svg class="cc-alt cc-alt-dark" viewBox="0 0 34 116" aria-hidden="true" focusable="false">
+  <path class="cc-quill" d="M17 114C16 80 16 40 18 4 30 14 33 38 26 60 22 72 20 80 19 88 11 78 7 62 10 46 12 32 15 20 18 4"/>
+  <path class="cc-quill-vein" d="M17 112C17 80 17 40 18 6M17 40l8-8M17 54l8-10M17 68l6-9M17 48l-6-8M17 62l-6-9"/>
+</svg>
+<svg class="cc-alt cc-alt-forest" viewBox="0 0 34 116" aria-hidden="true" focusable="false">
+  <path class="cc-twine" d="M17 112C16 90 18 60 17 36M12 78q5 4 10 0M13 82q4 3 8 0"/>
+  <path class="cc-herb" d="M17 70c-6-1-9-5-9-10 6 0 9 4 9 10zM17 70c6-1 9-5 9-10-6 0-9 4-9 10zM17 54c-5-1-8-4-8-9 5 0 8 4 8 9zM17 54c5-1 8-4 8-9-5 0-8 4-8 9zM17 40c-4-1-6-4-6-8 4 0 6 3 6 8zM17 40c4-1 6-4 6-8-4 0-6 3-6 8z"/>
+  <path class="cc-cap" d="M5 28C5 12 29 12 29 28z"/><path class="cc-capstem" d="M13 28h8l-1 12h-6z"/>
+  <circle class="cc-spot" cx="12" cy="22" r="1.800"/><circle class="cc-spot" cx="19" cy="18" r="1.600"/><circle class="cc-spot" cx="24" cy="24" r="1.400"/>
+</svg>
+<svg class="cc-alt cc-alt-temple" viewBox="0 0 34 116" aria-hidden="true" focusable="false">
+  <path class="cc-twig" d="M17 114C14 90 20 60 17 6"/>
+  <path class="cc-olive" d="M17 100c-6-2-9-6-9-12 6 1 9 6 9 12zM17 84c6-2 9-6 9-12-6 1-9 6-9 12zM17 68c-6-2-9-6-9-12 6 1 9 6 9 12zM17 52c6-2 9-6 9-12-6 1-9 6-9 12zM17 36c-6-2-9-6-9-12 6 1 9 6 9 12zM17 20c5-2 7-5 8-10-5 1-8 4-8 10z"/>
+  <ellipse class="cc-berry" cx="25" cy="96" rx="2.600" ry="3.600"/><ellipse class="cc-berry" cx="9" cy="62" rx="2.600" ry="3.600"/>
 </svg>`;

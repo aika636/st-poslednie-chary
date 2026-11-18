@@ -1,4 +1,4 @@
-import { L, F } from './kit.js?v=0.1.13';
+import { L, F } from './kit.js?v=0.1.14';
 
 // Иллюзии: пунктир и двойной контур.
 const D = ' stroke-dasharray="1.8 2.2"';
