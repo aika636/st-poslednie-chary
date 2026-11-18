@@ -61,7 +61,7 @@
   background: var(--tex), var(--bg); color: var(--ink); font: 15px/1.42 var(--f-ui); cursor: auto;
 }
 @media (max-width: 600px) {
-  #cc-panel[data-item="phone"] { top: 0; left: 0; right: 0; width: auto; height: 100dvh; max-height: none; }
+  #cc-panel[data-item="phone"] { top: var(--topBarBlockSize, 0px); left: 0; right: 0; width: auto; height: calc(100dvh - var(--topBarBlockSize, 0px)); max-height: none; }
   #cc-panel .cc-phone { height: 100%; padding: 0; border-radius: 0; background: none; box-shadow: none; }
   #cc-panel .cc-phone .cc-pscreen { border-radius: 0; }
 }

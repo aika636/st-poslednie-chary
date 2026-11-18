@@ -1,6 +1,6 @@
 // Тексты для модели: блок состояния (каждый ход) и факт хода (только для ответа на сообщение).
 // Только проза: никаких чисел механики, ID, цен, бросков и порогов.
-import { scaleFor, scaleOf, fractureLoad } from './rules.mjs?v=0.1.12';
+import { scaleFor, scaleOf, fractureLoad } from './rules.mjs?v=0.1.13';
 
 const SOURCE_GEN = { knowledge: 'знания', blood: 'крови', faith: 'веры', pact: 'договора', nature: 'природы' };
 
@@ -189,15 +189,16 @@ function effectsSection(state) {
     const items = groups.get(key).items;
     if (!items.some((x) => x.text === item.text)) items.push(item);
   }
-  // Сжатые эффекты идут списком через запятую, подробные — отдельными предложениями.
+  // Подробные эффекты — каждый отдельной строкой (под именем цели), сжатые — одной строкой через запятую.
   return [...groups.values()].map((g) => {
     const who = g.label ? `${upperFirst(g.label)}: ` : '';
     const short = g.items.filter((x) => x.compact).map((x) => x.text);
     const full = g.items.filter((x) => !x.compact).map((x) => x.text);
-    const parts = [...full];
-    if (short.length) parts.push(`${full.length ? 'Также: ' : ''}${short.join(', ')}.`);
-    return `— ${who}${parts.join(' ')}`;
-  });
+    const lines = [...full];
+    if (short.length) lines.push(`${short.join(', ')}.`);
+    if (lines.length === 1 || !who) return lines.map((l) => `— ${who}${l}`);
+    return [`— ${who.trim()}`, ...lines.map((l) => `  · ${l}`)];
+  }).flat();
 }
 
 // Блок состояния: кто персона, как выглядит её магия, сколько осталось сил и что действует.

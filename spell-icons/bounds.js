@@ -1,4 +1,4 @@
-import { L, F, E } from './kit.js?v=0.1.12';
+import { L, F, E } from './kit.js?v=0.1.13';
 
 // Магия пространства: проёмы, стрелки, траектории.
 export default {

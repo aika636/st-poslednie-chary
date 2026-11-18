@@ -1,14 +1,14 @@
 // Панель «Последних чар» — том заклинаний со свечой. Разметка строками от view, события через
 // data-act / data-bind. Правил здесь нет: можно ли, сколько стоит и что предупредить —
 // говорит actions.preview. Весь текст из чата, профиля и метаданных — только через esc().
-import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.12';
-import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.12';
-import SHORT from './core/data/short.mjs?v=0.1.12';
-import { clampOffset, canSwitchMode, OPTIONAL_TAG, SKINS } from './view.mjs?v=0.1.12';
-import { candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.12';
-import { SOURCE_GLYPH, STAR, glyphFor } from './glyphs.js?v=0.1.12';
-import { esc, list, attr } from './esc.js?v=0.1.12';
-import { shellOf } from './shells/index.js?v=0.1.12';
+import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.13';
+import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.13';
+import SHORT from './core/data/short.mjs?v=0.1.13';
+import { clampOffset, canSwitchMode, OPTIONAL_TAG, SKINS } from './view.mjs?v=0.1.13';
+import { candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.13';
+import { SOURCE_GLYPH, STAR, glyphFor } from './glyphs.js?v=0.1.13';
+import { esc, list, attr } from './esc.js?v=0.1.13';
+import { shellOf } from './shells/index.js?v=0.1.13';
 
 export { esc };
 
@@ -105,7 +105,15 @@ const sourceById = (data, id) => sourcesOf(data).find((s) => s?.id === id) ?? nu
 // Состояние, которое видит игрок: с учётом очереди.
 const current = (view) => view.forecast ?? view.state;
 
-export const shortLine = (spell) => clean(spell?.short) || SHORT[spell?.id] || clean(String(spell?.limit ?? '').split(/[.;]/)[0]).slice(0, 40);
+// Обрезка по слову с «…».
+const clip = (t, n) => {
+  if (t.length <= n) return t;
+  const cut = t.slice(0, n + 1);
+  const at = cut.lastIndexOf(' ');
+  return `${(at > n / 2 ? cut.slice(0, at) : cut.slice(0, n)).replace(/[\s,;:.\-—]+$/, '')}…`;
+};
+// У своей чары без короткой строки подзаголовок — цель; предел и так виден на листе отдельно.
+export const shortLine = (spell) => clean(spell?.short) || SHORT[spell?.id] || clip(clean(spell?.target), 40);
 
 // Дар, который игрок включает кнопкой на листе: знание — повтор последнего платного чуда,
 // кровь — надлом вместо цены 2–3, договор — долг. Милость веры и укоренение природы срабатывают сами.
@@ -245,6 +253,7 @@ export function tensionOf(view) {
   return {
     level: scaleOf(confirmed ?? st), forecast: scaleOf(st), cap, marks: candleMarks(confirmed ?? st),
     title: `Напряжение ${text}${load ? ` · надломы держат ${load}` : ''}`, text,
+    cast: list(view?.pending).some((c) => c.kind === 'cast'),
   };
 }
 
@@ -505,7 +514,7 @@ export function leafHtml(view, ui, preview, spell) {
       <button type="button" class="cc-x cc-leaf-x" data-act="unpick" title="Закрыть лист" aria-label="Закрыть лист">✕</button>
     </div>
     <h3 class="cc-leaf-name" tabindex="-1">${esc(spell.name)}</h3>
-    <p class="cc-leaf-short">${esc(shortLine(spell))}</p>
+    ${shortLine(spell) ? `<p class="cc-leaf-short">${esc(shortLine(spell))}</p>` : ''}
     <div class="cc-leaf-cost">${costLine}</div>
     ${problems}
     ${spell.limit ? `<p class="cc-leaf-summary">${esc(spell.limit)}</p>` : ''}
@@ -577,7 +586,7 @@ export function frontispiece(view) {
       <ul>${now}</ul>
       <button type="button" class="cc-linkbtn" data-act="tab" data-v="state">Подробнее — в «Состоянии»</button>
     </section>
-    ${src?.gift ? `<p class="cc-front-note">дар: ${esc(src.gift.charAt(0).toLowerCase() + src.gift.slice(1))}</p>` : ''}
+    <footer class="cc-front-foot">${src?.gift ? `<p class="cc-front-note">дар: ${esc(src.gift.charAt(0).toLowerCase() + src.gift.slice(1))}</p>` : ''}</footer>
   </div>`;
 }
 
@@ -874,7 +883,7 @@ export function createPanel(actions) {
   const shadow = host.attachShadow({ mode: 'open' });
   const reset = document.createElement('style');
   reset.textContent = ':host { all: initial; }';
-  const sheets = [new URL('./shells/tome.css?v=0.1.12', import.meta.url).href, new URL('./style.css?v=0.1.12', import.meta.url).href, new URL('./shells/phone.css?v=0.1.12', import.meta.url).href].map((href) => {
+  const sheets = [new URL('./shells/tome.css?v=0.1.13', import.meta.url).href, new URL('./style.css?v=0.1.13', import.meta.url).href, new URL('./shells/phone.css?v=0.1.13', import.meta.url).href].map((href) => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = href;
@@ -1229,7 +1238,14 @@ export function createPanel(actions) {
     const a = document.activeElement;
     if (a && a !== document.body && a !== host) return;
     // Esc сначала закрывает лист заклинания, потом весь том.
-    if (ui.spellId && ui.tab === 'cast') { ui.spellId = null; paint(); return; }
+    if (ui.spellId && ui.tab === 'cast') {
+      const id = ui.spellId;
+      ui.spellId = null;
+      paint();
+      const row = [...root.querySelectorAll('[data-act="pick"]')].find((x) => x.dataset.v === id) ?? root.querySelector('[data-act="school"][aria-selected="true"], [data-act="school"][aria-pressed="true"]');
+      row?.focus({ preventScroll: true });
+      return;
+    }
     close();
   }
 

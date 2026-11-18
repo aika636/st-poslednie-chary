@@ -1,8 +1,10 @@
+/* top + translate, не bottom: у html таверны высота 0 и transform, fixed считается от него. */
 .cc-dice-result {
   position: fixed;
   z-index: 2147483000;
   right: max(18px, env(safe-area-inset-right));
-  bottom: calc(var(--cc-form-h, 64px) + 16px + env(safe-area-inset-bottom));
+  top: calc(100dvh - var(--cc-form-h, 64px) - 16px - env(safe-area-inset-bottom));
+  translate: 0 -100%;
   display: grid;
   grid-template-columns: 88px minmax(130px, 1fr) auto;
   align-items: center;

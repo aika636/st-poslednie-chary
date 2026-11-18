@@ -1028,12 +1028,12 @@
   97% { opacity: 0; }
 }
 /* Сургучная печать с мотыльком на пустой правой странице. */
-#cc-panel .cc-frontispiece::after { content: ""; position: absolute; right: 22px; bottom: 22px; width: 88px; height: 85px; background: var(--cc-seal-image) center / contain no-repeat; transform: rotate(-9deg); filter: saturate(.8) brightness(.94) drop-shadow(0 1px 1px rgba(40, 10, 40, .22)); pointer-events: none; }
+#cc-panel .cc-front-foot::after { content: ""; position: absolute; right: -8px; bottom: -8px; width: 88px; height: 85px; background: var(--cc-seal-image) center / contain no-repeat; transform: rotate(-9deg); filter: saturate(.8) brightness(.94) drop-shadow(0 1px 1px rgba(40, 10, 40, .22)); pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
   #cc-panel .cc-candlelight, #cc-panel .cc-moth i { animation: none; }
 }
 @media (forced-colors: active) {
-  #cc-panel .cc-props, #cc-panel .cc-lavender, #cc-panel .cc-frontispiece::after { display: none; }
+  #cc-panel .cc-props, #cc-panel .cc-lavender, #cc-panel .cc-front-foot::after { display: none; }
 }
 @media (max-width:700px) {
   #cc-panel .cc-lavender, #cc-panel .cc-moth { display: none; }
@@ -1060,8 +1060,6 @@
 #cc-panel .cc-now li { display: flex; align-items: center; gap: 8px; font-size: 15px; }
 #cc-panel .cc-now li .cc-glyph { flex: none; width: 14px; height: 14px; color: var(--cc-gold-2); }
 #cc-panel .cc-linkbtn { margin-top: 8px; padding: 0; border: 0; background: none; color: var(--cc-accent); font: 600 14px var(--cc-body); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-/* Приписка от руки на нижнем поле, слева от сургуча. */
-#cc-panel .cc-front-note { position: absolute; left: 30px; right: 146px; bottom: 34px; margin: 0; color: #6a2f6e; font: 18px/1.15 var(--cc-hand); transform: rotate(-2deg); opacity: .85; }
 @media (max-width:700px) {
   #cc-panel .cc-frontispiece { padding: 20px 18px 80px; }
   #cc-panel .cc-exlibris { padding-right: 0; }
@@ -1171,14 +1169,17 @@
 }
 
 /* ---------- подпись у свечи тома, стикер с даром ---------- */
+/* Записка и сургуч — подвал в потоке под остальным: не налезают на «Сейчас» при любом числе чар. */
+#cc-panel .cc-frontispiece { padding-bottom: 30px; }
+#cc-panel .cc-front-foot { position: relative; margin-top: auto; min-height: 96px; padding-top: 8px; box-sizing: border-box; padding-right: 124px; display: flex; align-items: flex-end; }
 #cc-panel .cc-tome-candle .cc-candle-cap { position: relative; display: block; margin-top: 3px; translate: -20px 0; text-align: center; color: var(--cc-muted); font: 700 9.5px/1.1 var(--cc-display); letter-spacing: .3px; white-space: nowrap; max-width: 64px; overflow: hidden; }
 @media (max-width: 700px) { #cc-panel .cc-tome-candle .cc-candle-cap { translate: -8px 0; font-size: 9px; letter-spacing: .2px; max-width: 56px; } }
 #cc-panel .cc-front-note {
-  position: absolute; left: 22px; right: 150px; bottom: 26px; max-width: 296px; margin: 0; padding: 16px 22px 18px 26px;
+  position: relative; max-width: 296px; margin: 0; padding: 16px 22px 18px 26px;
   background: var(--cc-note-image) center / 100% 100% no-repeat; color: var(--cc-note-ink); font: 17.5px/1.2 var(--cc-hand);
   transform: rotate(-2deg); opacity: 1; filter: drop-shadow(0 2px 2px rgba(40, 24, 8, .3));
 }
-@media (max-width: 700px) { #cc-panel .cc-front-note { right: 130px; max-width: none; } }
+@media (max-width: 700px) { #cc-panel .cc-front-foot { padding-right: 104px; } #cc-panel .cc-front-note { max-width: none; } }
 @media (forced-colors: active) { #cc-panel .cc-front-note { background: Canvas; border: 1px solid CanvasText; color: CanvasText; } }
 
 /* ---------- закладки сверху: «Где остановилась» и «Избранное» ---------- */

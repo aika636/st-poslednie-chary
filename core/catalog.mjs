@@ -1,9 +1,9 @@
 // Каталог: проверка карточек заклинаний и надломов, поиск, копия карточки для каста,
 // минимальная форма своего заклинания.
-import { RESISTANCES, DURATIONS, SOURCES, rollsAgainst } from './rules.mjs?v=0.1.12';
-import { EFFECT_END_REASONS } from './journal.mjs?v=0.1.12';
-import DIRECTIONS from './data/directions.mjs?v=0.1.12';
-import TAGS from './data/tags.mjs?v=0.1.12';
+import { RESISTANCES, DURATIONS, SOURCES, rollsAgainst } from './rules.mjs?v=0.1.13';
+import { EFFECT_END_REASONS } from './journal.mjs?v=0.1.13';
+import DIRECTIONS from './data/directions.mjs?v=0.1.13';
+import TAGS from './data/tags.mjs?v=0.1.13';
 
 export const LABELS = ['бой', 'быт', 'социалка'];
 export const PLACEHOLDERS = ['цель', 'замысел'];

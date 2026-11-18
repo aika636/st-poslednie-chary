@@ -2,20 +2,20 @@
 import {
   META_KEY, MODES, previewCommand, enqueue as coreEnqueue, dequeue as coreDequeue, commitPending,
   toggleEvent as coreToggleEvent, computeChat,
-} from './core/chat-journal.mjs?v=0.1.12';
-import { createSnapshot } from './core/state.mjs?v=0.1.12';
-import { statusBlock } from './core/prompt.mjs?v=0.1.12';
+} from './core/chat-journal.mjs?v=0.1.13';
+import { createSnapshot } from './core/state.mjs?v=0.1.13';
+import { statusBlock } from './core/prompt.mjs?v=0.1.13';
 import {
   readMeta, worthWarning, hasProfile, hasHistory, canSwitchMode, buildView, promptTexts, normalizeSettings, clampDepth, ITEMS, SKINS, THEMES,
   upsertTemplate, removeTemplate, saveCustomSpell as saveCustomSpellTo, deleteCustomSpell as deleteCustomSpellFrom, migrateCustom, PROMPT_OPTIONS, DEPTH_MIN, DEPTH_MAX,
-} from './view.mjs?v=0.1.12';
-import { createPanel, candleHtml } from './ui.js?v=0.1.12';
-import { levelGrew, playFx } from './candle.js?v=0.1.12';
-import { scaleOf } from './core/rules.mjs?v=0.1.12';
-import { clampOffset } from './view.mjs?v=0.1.12';
-import { createDicePresenter } from './dice.js?v=0.1.12';
-import { buildMatchers, findSpell } from './hint.js?v=0.1.12';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.12';
+} from './view.mjs?v=0.1.13';
+import { createPanel, candleHtml } from './ui.js?v=0.1.13';
+import { levelGrew, playFx } from './candle.js?v=0.1.13';
+import { scaleOf } from './core/rules.mjs?v=0.1.13';
+import { clampOffset } from './view.mjs?v=0.1.13';
+import { createDicePresenter } from './dice.js?v=0.1.13';
+import { buildMatchers, findSpell } from './hint.js?v=0.1.13';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.13';
 
 const MODULE = 'cena-chuda';
 const SETTINGS_KEY = 'cenaChuda';
@@ -497,13 +497,13 @@ function mountFonts() {
   const link = document.createElement('link');
   link.id = 'cc-fonts';
   link.rel = 'stylesheet';
-  link.href = new URL('./fonts/fonts.css?v=0.1.12', import.meta.url).href;
+  link.href = new URL('./fonts/fonts.css?v=0.1.13', import.meta.url).href;
   document.head.append(link);
 }
 
 function mountStyle() {
   if (document.getElementById('cc-style')) return;
-  const hrefs = [new URL('./shells/tome.css?v=0.1.12', import.meta.url).href, new URL('./style.css?v=0.1.12', import.meta.url).href, new URL('./shells/phone.css?v=0.1.12', import.meta.url).href];
+  const hrefs = [new URL('./shells/tome.css?v=0.1.13', import.meta.url).href, new URL('./style.css?v=0.1.13', import.meta.url).href, new URL('./shells/phone.css?v=0.1.13', import.meta.url).href];
   hrefs.forEach((href, i) => {
     const link = document.createElement('link');
     if (i === 1) link.id = 'cc-style';
@@ -518,7 +518,7 @@ function mountDiceStyles() {
   const link = document.createElement('link');
   link.id = 'cc-dice-style';
   link.rel = 'stylesheet';
-  link.href = new URL('./dice.css?v=0.1.12', import.meta.url).href;
+  link.href = new URL('./dice.css?v=0.1.13', import.meta.url).href;
   document.head.append(link);
 }
 
