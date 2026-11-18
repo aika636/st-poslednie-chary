@@ -15,7 +15,7 @@ export const DEPTH_MIN = 0;
 export const DEPTH_MAX = 10;
 export const THEMES = ['amethyst', 'tavern'];
 export const ITEMS = ['tome', 'phone'];
-export const SKINS = { tome: ['amethyst', 'tavern'], phone: ['city', 'cyber', 'space'] };
+export const SKINS = { tome: ['amethyst', 'tavern', 'dark', 'forest', 'temple'], phone: ['city', 'cyber', 'space'] };
 export const DEFAULT_SETTINGS = Object.freeze({ enabled: true, depth: 1, templates: [], theme: 'amethyst', item: 'tome', skin: 'amethyst', desire: false, free: false, customSpells: [], customDeleted: [] });
 
 // Школа, выключенная по умолчанию: её чары и вкладка видны только при включённой настройке.
