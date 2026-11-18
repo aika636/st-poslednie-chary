@@ -1,21 +1,19 @@
 // Панель «Последних чар» — том заклинаний со свечой. Разметка строками от view, события через
 // data-act / data-bind. Правил здесь нет: можно ли, сколько стоит и что предупредить —
 // говорит actions.preview. Весь текст из чата, профиля и метаданных — только через esc().
-import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.11';
-import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.11';
-import SHORT from './core/data/short.mjs?v=0.1.11';
-import { clampOffset, canSwitchMode, OPTIONAL_TAG } from './view.mjs?v=0.1.11';
-import { candleSvg, candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.11';
-import { SOURCE_GLYPH, STAR, RING, CORNER, BRACKET, STITCH_MOTH, STITCH_LAVENDER, glyphFor } from './glyphs.js?v=0.1.11';
+import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.12';
+import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.12';
+import SHORT from './core/data/short.mjs?v=0.1.12';
+import { clampOffset, canSwitchMode, OPTIONAL_TAG, SKINS } from './view.mjs?v=0.1.12';
+import { candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.12';
+import { SOURCE_GLYPH, STAR, glyphFor } from './glyphs.js?v=0.1.12';
+import { esc, list, attr } from './esc.js?v=0.1.12';
+import { shellOf } from './shells/index.js?v=0.1.12';
 
-export const esc = (s) => String(s ?? '').replace(/[&<>"'`]/g, (ch) => ({
-  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;',
-}[ch]));
+export { esc };
 
 const clean = (s) => (typeof s === 'string' ? s.trim() : '');
-const list = (v) => (Array.isArray(v) ? v : []);
 const capFirst = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
-const attr = (name, on) => (on ? ` ${name}` : '');
 
 // ---------- словари ----------
 
@@ -27,6 +25,8 @@ const ENV_RU = { living: 'живая', lifeless: 'без жизни', unspecifie
 const LABELS = ['бой', 'быт', 'социалка'];
 const SOURCE_GEN = { knowledge: 'знания', blood: 'крови', faith: 'веры', pact: 'договора', nature: 'природы' };
 const THEME_RU = { amethyst: 'Аметист', tavern: 'Как таверна' };
+const ITEM_RU = { tome: 'Том', phone: 'Телефон' };
+const SKIN_RU = { city: 'Городская мистика', cyber: 'Киберпанк', space: 'Космос' };
 const KIND_RU = {
   cast: 'Каст', faith_pray: 'Молитва', nature_gift: 'Дар природы', breather: 'Передышка', rest: 'Отдых',
   scene_end: 'Конец сцены', effect_end: 'Снятие чар', effect_detail_set: 'Описание чар',
@@ -72,7 +72,7 @@ export function initialUi() {
     custom: emptyCustom(), customErrors: [], customEdit: null, customFrom: false, customDelete: null, customMoreOpen: false,
     manifestFor: null, acceptFor: null, accept: { text: '', tag: '' },
     noteText: '', traitText: '',
-    profileDraft: null, createError: '',
+    profileDraft: null, createError: '', peekOpen: false, queueOpen: false,
   };
 }
 
@@ -222,6 +222,9 @@ const seg = (act, options, value) => `<div class="cc-seg" role="group">${options
 const coin = (n, cls = '') => `<span class="cc-coin ${cls}" title="Цена">${esc(n)}</span>`;
 const closeBtn = '<button type="button" class="cc-close" data-act="close" title="Закрыть" aria-label="Закрыть">✕</button>';
 
+// Подпись шкалы в строке цены: только когда шкала меняется, у телефона — «напряжение».
+const costScale = (view, text) => (text.includes('→') ? ` · ${view?.settings?.item === 'phone' ? 'напряжение' : 'свеча'} ${text}` : '');
+
 // Шкала словами и числом (для подписи свечи).
 export function scaleText(st, confirmed) {
   const now = scaleOf(st);
@@ -231,23 +234,24 @@ export function scaleText(st, confirmed) {
   return was !== now || capWas !== capNow ? `${was}/${capWas} → ${now}/${capNow}` : `${now}/${capNow}`;
 }
 
-// Свеча на томе: уровень — подтверждённое состояние, прогноз — с очередью.
-export function candleHtml(view, { mini = false, uid = 'p', bare = false } = {}) {
-  if (bare) return `<div class="cc-candle-box cc-mini">${candleSvg({ level: 0, mini: true, uid })}</div>`;
+// Данные шкалы напряжения: уровень — подтверждённое состояние, прогноз — с очередью.
+export function tensionOf(view) {
   const confirmed = view?.state;
   const st = current(view ?? {});
-  if (!st) return '';
-  const marks = candleMarks(confirmed ?? st);
-  const level = scaleOf(confirmed ?? st);
-  const forecast = scaleOf(st);
+  if (!st) return null;
   const cap = Math.max(scaleFor(st.profile), scaleFor((confirmed ?? st).profile));
   const load = Math.min(cap, fractureLoad(list(st.fractures)));
-  const title = `Напряжение ${scaleText(st, confirmed)}${load ? ` · надломы держат ${load}` : ''}`;
-  return `<div class="cc-candle-box${mini ? ' cc-mini' : ''}" title="${esc(title)}">
-    ${candleSvg({ level, forecast, scale: cap, temporary: marks.temporary, permanent: marks.permanent, mini, uid })}
-    <span class="cc-candle-n">${esc(scaleText(st, confirmed))}</span>
-    ${mini ? '' : '<span class="cc-candle-cap">напряжение</span>'}
-  </div>`;
+  const text = scaleText(st, confirmed);
+  return {
+    level: scaleOf(confirmed ?? st), forecast: scaleOf(st), cap, marks: candleMarks(confirmed ?? st),
+    title: `Напряжение ${text}${load ? ` · надломы держат ${load}` : ''}`, text,
+  };
+}
+
+// Свеча на томе (и мини-свеча на кнопке); разметку рисует оболочка.
+export function candleHtml(view, { mini = false, uid = 'p', bare = false } = {}) {
+  if (bare) return shellOf(view).bareHtml(uid);
+  return shellOf(view).candleHtml(tensionOf(view), { mini, uid });
 }
 
 // Старые события, которые после правки чата больше не применяются.
@@ -259,30 +263,23 @@ function conflictsHtml(view) {
 
 // ---------- обложка и шапка страницы ----------
 
-const CHARM_FACES = {
-  story: '<path class="cc-cf-ink" d="M22 14c-3.5-2.6-9-2.8-12.5-.8v16.6c3.500-2 9-1.800 12.500.8 3.500-2.600 9-2.800 12.500-.8V13.200C31 11.200 25.500 11.400 22 14z"/><path class="cc-cf-ink" d="M22 14v16.600"/>',
-  dice: '<path class="cc-cf-ink" d="M22 7.500l12 7v14.500l-12 7-12-7V14.500z"/><path class="cc-cf-ink" d="M22 13l8.500 15.500h-17zM22 7.500V13M10 14.500l3.500 14M34 14.500l-3.500 14M22 36L13.500 28.500M22 36l8.500-7.500"/>',
-};
 const MODE_LABEL = { story: 'сюжет', dice: 'кубик d20' };
 const MODE_HINT = { story: 'Сюжет: чудо удаётся, платится цена', dice: 'Кубик d20: исход решает бросок при отправке' };
 
-// Брелок режима: монета на цепочке, одна сторона — «Сюжет», другая — «Кубик».
-function charmHtml(view, ui) {
+// Данные режима: брелок рисует оболочка.
+export function modeOf(view, ui) {
   const dice = view.mode === 'dice';
   const lock = canSwitchMode({ pending: view.pending });
-  const next = dice ? 'story' : 'dice';
-  const label = `Режим: ${MODE_LABEL[view.mode] ?? MODE_LABEL.story}`;
-  const title = lock.ok ? `${MODE_HINT[view.mode] ?? MODE_HINT.story}. Нажмите, чтобы переключить` : lock.reason;
-  const flip = ui?.flipTo === view.mode ? ` data-flip="1" style="--cc-from:${dice ? '0deg' : '180deg'}"` : '';
-  const face = (k) => `<span class="cc-face cc-face-${k}"><svg viewBox="0 0 44 44" aria-hidden="true"><circle class="cc-cf-disc" cx="22" cy="22" r="20.500"/><circle class="cc-cf-rim" cx="22" cy="22" r="17"/>${CHARM_FACES[k]}</svg></span>`;
-  return `<button type="button" class="cc-charm${lock.ok ? '' : ' cc-locked'}" role="switch" aria-checked="${dice}" aria-disabled="${!lock.ok}" aria-label="${esc(label)}" title="${esc(title)}" data-act="mode" data-v="${next}">
-    <svg class="cc-charm-chain" viewBox="0 0 44 54" aria-hidden="true"><defs><linearGradient id="cc-charm-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="cc-st1"/><stop offset=".5" class="cc-st2"/><stop offset="1" class="cc-st3"/></linearGradient></defs><circle class="cc-chain-ring" cx="22" cy="5" r="4"/><ellipse class="cc-chain-link" cx="22" cy="15" rx="3" ry="5"/><ellipse class="cc-chain-link" cx="22" cy="25" rx="5" ry="3"/><ellipse class="cc-chain-link" cx="22" cy="34" rx="3" ry="5"/><ellipse class="cc-chain-link" cx="22" cy="44" rx="5" ry="3"/></svg>
-    <span class="cc-coin3d" data-side="${dice ? 'dice' : 'story'}"${flip}>${face('story')}${face('dice')}</span>
-    <span class="cc-charm-cap">${esc(MODE_LABEL[view.mode] ?? MODE_LABEL.story)}</span>
-  </button>`;
+  const cap = MODE_LABEL[view.mode] ?? MODE_LABEL.story;
+  return {
+    id: view.mode, dice, next: dice ? 'story' : 'dice', locked: !lock.ok, cap, label: `Режим: ${cap}`,
+    title: lock.ok ? `${MODE_HINT[view.mode] ?? MODE_HINT.story}. Нажмите, чтобы переключить` : lock.reason,
+    flip: ui?.flipTo === view.mode,
+  };
 }
 
-function headHtml(view, ui) {
+// Имя, источник и флаги персоны: шапка тома и экран телефона рисуют их по-своему.
+function whoOf(view) {
   const st = current(view);
   const p = st.profile;
   const src = sourceById(view.data, p.source);
@@ -292,26 +289,48 @@ function headHtml(view, ui) {
   const soon = !spent && st.giftUsed;
   flags.push(`<span class="cc-flag${spent ? ' cc-off' : ''}" title="${esc(src?.gift ?? 'Дар источника')}">${STAR}<span>${spent ? 'дар потрачен' : soon ? 'дар потратится с сообщением' : 'дар доступен'}</span></span>`);
   if (st.debts?.length) flags.push(`<span class="cc-flag cc-warnflag">долгов: ${esc(st.debts.length)}</span>`);
-  if (view.settings?.free === true) flags.push('<span class="cc-flag cc-warnflag" title="Касты не тратят напряжение и дар">режим бога</span>');
+  if (view.settings?.free === true) flags.push('<span class="cc-flag cc-godflag" title="Касты не тратят напряжение и дар"><span class="cc-godmark" aria-hidden="true">✦</span>режим бога</span>');
   if (view.settings && view.settings.enabled === false) flags.push('<span class="cc-flag cc-warnflag">не передаётся модели</span>');
+  return { name: p.name || 'Персона', source: p.source, sourceName: src?.name ?? '', glyph: SOURCE_GLYPH[p.source] ?? '', flags };
+}
+
+function headHtml(view, ui, charm) {
+  const w = whoOf(view);
   return `<header class="cc-pagehead">
     <div class="cc-title"><i>✦</i><span>Последние чары</span><i>✦</i></div>
     <div class="cc-who">
-      <span class="cc-pill"><b>${esc(p.name || 'Персона')}</b></span>
-      <span class="cc-pill cc-src" data-src="${esc(p.source)}">${SOURCE_GLYPH[p.source] ?? ''}<b>${esc(src?.name ?? '')}</b></span>
+      <span class="cc-pill"><b>${esc(w.name)}</b></span>
+      <span class="cc-pill cc-src" data-src="${esc(w.source)}">${w.glyph}<b>${esc(w.sourceName)}</b></span>
     </div>
-    <div class="cc-flags">${flags.join('')}</div>
+    <div class="cc-flags">${w.flags.join('')}</div>
     ${conflictsHtml(view)}
-    ${charmHtml(view, ui)}
+    ${charm}
   </header>`;
 }
 
-function ribbonsHtml(view, ui) {
+// Данные вкладок: id, подпись, выбрана ли, число тревог.
+export function tabsOf(view, ui) {
   const st = current(view);
   const alerts = list(st.fractures).filter((f) => !f.manifest).length + list(view.conflicts).length;
-  const tabs = [['cast', 'Каст'], ['state', 'Состояние'], ['more', 'Ещё']];
-  return `<nav class="cc-ribbons" role="tablist">${tabs.map(([k, n], i) =>
-    `<button type="button" role="tab" class="cc-ribbon" data-i="${i}" data-act="tab" data-v="${k}" aria-selected="${ui.tab === k}">${esc(n)}${k === 'state' && alerts ? `<span class="cc-dot">${esc(alerts)}</span>` : ''}</button>`).join('')}</nav>`;
+  return [['cast', 'Каст'], ['state', 'Состояние'], ['more', 'Ещё']].map(([id, name]) => ({
+    id, name, selected: ui.tab === id, alerts: id === 'state' ? alerts : 0,
+  }));
+}
+
+// Последние последствия для строки телефона: журнал событий, а без него — последняя заметка состояния.
+export function lastEffectOf(view) {
+  const items = list(view.rows).filter((r) => !r.disabled).slice(-5).reverse().map((row) => {
+    const st = row.before ?? view.state;
+    const label = KIND_RU[row.event?.kind] ?? 'Событие';
+    const what = describe(row.event?.kind, row.event?.payload, st, st?.casts?.[row.event?.id] ? (st.casts[row.event.id].gift ?? null) : undefined);
+    const text = String(what).startsWith(label) ? what : `${label}: ${what}`;
+    return { text, bad: row.ok === false };
+  });
+  if (!items.length) {
+    const note = list(current(view)?.notes).slice(-1)[0];
+    items.push({ text: note ? noteText(note) : 'Пока без последствий', bad: false });
+  }
+  return { text: items[0].text, items, alerts: list(current(view)?.fractures).filter((f) => !f.manifest).length + list(view.conflicts).length };
 }
 
 // Очередь: уйдёт с ближайшим сообщением игрока.
@@ -331,6 +350,17 @@ export function queueHtml(view) {
     </span>`;
   }).join('');
   return `<section class="cc-queue"><div class="cc-q-h">Уйдёт с вашим сообщением</div><div class="cc-q-list">${items}</div></section>`;
+}
+
+// Очередь одной строкой (телефон): названия, пометка о перегрузе и кнопка раскрытия.
+export function queueFoldHtml(view, open) {
+  const pending = list(view.pending);
+  if (!pending.length) return '';
+  const st = current(view);
+  const names = pending.map((cmd) => (cmd.kind === 'cast' ? (cmd.payload?.spell?.name ?? 'чудо') : describe(cmd.kind, cmd.payload, st)));
+  const t = tensionOf(view);
+  const over = t && t.forecast > t.cap ? ' · перегруз' : '';
+  return `<button type="button" class="cc-qfold" data-act="queuefold" aria-expanded="${open}"><span><b>В очереди:</b> ${esc(names.join(', '))}${over}</span><i aria-hidden="true">${open ? '▾' : '▴'}</i></button>`;
 }
 
 // ---------- страница «Каст» ----------
@@ -442,13 +472,13 @@ export function leafHtml(view, ui, preview, spell) {
   let problems = '';
   if (queued) {
     const f = list(st.fractures).find((x) => x.castId === queued.id);
-    costLine = `Цена ${esc(st.casts?.[queued.id]?.cost ?? spell.cost)} · свеча ${esc(scaleText(st, confirmed))}${f ? ` · <b class="cc-bad-text">надлом ${esc(f.weight)}</b>` : ''}${st.casts?.[queued.id]?.gift === 'mercy' ? MERCY_NOTE : ''}`;
+    costLine = `Цена ${esc(st.casts?.[queued.id]?.cost ?? spell.cost)}${esc(costScale(view, scaleText(st, confirmed)))}${f ? ` · <b class="cc-bad-text">надлом ${esc(f.weight)}</b>` : ''}${st.casts?.[queued.id]?.gift === 'mercy' ? MERCY_NOTE : ''}`;
   } else {
     const r = safePreview(preview, 'cast', payload);
     if (r.ok && r.state) {
       const c = r.state.casts?.__preview__;
       const f = list(r.state.fractures).find((x) => x.castId === '__preview__');
-      costLine = `Цена ${esc(c?.cost ?? spell.cost)} · свеча ${esc(`${scaleOf(st)}/${scaleFor(st.profile)} → ${scaleOf(r.state)}/${scaleFor(r.state.profile)}`)}${f ? ` · <b class="cc-bad-text">надлом ${esc(f.weight)}</b>` : ''}${c?.gift === 'mercy' ? MERCY_NOTE : ''}`;
+      costLine = `Цена ${esc(c?.cost ?? spell.cost)}${esc(costScale(view, scaleText(r.state, st)))}${f ? ` · <b class="cc-bad-text">надлом ${esc(f.weight)}</b>` : ''}${c?.gift === 'mercy' ? MERCY_NOTE : ''}`;
       problems = list(r.warnings).map((w) => warnBox(w)).join('');
     } else problems = warnBox(r.reason ?? 'так не выйдет', 'cc-bad');
   }
@@ -702,13 +732,15 @@ function customHtml(view, ui) {
     <div class="cc-inline">${btn('custom-save', editing ? 'Сохранить' : 'Добавить в том')}${editing || ui.customFrom ? btn('custom-cancel', 'Отмена', { cls: 'cc-ghost' }) : ''}</div>`;
 }
 
+const noteText = (n) => (n.kind === 'effect-end'
+  ? `«${n.spell?.name ?? 'чары'}»${n.target?.label ? ` → ${n.target.label}` : ''}: ${END_RU[n.reason] ?? 'снято'}${n.comment ? `. ${n.comment}` : ''}`
+  : n.text ?? '');
+
 function notesHtml(view, ui) {
   const st = current(view);
   const notes = list(st.notes);
   const traits = list(st.profile.traits);
-  const text = (n) => (n.kind === 'effect-end'
-    ? `«${n.spell?.name ?? 'чары'}»${n.target?.label ? ` → ${n.target.label}` : ''}: ${END_RU[n.reason] ?? 'снято'}${n.comment ? `. ${n.comment}` : ''}`
-    : n.text ?? '');
+  const text = noteText;
   const noteRows = notes.map((n) => `<div class="cc-row"><div><span class="cc-ink">${esc(text(n))}</span></div><button type="button" class="cc-x" data-act="note-remove" data-v="${esc(n.id)}" title="Убрать заметку" aria-label="Убрать заметку">✕</button></div>`).join('');
   const traitRows = traits.map((t) => `<div class="cc-row"><div><span class="cc-ink">${esc(t.text)}</span>${t.origin ? `<span>${esc(t.origin)}</span>` : ''}</div><button type="button" class="cc-x" data-act="trait-remove" data-v="${esc(t.id)}" title="Убрать свойство" aria-label="Убрать свойство">✕</button></div>`).join('');
   return `${noteRows || '<p class="cc-small">Заметок нет.</p>'}
@@ -759,7 +791,9 @@ function journalHtml(view) {
 
 function settingsHtml(view) {
   const s = view.settings ?? {};
-  return `<div class="cc-field"><span>Оформление</span>${seg('theme', Object.entries(THEME_RU), s.theme ?? 'amethyst')}</div>
+  const phone = s.item === 'phone';
+  return `<div class="cc-field"><span>Предмет</span>${seg('item', Object.entries(ITEM_RU), s.item ?? 'tome')}</div>
+    <div class="cc-field"><span>Оформление</span>${phone ? seg('skin', SKINS.phone.map((k) => [k, SKIN_RU[k]]), s.skin) : seg('skin', SKINS.tome.map((k) => [k, THEME_RU[k]]), s.skin)}</div>
     <label class="cc-check"><input type="checkbox" data-act="enabled"${attr('checked', s.enabled !== false)}> Передавать магию модели</label>
     <label class="cc-check"><input type="checkbox" data-act="desire"${attr('checked', s.desire === true)}> Чары влечения (18+)</label>
     <label class="cc-check"><input type="checkbox" data-act="free"${attr('checked', s.free === true)}> Режим бога (каст без цены)</label>
@@ -797,54 +831,26 @@ export function choiceHtml(view, ui) {
 
 // ---------- весь том ----------
 
-function marksHtml(view, ui) {
-  const last = list(view.data?.spells).find((s) => s.id === ui.lastSpellId);
-  const onCast = ui.tab === 'cast';
-  const resume = last ? `Где остановилась: ${last.name}` : 'Здесь появится последнее открытое заклинание';
-  return `<div class="cc-marks">
-    <button type="button" class="cc-mark cc-mark-a" data-act="resume" aria-label="${esc(resume)}" title="${esc(resume)}" aria-disabled="${!last}"${attr('data-active', Boolean(last && onCast && ui.spellId === last.id))}>${STITCH_MOTH}</button>
-    <button type="button" class="cc-mark cc-mark-b" data-act="favshelf" aria-label="Избранное" title="Избранное"${attr('data-active', onCast && !ui.spellId && ui.school === 'fav' && !ui.q)}>${STITCH_LAVENDER}</button>
-  </div>`;
-}
-
-const tome = (view, inner, { side = '', spread = false, selected = false, layout = 'spread', candle = '', ribbons = '', marks = '' } = {}) => {
-  const theme = esc(view?.settings?.theme ?? 'amethyst');
-  return `<div class="cc-tome" data-theme="${theme}" data-spread="${spread}" data-selected="${selected}" data-layout="${esc(layout)}">
-    ${marks}
-    <div class="cc-edges" aria-hidden="true"></div>
-    <div class="cc-lavender" aria-hidden="true"></div>
-    <div class="cc-corners" aria-hidden="true">${CORNER}${CORNER}${CORNER}${CORNER}</div>
-    <div class="cc-spine">${RING}${RING}${RING}</div>
-    ${candle ? `<div class="cc-tome-candle">${BRACKET}${candle}</div>` : ''}
-    ${ribbons}
-    ${inner}
-    ${side ? `<div class="cc-side">${side}</div>` : ''}
-    <div class="cc-props" aria-hidden="true"><div class="cc-candlelight"></div><div class="cc-moth"><i class="cc-moth-rest"></i><i class="cc-moth-fly"></i></div></div>
-  </div>`;
-};
-
-const layoutBtn = (ui) => { const c = ui.layout === 'compact'; return `<button type="button" class="cc-layoutbtn" data-act="layout" data-v="${c ? 'spread' : 'compact'}" aria-label="${c ? 'Показать разворот' : 'Компактный режим'}" aria-pressed="${c}">${c ? 'Разворот' : 'Компактно'}</button>`; };
-
 const blankPage = (text) => `<section class="cc-page"><header class="cc-pagehead"><div class="cc-title"><i>✦</i><span>Последние чары</span><i>✦</i></div></header><div class="cc-pagebody">${text}</div>${closeBtn}</section>`;
 
 export function panelHtml(view, ui, preview) {
-  if (!view || !view.chatOpen) return tome(view, blankPage('<p class="cc-empty">Откройте чат — магия хранится в каждом чате отдельно.</p>'));
-  if (view.unsupported) return tome(view, blankPage(warnBox('Данные магии в этом чате записаны другой версией расширения. Панель их не трогает — обновите расширение.', 'cc-bad')));
-  if (!view.hasProfile || !current(view)) return tome(view, blankPage(choiceHtml(view, ui)));
+  const shell = shellOf(view);
+  if (!view || !view.chatOpen) return shell.html({ view, ui, content: blankPage('<p class="cc-empty">Откройте чат — магия хранится в каждом чате отдельно.</p>') });
+  if (view.unsupported) return shell.html({ view, ui, content: blankPage(warnBox('Данные магии в этом чате записаны другой версией расширения. Панель их не трогает — обновите расширение.', 'cc-bad')) });
+  if (!view.hasProfile || !current(view)) return shell.html({ view, ui, content: blankPage(choiceHtml(view, ui)) });
   let main;
   let side = '';
   if (ui.tab === 'state') main = statePage(view, ui, preview);
   else if (ui.tab === 'more') main = morePage(view, ui);
   else ({ main, side } = castPage(view, ui, preview));
-  const page = `<section class="cc-page">
-    ${closeBtn}${layoutBtn(ui)}
-    ${headHtml(view, ui)}
-    ${ui.tab === 'cast' ? `<div class="cc-queue-slot">${queueHtml(view)}</div>` : ''}
-    ${ui.tab === 'cast' && ui.spellId ? `<div class="cc-toolbar">${btn('unpick', 'К каталогу', { cls: 'cc-back' })}</div>` : ''}
-    <div class="cc-pagebody">${main}</div>
-  </section>`;
   const casting = ui.tab === 'cast';
-  return tome(view, page, { side: casting ? side : frontispiece(view), spread: true, selected: Boolean(casting && ui.spellId), layout: ui.layout ?? 'spread', candle: candleHtml(view), ribbons: ribbonsHtml(view, ui), marks: marksHtml(view, ui) });
+  const mode = modeOf(view, ui);
+  const parts = {
+    close: closeBtn, mode, main, side, casting, spell: Boolean(casting && ui.spellId), queue: queueHtml(view), queueFold: queueFoldHtml(view, ui.queueOpen), queueOpen: ui.queueOpen,
+    toolbar: casting && ui.spellId ? `<div class="cc-toolbar">${btn('unpick', 'К каталогу', { cls: 'cc-back' })}</div>` : '',
+    head: (charm) => headHtml(view, ui, charm), who: whoOf(view), last: lastEffectOf(view), peekOpen: ui.peekOpen,
+  };
+  return shell.html({ view, ui, parts, side: casting ? side : frontispiece(view), selected: Boolean(casting && ui.spellId), tension: tensionOf(view), tabs: tabsOf(view, ui), mode });
 }
 
 // ---------- DOM ----------
@@ -862,25 +868,32 @@ export function createPanel(actions) {
   let scrollTop = false;
   let lastLevel = null;
   let renderedSpellId = null;
+  let paintedItem = null;
   const host = document.createElement('div');
   host.id = 'cc-panel-host';
   const shadow = host.attachShadow({ mode: 'open' });
   const reset = document.createElement('style');
   reset.textContent = ':host { all: initial; }';
-  const sheet = document.createElement('link');
-  sheet.rel = 'stylesheet';
-  sheet.href = new URL('./style.css?v=0.1.11', import.meta.url).href;
+  const sheets = [new URL('./shells/tome.css?v=0.1.12', import.meta.url).href, new URL('./style.css?v=0.1.12', import.meta.url).href, new URL('./shells/phone.css?v=0.1.12', import.meta.url).href].map((href) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    return link;
+  });
   const root = document.createElement('div');
   root.id = 'cc-panel';
   root.className = 'cc-panel';
+  root.dataset.item = 'tome';
+  root.dataset.skin = 'amethyst';
   root.hidden = true;
   root.setAttribute('role', 'dialog');
   root.setAttribute('aria-label', 'Последние чары');
-  shadow.append(reset, sheet, root);
+  shadow.append(reset, ...sheets, root);
   document.body.append(host);
 
   const preview = (kind, payload) => actions.preview(kind, payload);
   const st = () => (view ? current(view) : null);
+  const shell = () => shellOf(view);
   const spellById = (id) => list(view?.data?.spells).find((s) => s.id === id) ?? null;
 
   function paint() {
@@ -906,8 +919,11 @@ export function createPanel(actions) {
     }
     const resetScroll = scrollTop;
     scrollTop = false;
+    root.dataset.item = view?.settings?.item ?? 'tome';
+    root.dataset.skin = view?.settings?.skin ?? 'amethyst';
     root.innerHTML = panelHtml(view, ui, preview);
     ui.flipTo = null;
+    if (paintedItem !== root.dataset.item) { paintedItem = root.dataset.item; applyPos(); }
     const body = root.querySelector('.cc-pagebody');
     if (body) body.scrollTop = resetScroll ? 0 : (ui.tab === 'cast' ? ui.listScroll : 0);
     // Короткие эффекты: капля воска при росте напряжения и каст на листе.
@@ -933,10 +949,10 @@ export function createPanel(actions) {
     } else if (focusAct) {
       let el;
       if (focusAct === 'pick') el = root.querySelector('.cc-leaf-name') ?? [...root.querySelectorAll('[data-act="pick"]')].find((x) => x.dataset.v === focusV);
-      else if (focusAct === 'unpick') el = root.querySelector('[data-bind="q"]');
+      else if (focusAct === 'unpick') el = [...root.querySelectorAll('[data-act="pick"]')].find((x) => x.dataset.v === renderedSpellId) ?? root.querySelector('[data-act="school"][aria-selected="true"], [data-act="school"][aria-pressed="true"]');
       else el = [...root.querySelectorAll('[data-act]')].find((x) => x.dataset.act === focusAct && (focusV === undefined || x.dataset.v === focusV))
         ?? [...root.querySelectorAll('[data-act]')].find((x) => x.dataset.act === focusAct);
-      el?.focus();
+      el?.focus({ preventScroll: true });
     }
     renderedSpellId = ui.spellId;
   }
@@ -1020,8 +1036,12 @@ export function createPanel(actions) {
       case 'close': close(); return;
       case 'tab': ui.tab = v; ui.profileDraft = null; scrollTop = true; break;
       case 'more': ui.tab = 'more'; ui.moreOpen = v; scrollTop = true; break;
-      case 'mode': ui.flipTo = v; actions.setMode(v); return;
+      case 'mode': if (v === view?.mode) return; ui.flipTo = v; actions.setMode(v); return;
       case 'theme': actions.setTheme?.(v); return;
+      case 'item': actions.setItem?.(v); return;
+      case 'skin': actions.setSkin?.(v); return;
+      case 'peek': ui.peekOpen = !ui.peekOpen; break;
+      case 'queuefold': ui.queueOpen = !ui.queueOpen; break;
       case 'dequeue': actions.dequeue(v); return;
       case 'create': create(v); return;
       // каст
@@ -1235,30 +1255,39 @@ export function createPanel(actions) {
   document.addEventListener('keydown', onKey);
 
   // Перетаскивание: смещение от места по умолчанию, на телефонной вёрстке не применяется.
-  const POS_KEY = 'cena-chuda:pos';
-  const narrow = () => globalThis.matchMedia?.('(max-width: 700px)').matches ?? false;
+  const narrow = () => globalThis.matchMedia?.(shell().narrow ?? '(max-width: 700px)').matches ?? false;
   let off = null;
-  try {
-    const p = JSON.parse(globalThis.localStorage?.getItem(POS_KEY) ?? 'null');
-    if (p && Number.isFinite(p.x) && Number.isFinite(p.y)) off = { x: p.x, y: p.y };
-  } catch { off = null; }
+  let posKey = null;
+  // У каждого предмета свой ключ позиции: при смене предмета смещение читается заново.
+  function syncPos() {
+    const key = shell().posKey;
+    if (key === posKey) return;
+    posKey = key;
+    off = null;
+    try {
+      const p = JSON.parse(globalThis.localStorage?.getItem(key) ?? 'null');
+      if (p && Number.isFinite(p.x) && Number.isFinite(p.y)) off = { x: p.x, y: p.y };
+    } catch { off = null; }
+  }
   const savePos = () => {
     try {
-      if (off) globalThis.localStorage?.setItem(POS_KEY, JSON.stringify(off));
-      else globalThis.localStorage?.removeItem(POS_KEY);
+      if (off) globalThis.localStorage?.setItem(posKey, JSON.stringify(off));
+      else globalThis.localStorage?.removeItem(posKey);
     } catch { /* без хранилища */ }
   };
-  function applyPos(next = off) {
+  function applyPos(next) {
+    syncPos();
+    if (next === undefined) next = off;
     root.style.translate = 'none';
     if (!next || narrow() || root.hidden) return;
-    const tome = root.querySelector('.cc-tome');
+    const tome = root.querySelector(shell().dragSelector);
     if (!tome) return;
     off = clampOffset(next, tome.getBoundingClientRect(), globalThis.innerWidth, globalThis.innerHeight);
     root.style.translate = `${off.x}px ${off.y}px`;
   }
   // Если обложки почти не видно (окно сильно уменьшили), том возвращается на место.
   function ensureReachable() {
-    const tome = root.querySelector('.cc-tome');
+    const tome = root.querySelector(shell().dragSelector);
     if (!off || narrow() || !tome) return;
     const r = tome.getBoundingClientRect();
     const vis = (a, b, max) => Math.min(b, max) - Math.max(a, 0);
@@ -1267,10 +1296,10 @@ export function createPanel(actions) {
     savePos();
     applyPos();
   }
-  const NO_GRAB = 'button, input, select, textarea, a, summary, label, [data-act], [contenteditable], .cc-page, .cc-side';
+  const grabbable = (ev) => ev.target.closest?.(shell().dragSelector) && !ev.target.closest(shell().noGrab);
   let drag = null;
   root.addEventListener('pointerdown', (ev) => {
-    if (ev.button !== 0 || narrow() || !ev.target.closest?.('.cc-tome') || ev.target.closest(NO_GRAB)) return;
+    if (ev.button !== 0 || narrow() || !grabbable(ev)) return;
     drag = { id: ev.pointerId, sx: ev.clientX, sy: ev.clientY, from: off ?? { x: 0, y: 0 }, moved: false };
   });
   root.addEventListener('pointermove', (ev) => {
@@ -1296,7 +1325,7 @@ export function createPanel(actions) {
   root.addEventListener('pointerup', endDrag);
   root.addEventListener('pointercancel', endDrag);
   root.addEventListener('dblclick', (ev) => {
-    if (narrow() || !ev.target.closest?.('.cc-tome') || ev.target.closest(NO_GRAB)) return;
+    if (narrow() || !grabbable(ev)) return;
     off = null;
     savePos();
     applyPos();

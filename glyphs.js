@@ -1,6 +1,6 @@
 // Знаки: пять источников и шесть направлений магии. Только константная разметка SVG, без
 // пользовательского текста. Цвет — currentColor и переменные темы.
-import { SPELL_ICONS } from './spell-icons/index.js?v=0.1.11';
+import { SPELL_ICONS } from './spell-icons/index.js?v=0.1.12';
 
 const svg = (body, cls = '') => `<svg class="cc-glyph ${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${body}</svg>`;
 

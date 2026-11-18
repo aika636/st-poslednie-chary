@@ -1,20 +1,22 @@
 // Чистые части слоя SillyTavern: чтение метаданных без записи, сборка view для панели,
 // тексты для промпта по типу генерации, настройки, шаблоны и свои заклинания.
 // Без DOM и без SillyTavern: всё нужное приходит параметрами.
-import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.11';
-import { statusBlock, turnFact, notesOfRows, fracturesOfRows } from './core/prompt.mjs?v=0.1.11';
-import { createProfile } from './core/state.mjs?v=0.1.11';
-import { customSpell, customId, validateSpell } from './core/catalog.mjs?v=0.1.11';
-import SPELLS from './core/data/spells.mjs?v=0.1.11';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.11';
-import TAGS from './core/data/tags.mjs?v=0.1.11';
-import DIRECTIONS from './core/data/directions.mjs?v=0.1.11';
-import SOURCES from './core/data/sources.mjs?v=0.1.11';
+import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.12';
+import { statusBlock, turnFact, notesOfRows, fracturesOfRows } from './core/prompt.mjs?v=0.1.12';
+import { createProfile } from './core/state.mjs?v=0.1.12';
+import { customSpell, customId, validateSpell } from './core/catalog.mjs?v=0.1.12';
+import SPELLS from './core/data/spells.mjs?v=0.1.12';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.12';
+import TAGS from './core/data/tags.mjs?v=0.1.12';
+import DIRECTIONS from './core/data/directions.mjs?v=0.1.12';
+import SOURCES from './core/data/sources.mjs?v=0.1.12';
 
 export const DEPTH_MIN = 0;
 export const DEPTH_MAX = 10;
 export const THEMES = ['amethyst', 'tavern'];
-export const DEFAULT_SETTINGS = Object.freeze({ enabled: true, depth: 1, templates: [], theme: 'amethyst', desire: false, free: false, customSpells: [], customDeleted: [] });
+export const ITEMS = ['tome', 'phone'];
+export const SKINS = { tome: ['amethyst', 'tavern'], phone: ['city', 'cyber', 'space'] };
+export const DEFAULT_SETTINGS = Object.freeze({ enabled: true, depth: 1, templates: [], theme: 'amethyst', item: 'tome', skin: 'amethyst', desire: false, free: false, customSpells: [], customDeleted: [] });
 
 // Школа, выключенная по умолчанию: её чары и вкладка видны только при включённой настройке.
 export const OPTIONAL_SCHOOL = 'desire';
@@ -156,12 +158,17 @@ export function deleteCustomSpell(settings, id) {
 
 export function normalizeSettings(raw) {
   const s = isObject(raw) ? raw : {};
+  const item = ITEMS.includes(s.item) ? s.item : DEFAULT_SETTINGS.item;
+  const skins = SKINS[item];
+  const skin = skins.includes(s.skin) ? s.skin : skins.includes(s.theme) ? s.theme : (skins[0] ?? '');
   return {
     ...s,
     enabled: typeof s.enabled === 'boolean' ? s.enabled : DEFAULT_SETTINGS.enabled,
     depth: clampDepth(s.depth ?? DEFAULT_SETTINGS.depth),
     templates: Array.isArray(s.templates) ? s.templates.filter((t) => isObject(t) && isText(t.name)) : [],
     theme: THEMES.includes(s.theme) ? s.theme : DEFAULT_SETTINGS.theme,
+    item,
+    skin,
     desire: s.desire === true,
     free: s.free === true,
     customSpells: validCards(s.customSpells),
@@ -234,7 +241,7 @@ export function buildView({ chatOpen, chatId = null, chat, meta, unsupported, se
     conflicts: [],
     data: viewData(unsupported ? null : meta, s),
     templates: s.templates,
-    settings: { enabled: s.enabled, depth: s.depth, theme: s.theme, desire: s.desire, free: s.free },
+    settings: { enabled: s.enabled, depth: s.depth, theme: s.theme, item: s.item, skin: s.skin, desire: s.desire, free: s.free },
   };
   if (!chatOpen || !isObject(meta)) return base;
   base.hasProfile = hasProfile(meta);

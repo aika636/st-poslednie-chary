@@ -2,20 +2,20 @@
 import {
   META_KEY, MODES, previewCommand, enqueue as coreEnqueue, dequeue as coreDequeue, commitPending,
   toggleEvent as coreToggleEvent, computeChat,
-} from './core/chat-journal.mjs?v=0.1.11';
-import { createSnapshot } from './core/state.mjs?v=0.1.11';
-import { statusBlock } from './core/prompt.mjs?v=0.1.11';
+} from './core/chat-journal.mjs?v=0.1.12';
+import { createSnapshot } from './core/state.mjs?v=0.1.12';
+import { statusBlock } from './core/prompt.mjs?v=0.1.12';
 import {
-  readMeta, worthWarning, hasProfile, hasHistory, canSwitchMode, buildView, promptTexts, normalizeSettings, clampDepth,
+  readMeta, worthWarning, hasProfile, hasHistory, canSwitchMode, buildView, promptTexts, normalizeSettings, clampDepth, ITEMS, SKINS, THEMES,
   upsertTemplate, removeTemplate, saveCustomSpell as saveCustomSpellTo, deleteCustomSpell as deleteCustomSpellFrom, migrateCustom, PROMPT_OPTIONS, DEPTH_MIN, DEPTH_MAX,
-} from './view.mjs?v=0.1.11';
-import { createPanel, candleHtml } from './ui.js?v=0.1.11';
-import { levelGrew, playFx } from './candle.js?v=0.1.11';
-import { scaleOf } from './core/rules.mjs?v=0.1.11';
-import { clampOffset } from './view.mjs?v=0.1.11';
-import { createDicePresenter } from './dice.js?v=0.1.11';
-import { buildMatchers, findSpell } from './hint.js?v=0.1.11';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.11';
+} from './view.mjs?v=0.1.12';
+import { createPanel, candleHtml } from './ui.js?v=0.1.12';
+import { levelGrew, playFx } from './candle.js?v=0.1.12';
+import { scaleOf } from './core/rules.mjs?v=0.1.12';
+import { clampOffset } from './view.mjs?v=0.1.12';
+import { createDicePresenter } from './dice.js?v=0.1.12';
+import { buildMatchers, findSpell } from './hint.js?v=0.1.12';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.12';
 
 const MODULE = 'cena-chuda';
 const SETTINGS_KEY = 'cenaChuda';
@@ -277,7 +277,20 @@ const actions = {
   },
 
   setTheme(theme) {
-    writeSettings({ theme });
+    writeSettings({ theme, skin: theme });
+    refresh();
+  },
+
+  setItem(item) {
+    if (!ITEMS.includes(item)) return;
+    writeSettings({ item, skin: SKINS[item][0] ?? '' });
+    refresh();
+  },
+
+  setSkin(skin) {
+    const s = readSettings();
+    if (!SKINS[s.item].includes(skin)) return;
+    writeSettings(THEMES.includes(skin) ? { skin, theme: skin } : { skin });
     refresh();
   },
 
@@ -352,8 +365,11 @@ function updateButton(cur, view) {
   btn.classList.toggle('cc-armed', n > 0);
   btn.title = n ? `${TITLE} — в очереди: ${n}, уйдёт с сообщением` : TITLE;
   btn.style.display = readSettings().enabled ? '' : 'none';
-  btn.dataset.theme = readSettings().theme;
-  btn.innerHTML = view?.hasProfile && view.state ? candleHtml(view, { mini: true, uid: 'mini' }) : candleHtml(null, { mini: true, uid: 'mini', bare: true });
+  const cfg = readSettings();
+  btn.dataset.theme = cfg.theme;
+  btn.dataset.item = cfg.item;
+  btn.dataset.skin = cfg.skin;
+  btn.innerHTML = view?.hasProfile && view.state ? candleHtml(view, { mini: true, uid: 'mini' }) : candleHtml({ settings: readSettings() }, { mini: true, uid: 'mini', bare: true });
   const level = view?.hasProfile && view.state ? scaleOf(view.state) : null;
   const same = miniFx.chat === (view?.chatId ?? null);
   if (same && levelGrew(miniFx.level, level)) miniFx.at = Date.now();
@@ -438,7 +454,10 @@ function updateHint() {
   const on = Boolean(readSettings().enabled && view?.hasProfile && !view.unsupported);
   const hits = on && text.trim() ? hintCandidates(text, view) : [];
   const queued = on ? (view.pending ?? []).filter((c) => c.kind === 'cast') : [];
-  box.dataset.theme = readSettings().theme;
+  const cfg = readSettings();
+  box.dataset.theme = cfg.theme;
+  box.dataset.item = cfg.item;
+  box.dataset.skin = cfg.skin;
   box.replaceChildren(
     ...queued.map((c) => hintChip(`✦ ${c.payload?.spell?.name ?? 'чудо'} · в очереди`, 'Уйдёт с вашим сообщением',
       () => panel?.open(), () => actions.dequeue(c.id), 'cc-hint-on')),
@@ -478,17 +497,20 @@ function mountFonts() {
   const link = document.createElement('link');
   link.id = 'cc-fonts';
   link.rel = 'stylesheet';
-  link.href = new URL('./fonts/fonts.css?v=0.1.11', import.meta.url).href;
+  link.href = new URL('./fonts/fonts.css?v=0.1.12', import.meta.url).href;
   document.head.append(link);
 }
 
 function mountStyle() {
   if (document.getElementById('cc-style')) return;
-  const link = document.createElement('link');
-  link.id = 'cc-style';
-  link.rel = 'stylesheet';
-  link.href = new URL('./style.css?v=0.1.11', import.meta.url).href;
-  document.head.append(link);
+  const hrefs = [new URL('./shells/tome.css?v=0.1.12', import.meta.url).href, new URL('./style.css?v=0.1.12', import.meta.url).href, new URL('./shells/phone.css?v=0.1.12', import.meta.url).href];
+  hrefs.forEach((href, i) => {
+    const link = document.createElement('link');
+    if (i === 1) link.id = 'cc-style';
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.append(link);
+  });
 }
 
 function mountDiceStyles() {
@@ -496,7 +518,7 @@ function mountDiceStyles() {
   const link = document.createElement('link');
   link.id = 'cc-dice-style';
   link.rel = 'stylesheet';
-  link.href = new URL('./dice.css?v=0.1.11', import.meta.url).href;
+  link.href = new URL('./dice.css?v=0.1.12', import.meta.url).href;
   document.head.append(link);
 }
 
@@ -555,7 +577,7 @@ function mountButton() {
       panel?.toggle();
     }
   });
-  btn.innerHTML = candleHtml(null, { mini: true, uid: 'mini', bare: true });
+  btn.innerHTML = candleHtml({ settings: readSettings() }, { mini: true, uid: 'mini', bare: true });
   document.body.append(btn);
   placeButton();
   addEventListener('resize', placeButton);

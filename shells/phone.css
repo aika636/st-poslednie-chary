@@ -1,0 +1,198 @@
+/* Оболочка «телефон» и её кожи (Городская мистика, Киберпанк, Космос). Содержимое — то же, что у тома, цвета через --cc-*. */
+
+/* ---------- кожи: палитры и шрифты ---------- */
+
+#cc-panel[data-item="phone"], #cc-open[data-item="phone"], #cc-hint[data-item="phone"] {
+  --bg: #15120f; --card: #211b17; --card2: #2b231d; --ink: #efe3cb; --mut: #a89a84; --line: #4a3d2e;
+  --acc: #b99458; --acc2: #d6b983; --on-acc: #1c140b; --danger: #d8715f; --okc: #6fb39a;
+  --r: 16px;
+  --f-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --f-d: 'CC Playfair Display', 'Playfair Display', Georgia, serif;
+  --f-n: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --tex: radial-gradient(120% 55% at 50% -8%, rgba(214, 170, 98, .17), transparent 62%);
+  --src: var(--acc);
+  --cc-page: var(--card); --cc-page-2: var(--card2); --cc-page-edge: var(--line);
+  --cc-ink: var(--ink); --cc-muted: var(--mut); --cc-line: var(--line);
+  --cc-accent-2: var(--acc2); --cc-gold: var(--acc); --cc-gold-2: var(--acc); --cc-gold-3: var(--line);
+  --cc-cover-1: var(--card2); --cc-cover-2: var(--card); --cc-cover-3: var(--bg);
+  --cc-bad: var(--danger); --cc-warn: #d0953f; --cc-ok: var(--okc); --cc-r3: var(--danger);
+  --cc-lift: var(--card2);
+  --cc-display: var(--f-d); --cc-body: var(--f-ui);
+  --cc-glow: transparent;
+}
+#cc-panel[data-item="phone"][data-skin="cyber"], #cc-open[data-item="phone"][data-skin="cyber"], #cc-hint[data-item="phone"][data-skin="cyber"] {
+  --bg: #0c0e13; --card: #141821; --card2: #1b2130; --ink: #dfe5ee; --mut: #8791a4; --line: #2b3447;
+  --acc: #5aadb8; --acc2: #8fd0d8; --on-acc: #05151a; --danger: #d96d97; --okc: #5fbf9c;
+  --r: 6px;
+  --f-ui: 'CC Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --f-d: 'CC JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --f-n: 'CC JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --tex: repeating-linear-gradient(0deg, rgba(255, 255, 255, .022) 0 1px, transparent 1px 3px), linear-gradient(180deg, rgba(90, 173, 184, .07), transparent 30%);
+}
+#cc-panel[data-item="phone"][data-skin="space"], #cc-open[data-item="phone"][data-skin="space"], #cc-hint[data-item="phone"][data-skin="space"] {
+  --bg: #080d1a; --card: #0e1628; --card2: #15203a; --ink: #dbe5f5; --mut: #8a9ab6; --line: #26354f;
+  --acc: #8db0dc; --acc2: #b9d0ee; --on-acc: #07101f; --danger: #e07488; --okc: #6fc2a8;
+  --r: 12px;
+  --f-ui: 'CC Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --f-d: 'CC Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --f-n: 'CC Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --tex: radial-gradient(1px 1px at 20% 30%, rgba(255, 255, 255, .5), transparent 60%), radial-gradient(1px 1px at 70% 15%, rgba(255, 255, 255, .4), transparent 60%), radial-gradient(1px 1px at 85% 60%, rgba(255, 255, 255, .35), transparent 60%), radial-gradient(1px 1px at 35% 80%, rgba(255, 255, 255, .3), transparent 60%), linear-gradient(180deg, rgba(141, 176, 220, .08), transparent 35%);
+}
+#cc-panel[data-item="phone"] .cc-phone[data-src="knowledge"] { --src: #7f9bd8; --on-src: #0b1226; }
+#cc-panel[data-item="phone"] .cc-phone[data-src="blood"] { --src: #c4584c; --on-src: #fff6f2; }
+#cc-panel[data-item="phone"] .cc-phone[data-src="faith"] { --src: #d2bb7e; --on-src: #231b08; }
+#cc-panel[data-item="phone"] .cc-phone[data-src="pact"] { --src: #a07fc6; --on-src: #fbf5ff; }
+#cc-panel[data-item="phone"] .cc-phone[data-src="nature"] { --src: #70a468; --on-src: #0d1a0c; }
+
+/* ---------- окно ---------- */
+
+#cc-panel[data-item="phone"] { width: min(410px, calc(100vw - 24px)); align-items: flex-start; }
+#cc-panel .cc-phone {
+  position: relative; flex: 1; min-width: 0; height: min(820px, 100%); padding: 10px; border-radius: 50px;
+  --on-src: var(--on-acc);
+  --cc-accent: var(--src); --cc-on-accent: var(--on-src);
+  --cc-accent-soft: color-mix(in srgb, var(--src) 14%, transparent);
+  background: linear-gradient(145deg, #3a3a3e, #141416 55%, #2a2a2d);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, .55), inset 0 0 0 1.5px #4b4b50;
+  cursor: grab; pointer-events: auto;
+}
+#cc-panel .cc-phone .cc-pscreen {
+  position: relative; display: flex; flex-direction: column; height: 100%; overflow: hidden; border-radius: 40px; isolation: isolate;
+  background: var(--tex), var(--bg); color: var(--ink); font: 15px/1.42 var(--f-ui); cursor: auto;
+}
+@media (max-width: 600px) {
+  #cc-panel[data-item="phone"] { top: 0; left: 0; right: 0; width: auto; height: 100dvh; max-height: none; }
+  #cc-panel .cc-phone { height: 100%; padding: 0; border-radius: 0; background: none; box-shadow: none; }
+  #cc-panel .cc-phone .cc-pscreen { border-radius: 0; }
+}
+
+/* ---------- полоса статуса, кольцо, шапка ---------- */
+
+#cc-panel .cc-phone .cc-pbar { position: relative; flex: none; height: 34px; display: flex; align-items: center; justify-content: center; }
+#cc-panel .cc-phone .cc-pgrip { width: 56px; height: 5px; border-radius: 3px; background: var(--line); }
+#cc-panel .cc-phone .cc-pbar .cc-close {
+  top: 50%; left: auto; right: 12px; width: 28px; height: 28px; transform: translateY(-50%);
+  border: 1px solid var(--line); background: var(--card2); color: var(--ink); font-size: 12px; display: grid; place-items: center; padding: 0;
+}
+#cc-panel .cc-phone .cc-ptop { flex: none; display: flex; gap: 14px; align-items: center; padding: 2px 16px 10px; }
+#cc-panel .cc-phone .cc-pwho { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }
+#cc-panel .cc-phone .cc-pname { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 24px/1.1 var(--f-d); }
+#cc-panel .cc-phone .cc-pill.cc-src {
+  height: 24px; padding: 0 9px 0 6px; border-radius: 12px; font: 600 12.5px var(--f-ui); background: color-mix(in srgb, var(--src) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--src) 55%, transparent); color: var(--ink); box-shadow: none;
+}
+#cc-panel .cc-phone .cc-pill.cc-src .cc-glyph { width: 15px; height: 15px; color: var(--src); }
+#cc-panel .cc-phone .cc-pmode { display: inline-flex; border: 1px solid var(--line); border-radius: calc(var(--r) - 4px); overflow: hidden; background: var(--card); }
+#cc-panel .cc-phone .cc-pmode button { border: 0; background: transparent; color: var(--mut); height: 30px; padding: 0 14px; font: 600 13px var(--f-ui); cursor: pointer; }
+#cc-panel .cc-phone .cc-pmode button[aria-pressed="true"] { background: var(--acc); color: var(--on-acc); }
+#cc-panel .cc-phone .cc-pmode button[aria-disabled="true"]:not([aria-pressed="true"]) { color: var(--ink); opacity: .72; }
+#cc-panel .cc-phone .cc-btn:disabled { opacity: 1; background: color-mix(in srgb, var(--src) 26%, var(--card)); color: color-mix(in srgb, var(--ink) 78%, var(--card)); }
+#cc-panel .cc-phone .cc-btn.cc-ghost:disabled { background: transparent; color: var(--mut); }
+#cc-panel .cc-phone .cc-flags { gap: 4px 10px; }
+#cc-panel .cc-phone .cc-flag { font-size: 12.5px; color: var(--mut); }
+#cc-panel .cc-phone .cc-flag .cc-glyph { color: var(--src); }
+#cc-panel .cc-phone .cc-warnflag { color: var(--danger); }
+#cc-panel .cc-phone .cc-godflag {
+  gap: 5px; padding: 1px 9px 1px 7px; border-radius: 999px; font-size: 12px;
+  color: color-mix(in srgb, var(--danger) 70%, var(--ink));
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 38%, transparent);
+}
+#cc-panel .cc-phone .cc-godflag .cc-godmark { font-size: 11px; line-height: 1; color: var(--danger); }
+
+#cc-panel .cc-phone .cc-dial { position: relative; flex: none; width: 140px; height: 140px; display: block; margin: 0; }
+#cc-panel .cc-phone .cc-dial-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+#cc-panel .cc-phone .cc-ds { fill: none; stroke-width: 9; stroke-linecap: butt; }
+#cc-panel .cc-phone .cc-ds-off { stroke: var(--line); opacity: .75; }
+#cc-panel .cc-phone .cc-ds-on, #cc-panel .cc-phone .cc-ds-fc { stroke: var(--src); }
+#cc-panel .cc-phone .cc-dial-over { fill: none; stroke: var(--danger); stroke-width: 1.4; stroke-dasharray: 3 4; opacity: .85; }
+#cc-panel .cc-phone .cc-dm-under { fill: var(--bg); stroke: var(--bg); stroke-width: 5.6; stroke-linecap: round; stroke-linejoin: round; opacity: .92; }
+#cc-panel .cc-phone path.cc-dm-under { fill: none; }
+#cc-panel .cc-phone .cc-dm-temp path.cc-dm-under { stroke-width: 3.4; }
+#cc-panel .cc-phone .cc-dm-seam { fill: none; stroke: var(--acc2); stroke-width: 2.4; stroke-linecap: round; }
+#cc-panel .cc-phone .cc-dm-glint { fill: none; stroke: var(--bg); stroke-width: .7; stroke-dasharray: 1 2.2; }
+#cc-panel .cc-phone .cc-dm-perm circle { fill: var(--acc2); }
+#cc-panel .cc-phone .cc-dm-temp path:not(.cc-dm-under) { fill: none; stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 3 1.6; stroke-linejoin: round; }
+#cc-panel .cc-phone .cc-dial-c { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
+#cc-panel .cc-phone .cc-dial-c b { font: 700 28px/1 var(--f-n); font-variant-numeric: tabular-nums; letter-spacing: -.5px; color: var(--ink); }
+#cc-panel .cc-phone .cc-dial-c small { margin-top: 3px; font-size: 9.5px; letter-spacing: .03em; text-transform: uppercase; color: var(--mut); }
+#cc-panel .cc-phone .cc-dial-c em { margin-top: 3px; font: normal 12px var(--f-n); color: var(--src); }
+#cc-panel .cc-phone .cc-candle-box.cc-drop { animation: cc-ring-flash .9s ease-out var(--cc-fx-delay, 0ms) both; }
+@keyframes cc-ring-flash { 0% { filter: drop-shadow(0 0 0 transparent); } 30% { filter: drop-shadow(0 0 7px var(--src)); } 100% { filter: none; } }
+
+/* ---------- последствие, вкладки, содержимое, очередь ---------- */
+
+#cc-panel .cc-phone .cc-tick {
+  flex: none; display: flex; align-items: center; gap: 8px; width: calc(100% - 32px); margin: 0 16px 8px; padding: 8px 12px; text-align: left;
+  border-radius: calc(var(--r) - 2px); background: var(--card); border: 1px solid var(--line); font: 12.5px var(--f-ui); color: var(--ink); cursor: pointer;
+}
+#cc-panel .cc-phone .cc-tick span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#cc-panel .cc-phone .cc-tick b { color: var(--mut); font-size: 11px; }
+#cc-panel .cc-phone .cc-tick i { width: 7px; height: 7px; border-radius: 50%; background: var(--danger); flex: none; }
+#cc-panel .cc-phone .cc-peek { flex: none; margin: -2px 16px 8px; padding: 4px 12px; border-radius: calc(var(--r) - 2px); background: var(--card); border: 1px solid var(--line); font-size: 12.5px; max-height: 150px; overflow: auto; }
+#cc-panel .cc-phone .cc-peek div { padding: 6px 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+#cc-panel .cc-phone .cc-peek div:last-child { border: 0; }
+#cc-panel .cc-phone .cc-ptabs { flex: none; display: flex; gap: 4px; margin: 0 16px 6px; padding: 4px; border-radius: calc(var(--r) + 2px); background: var(--card); border: 1px solid var(--line); }
+#cc-panel .cc-phone .cc-ptab { display: inline-flex; align-items: center; justify-content: center; flex: 1; height: 38px; border: 0; border-radius: var(--r); background: transparent; color: var(--mut); font: 600 14px var(--f-ui); cursor: pointer; }
+#cc-panel .cc-phone .cc-ptab[aria-selected="true"] { background: var(--card2); color: var(--ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acc) 60%, transparent); }
+#cc-panel .cc-phone .cc-ptab .cc-dot { background: color-mix(in srgb, var(--danger) 62%, #000); color: #fff; }
+#cc-panel .cc-phone .cc-pview { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#cc-panel .cc-phone .cc-pview .cc-pagebody { padding: 4px 16px 14px; scrollbar-width: none; overscroll-behavior: contain; }
+#cc-panel .cc-phone .cc-pview .cc-pagebody::-webkit-scrollbar { display: none; }
+#cc-panel .cc-phone .cc-pleaf { flex: 1; min-height: 0; display: flex; padding: 0 4px; }
+#cc-panel .cc-phone .cc-pleaf .cc-leaf { padding: 12px 14px 18px; scrollbar-width: none; background: transparent; }
+#cc-panel .cc-phone .cc-pview > .cc-toolbar { margin: 0 16px 4px; min-height: 0; }
+#cc-panel .cc-phone .cc-pblank .cc-page { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; background: none; box-shadow: none; padding: 0; }
+#cc-panel .cc-phone .cc-pblank .cc-pagehead { padding: 8px 16px 6px; }
+#cc-panel .cc-phone .cc-pblank .cc-close { display: none; }
+#cc-panel .cc-phone .cc-pqueue { flex: none; margin: 0 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+#cc-panel .cc-phone .cc-qfold {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 14px; text-align: left; cursor: pointer;
+  border-radius: calc(var(--r) + 2px); background: var(--card2); border: 1px solid var(--src); color: var(--ink); font: 13px var(--f-ui);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .4);
+}
+#cc-panel .cc-phone .cc-qfold span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#cc-panel .cc-phone .cc-qfold b { color: var(--src); }
+#cc-panel .cc-phone .cc-qfold i { flex: none; font-style: normal; color: var(--mut); font-size: 12px; }
+#cc-panel .cc-phone[data-queue="true"] .cc-pagebody { padding-bottom: 24px; }
+#cc-panel .cc-phone[data-queue="true"] .cc-pleaf .cc-leaf { padding-bottom: 28px; }
+#cc-panel .cc-phone .cc-pqueue .cc-queue { max-height: 120px; padding: 8px 10px 8px 14px; border-radius: calc(var(--r) + 6px); background: var(--card2); border: 1px solid var(--src); border-left-width: 1px; box-shadow: 0 8px 24px rgba(0, 0, 0, .4); }
+
+/* Содержимое на тёмном экране: убрать «бумажные» подложки. */
+#cc-panel .cc-phone .cc-school-nav { background: transparent; }
+#cc-panel .cc-phone .cc-school-nav button { border: 0; border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0; box-shadow: none; }
+#cc-panel .cc-phone .cc-school-nav button[aria-pressed="true"] { border-bottom-color: var(--acc); background: color-mix(in srgb, var(--acc) 14%, transparent); box-shadow: none; color: var(--ink); }
+#cc-panel .cc-phone .cc-seg { padding: 0; gap: 0; border-color: var(--line); border-radius: calc(var(--r) - 4px); overflow: hidden; background: var(--card); }
+#cc-panel .cc-phone .cc-seg button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 7px 14px; box-shadow: none; }
+#cc-panel .cc-phone .cc-seg button.cc-on { background: color-mix(in srgb, var(--acc) 16%, transparent); color: var(--ink); border-bottom-color: var(--acc); box-shadow: none; }
+#cc-panel .cc-phone .cc-school-nav button:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+#cc-panel .cc-phone .cc-toolbar button { background: transparent; border-color: var(--line); }
+#cc-panel .cc-phone .cc-toolbar button:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); border-color: var(--acc); }
+#cc-panel .cc-phone .cc-leaf-cost { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+#cc-panel .cc-phone .cc-front-mark { background: none; box-shadow: none; }
+#cc-panel .cc-phone .cc-spell-row, #cc-panel .cc-phone .cc-chapter { --school-accent: var(--src); }
+#cc-panel .cc-phone .cc-leaf { --school-accent: var(--src); }
+#cc-panel .cc-phone .cc-spell-row[data-direction], #cc-panel .cc-phone .cc-leaf[data-direction], #cc-panel .cc-phone .cc-chapter[data-direction] { --school-accent: var(--src); }
+#cc-panel .cc-phone .cc-btn { background: var(--src); color: var(--on-src); box-shadow: none; border-radius: var(--r); }
+#cc-panel .cc-phone .cc-btn.cc-ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+
+/* ---------- у поля ввода: мини-кольцо ---------- */
+
+#cc-open[data-item="phone"] {
+  border-radius: 14px !important; background: var(--card2) !important; border: 1.5px solid var(--acc) !important; color: var(--ink) !important;
+}
+#cc-open[data-item="phone"] .cc-candle-box { position: relative; width: 28px; height: 28px; }
+#cc-open[data-item="phone"] .cc-dial-svg { width: 28px; height: 28px; }
+#cc-open[data-item="phone"] .cc-ds { stroke-width: 11; }
+#cc-open[data-item="phone"] .cc-ds-on, #cc-open[data-item="phone"] .cc-ds-fc { stroke: var(--acc); }
+#cc-open[data-item="phone"] .cc-ds-off { stroke: var(--line); }
+#cc-open[data-item="phone"] .cc-candle-n { background: var(--card) !important; color: var(--ink) !important; border-color: var(--acc) !important; font-family: var(--f-n); }
+#cc-panel .cc-phone .cc-pqueue .cc-q-item { border: 1px solid var(--line); border-radius: 10px; background: var(--card); box-shadow: none; }
+#cc-panel .cc-phone .cc-pqueue .cc-q-h { color: var(--src); }
+#cc-panel .cc-phone .cc-ptab .cc-dot { margin-left: 6px; }
+#cc-panel .cc-phone .cc-leaf-nav { display: none; }
+#cc-panel .cc-phone .cc-toolbar .cc-back { min-height: 36px; padding: 4px 14px; border-radius: var(--r); background: transparent; color: var(--ink); border: 1px solid var(--line); box-shadow: none; }
+
+/* Поля ввода и пустые деления: заметнее на тёмном экране. */
+#cc-panel .cc-phone :is(input:not([type="checkbox"], [type="radio"], [type="range"]), textarea, select) { border-color: color-mix(in srgb, var(--mut) 62%, transparent); }
+#cc-panel .cc-phone .cc-ds-off { stroke: color-mix(in srgb, var(--line) 78%, var(--ink)); opacity: 1; }
