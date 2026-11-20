@@ -1,5 +1,5 @@
-import tome from './tome.js?v=0.1.14';
-import phone from './phone.js?v=0.1.14';
+import tome from './tome.js?v=0.1.15';
+import phone from './phone.js?v=0.1.15';
 
 export const shells = { tome, phone };
 export const shellOf = (view) => shells[view?.settings?.item] ?? tome;

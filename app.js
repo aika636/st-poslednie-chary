@@ -2,20 +2,20 @@
 import {
   META_KEY, MODES, previewCommand, enqueue as coreEnqueue, dequeue as coreDequeue, commitPending,
   toggleEvent as coreToggleEvent, computeChat,
-} from './core/chat-journal.mjs?v=0.1.14';
-import { createSnapshot } from './core/state.mjs?v=0.1.14';
-import { statusBlock } from './core/prompt.mjs?v=0.1.14';
+} from './core/chat-journal.mjs?v=0.1.15';
+import { createSnapshot } from './core/state.mjs?v=0.1.15';
+import { statusBlock } from './core/prompt.mjs?v=0.1.15';
 import {
   readMeta, worthWarning, hasProfile, hasHistory, canSwitchMode, buildView, promptTexts, normalizeSettings, clampDepth, ITEMS, SKINS, THEMES,
   upsertTemplate, removeTemplate, saveCustomSpell as saveCustomSpellTo, deleteCustomSpell as deleteCustomSpellFrom, migrateCustom, PROMPT_OPTIONS, DEPTH_MIN, DEPTH_MAX,
-} from './view.mjs?v=0.1.14';
-import { createPanel, candleHtml } from './ui.js?v=0.1.14';
-import { levelGrew, playFx } from './candle.js?v=0.1.14';
-import { scaleOf } from './core/rules.mjs?v=0.1.14';
-import { clampOffset } from './view.mjs?v=0.1.14';
-import { createDicePresenter } from './dice.js?v=0.1.14';
-import { buildMatchers, findSpell } from './hint.js?v=0.1.14';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.14';
+} from './view.mjs?v=0.1.15';
+import { createPanel, candleHtml } from './ui.js?v=0.1.15';
+import { levelGrew, playFx } from './candle.js?v=0.1.15';
+import { scaleOf } from './core/rules.mjs?v=0.1.15';
+import { clampOffset } from './view.mjs?v=0.1.15';
+import { createDicePresenter } from './dice.js?v=0.1.15';
+import { buildMatchers, findSpell } from './hint.js?v=0.1.15';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.15';
 
 const MODULE = 'cena-chuda';
 const SETTINGS_KEY = 'cenaChuda';
@@ -455,6 +455,10 @@ function updateHint() {
   const hits = on && text.trim() ? hintCandidates(text, view) : [];
   const queued = on ? (view.pending ?? []).filter((c) => c.kind === 'cast') : [];
   const cfg = readSettings();
+  // Пересобирать только при смене набора плашек, иначе анимация появления перезапускается на каждый ввод.
+  const key = JSON.stringify([cfg.theme, cfg.item, cfg.skin, queued.map((c) => [c.id, c.payload?.spell?.name]), hits.map((h) => [h.id, h.name])]);
+  if (box.dataset.key === key) return;
+  box.dataset.key = key;
   box.dataset.theme = cfg.theme;
   box.dataset.item = cfg.item;
   box.dataset.skin = cfg.skin;
@@ -497,13 +501,13 @@ function mountFonts() {
   const link = document.createElement('link');
   link.id = 'cc-fonts';
   link.rel = 'stylesheet';
-  link.href = new URL('./fonts/fonts.css?v=0.1.14', import.meta.url).href;
+  link.href = new URL('./fonts/fonts.css?v=0.1.15', import.meta.url).href;
   document.head.append(link);
 }
 
 function mountStyle() {
   if (document.getElementById('cc-style')) return;
-  const hrefs = [new URL('./shells/tome.css?v=0.1.14', import.meta.url).href, new URL('./style.css?v=0.1.14', import.meta.url).href, new URL('./shells/phone.css?v=0.1.14', import.meta.url).href];
+  const hrefs = [new URL('./shells/tome.css?v=0.1.15', import.meta.url).href, new URL('./style.css?v=0.1.15', import.meta.url).href, new URL('./shells/phone.css?v=0.1.15', import.meta.url).href];
   hrefs.forEach((href, i) => {
     const link = document.createElement('link');
     if (i === 1) link.id = 'cc-style';
@@ -518,7 +522,7 @@ function mountDiceStyles() {
   const link = document.createElement('link');
   link.id = 'cc-dice-style';
   link.rel = 'stylesheet';
-  link.href = new URL('./dice.css?v=0.1.14', import.meta.url).href;
+  link.href = new URL('./dice.css?v=0.1.15', import.meta.url).href;
   document.head.append(link);
 }
 

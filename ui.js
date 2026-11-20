@@ -1,14 +1,14 @@
 // Панель «Последних чар» — том заклинаний со свечой. Разметка строками от view, события через
 // data-act / data-bind. Правил здесь нет: можно ли, сколько стоит и что предупредить —
 // говорит actions.preview. Весь текст из чата, профиля и метаданных — только через esc().
-import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.14';
-import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.14';
-import SHORT from './core/data/short.mjs?v=0.1.14';
-import { clampOffset, canSwitchMode, OPTIONAL_TAG, SKINS } from './view.mjs?v=0.1.14';
-import { candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.14';
-import { SOURCE_GLYPH, STAR, glyphFor } from './glyphs.js?v=0.1.14';
-import { esc, list, attr } from './esc.js?v=0.1.14';
-import { shellOf } from './shells/index.js?v=0.1.14';
+import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.15';
+import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.15';
+import SHORT from './core/data/short.mjs?v=0.1.15';
+import { clampOffset, canSwitchMode, OPTIONAL_TAG, SKINS } from './view.mjs?v=0.1.15';
+import { candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.15';
+import { SOURCE_GLYPH, STAR, glyphFor } from './glyphs.js?v=0.1.15';
+import { esc, list, attr } from './esc.js?v=0.1.15';
+import { shellOf } from './shells/index.js?v=0.1.15';
 
 export { esc };
 
@@ -885,7 +885,7 @@ export function createPanel(actions) {
   const shadow = host.attachShadow({ mode: 'open' });
   const reset = document.createElement('style');
   reset.textContent = ':host { all: initial; }';
-  const sheets = [new URL('./shells/tome.css?v=0.1.14', import.meta.url).href, new URL('./style.css?v=0.1.14', import.meta.url).href, new URL('./shells/phone.css?v=0.1.14', import.meta.url).href].map((href) => {
+  const sheets = [new URL('./shells/tome.css?v=0.1.15', import.meta.url).href, new URL('./style.css?v=0.1.15', import.meta.url).href, new URL('./shells/phone.css?v=0.1.15', import.meta.url).href].map((href) => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = href;

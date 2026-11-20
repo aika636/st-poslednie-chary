@@ -1,4 +1,4 @@
-import { esc } from '../esc.js?v=0.1.14';
+import { esc } from '../esc.js?v=0.1.15';
 
 const R = 48;
 const GAP = 7;

@@ -1137,14 +1137,14 @@
 #cc-panel .cc-ribbon .cc-dot { writing-mode: horizontal-tb; margin: 4px 0 0; }
 @media (max-width: 700px) {
   #cc-panel .cc-ribbons { left: 16px; top: calc(100% - 62px); flex-direction: row; gap: 6px; }
-  #cc-panel .cc-ribbon { width: 84px; height: 44px; padding: 10px 6px 0; writing-mode: horizontal-tb; transform: translateY(-4px);
+  #cc-panel .cc-ribbon { display: inline-flex; align-items: center; justify-content: center; gap: 4px; width: auto; min-width: 84px; height: 44px; padding: 14px 10px 4px; white-space: nowrap; writing-mode: horizontal-tb; transform: translateY(-4px);
     clip-path: polygon(0 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 7px 100%, 0 calc(100% - 7px));
     box-shadow: inset 0 10px 8px -6px rgba(0, 0, 0, .5), inset 0 -2px 0 rgba(255, 255, 255, .08);
     background-position: 0 0, 0 0, 0 0, 0 0; }
   #cc-panel .cc-ribbon:hover { transform: translateY(0); }
   #cc-panel .cc-ribbon[aria-selected="true"] { transform: translateY(6px); }
   #cc-panel .cc-ribbon::before { inset: 10px 4px 4px; }
-  #cc-panel .cc-ribbon .cc-dot { margin: 0 0 0 4px; }
+  #cc-panel .cc-ribbon .cc-dot { margin: 0; }
 }
 
 /* ---------- под рукой: пустые слоты, сейчас ---------- */
@@ -1300,11 +1300,12 @@
 #cc-panel .cc-pill { padding: 2px 8px; border-radius: 2px; border: 1px solid color-mix(in srgb, var(--cc-ink) 50%, transparent); background: transparent; }
 #cc-panel .cc-pill.cc-src { background: color-mix(in srgb, var(--cc-ink) 11%, transparent); color: var(--cc-ink); border: 1px solid var(--cc-ci); }
 #cc-panel .cc-tog { padding: 4px 8px; border: 0; border-bottom: 1px dotted var(--cc-ci); border-radius: 0; background: transparent; }
-#cc-panel .cc-tog[aria-pressed="true"] { border-bottom: 1px solid var(--cc-ci); background: linear-gradient(transparent 52%, color-mix(in srgb, var(--cc-ink) 22%, transparent) 52% 90%, transparent 90%); color: var(--cc-ink); font-weight: 700; }
+#cc-panel .cc-tog[aria-pressed="true"] { border-bottom: 1px solid var(--cc-ci); box-shadow: 0 1px 0 var(--cc-ci); background: transparent; color: var(--cc-ink); font-weight: 700; }
 #cc-panel .cc-school-nav { background: transparent; }
 #cc-panel .cc-school-nav button { border-radius: 0; }
-#cc-panel .cc-school-nav button:hover { background: color-mix(in srgb, var(--cc-ink) 7%, transparent); }
-#cc-panel .cc-school-nav button[aria-pressed="true"] { border-color: transparent; border-bottom: 2px solid var(--cc-ci); background: linear-gradient(transparent 55%, color-mix(in srgb, var(--cc-ink) 14%, transparent) 55% 92%, transparent 92%); color: var(--cc-ink); }
+#cc-panel .cc-school-nav button:hover { background-color: color-mix(in srgb, var(--cc-ink) 7%, transparent); }
+@media (hover: none) { #cc-panel .cc-school-nav button:hover, #cc-panel .cc-tog:hover { background-color: transparent; } }
+#cc-panel .cc-school-nav button[aria-pressed="true"] { border-color: transparent; background: linear-gradient(var(--cc-ci), var(--cc-ci)) 0 100% / 100% 2px no-repeat content-box; color: var(--cc-ink); }
 #cc-panel .cc-toolbar button, #cc-panel .cc-btn.cc-ghost { border: 1px solid color-mix(in srgb, var(--cc-ink) 50%, transparent); border-radius: 2px; background: transparent; color: var(--cc-ink); }
 #cc-panel .cc-toolbar button:hover, #cc-panel .cc-btn.cc-ghost:hover:not(:disabled) { background: color-mix(in srgb, var(--cc-ink) 9%, transparent); border-color: var(--cc-ci); }
 #cc-panel .cc-btn { border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25), inset 0 0 0 3px color-mix(in srgb, var(--cc-gold) 22%, transparent); background: color-mix(in srgb, var(--cc-accent) 92%, black); }
