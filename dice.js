@@ -1,4 +1,5 @@
-import { judgeRoll, threshold } from './core/rules.mjs?v=0.1.15';
+import { judgeRoll, threshold } from './core/rules.mjs?v=0.1.16';
+import { worldOf, spellName } from './core/worlds.mjs?v=0.1.16';
 
 const validD20 = (value) => Number.isInteger(value) && value >= 1 && value <= 20;
 
@@ -26,7 +27,7 @@ function escapeAttr(text) {
   return String(text).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
 }
 
-function resultFor(row) {
+function resultFor(row, world = null) {
   if (!row || row.pending || row.disabled || row.ok === false) return null;
   const event = row?.event;
   const payload = event?.payload ?? {};
@@ -38,7 +39,7 @@ function resultFor(row) {
     }
     return {
       id: `cast:${event.id}`, kind: 'cast', value: payload.roll.d20,
-      spell: cast?.spell?.name ?? payload.spell?.name ?? 'Заклинание',
+      spell: spellName(cast?.spell ?? payload.spell, world) ?? 'Заклинание',
       outcome: outcome ?? 'unknown',
     };
   }
@@ -47,7 +48,7 @@ function resultFor(row) {
     const answered = prayer ? prayer.answered : payload.d20 >= 11;
     return {
       id: `prayer:${event.id}`, kind: 'prayer', value: payload.d20,
-      spell: row.after?.casts?.[payload.castId]?.spell?.name ?? 'чудо',
+      spell: spellName(row.after?.casts?.[payload.castId]?.spell, world) ?? 'чудо',
       outcome: answered ? 'answered' : 'silent',
     };
   }
@@ -56,7 +57,8 @@ function resultFor(row) {
 
 /** Extract only committed d20 events. Pending preview rows are never inspected. */
 export function committedRolls(view) {
-  return (Array.isArray(view?.rows) ? view.rows : []).map(resultFor).filter(Boolean);
+  const world = worldOf(view?.settings?.skin);
+  return (Array.isArray(view?.rows) ? view.rows : []).map((r) => resultFor(r, world)).filter(Boolean);
 }
 
 /** Pure detection helper. Seen keys are retained when history is removed. */

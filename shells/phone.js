@@ -1,4 +1,4 @@
-import { esc } from '../esc.js?v=0.1.15';
+import { esc } from '../esc.js?v=0.1.16';
 
 const R = 48;
 const GAP = 7;
@@ -46,7 +46,7 @@ export function dialHtml(t) {
   const fc = Math.min(t.forecast, t.cap);
   const next = t.forecast > t.level
     ? `<em>→ ${esc(fc)}/${esc(t.cap)}</em><small>${t.forecast > t.cap ? 'перегруз' : t.cast ? 'после каста' : 'после очереди'}</small>`
-    : '<small>напряжение</small>';
+    : `<small>${esc(t.word ?? 'напряжение')}</small>`;
   return `<div class="cc-candle-box cc-dial" title="${esc(t.title)}" data-over="${t.forecast > t.cap}">${dialSvg(t)}<div class="cc-dial-c"><b>${esc(t.level)}/${esc(t.cap)}</b>${next}</div></div>`;
 }
 

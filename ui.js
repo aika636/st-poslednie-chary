@@ -1,19 +1,26 @@
 // Панель «Последних чар» — том заклинаний со свечой. Разметка строками от view, события через
 // data-act / data-bind. Правил здесь нет: можно ли, сколько стоит и что предупредить —
 // говорит actions.preview. Весь текст из чата, профиля и метаданных — только через esc().
-import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.15';
-import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.15';
-import SHORT from './core/data/short.mjs?v=0.1.15';
-import { clampOffset, canSwitchMode, OPTIONAL_TAG, SKINS } from './view.mjs?v=0.1.15';
-import { candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.15';
-import { SOURCE_GLYPH, STAR, glyphFor } from './glyphs.js?v=0.1.15';
-import { esc, list, attr } from './esc.js?v=0.1.15';
-import { shellOf } from './shells/index.js?v=0.1.15';
+import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.16';
+import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.16';
+import SHORT from './core/data/short.mjs?v=0.1.16';
+import { clampOffset, canSwitchMode, OPTIONAL_TAG, SKINS } from './view.mjs?v=0.1.16';
+import { candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.16';
+import { SOURCE_GLYPH, STAR, glyphFor } from './glyphs.js?v=0.1.16';
+import { esc, list, attr } from './esc.js?v=0.1.16';
+import { shellOf } from './shells/index.js?v=0.1.16';
+import { worldOf, spellName, schoolName, sourceName, wordOf, spellNames } from './core/worlds.mjs?v=0.1.16';
 
 export { esc };
 
 const clean = (s) => (typeof s === 'string' ? s.trim() : '');
 const capFirst = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+
+// Мир выбранной кожи: названия чар, школ, источников и слов механики. Хранимые данные не меняются, только показ.
+let W = null;
+const useWorld = (view) => { W = worldOf(view?.settings?.skin); };
+const sn = (card) => spellName(card, W);
+const wd = (key, fallback) => wordOf(W, key, fallback);
 
 // ---------- словари ----------
 
@@ -34,6 +41,7 @@ const KIND_RU = {
   note_add: 'Заметка', note_remove: 'Заметка убрана', debt_settle: 'Долг погашен', trait_add: 'Свойство',
   trait_remove: 'Свойство убрано', environment_set: 'Среда', profile_patch: 'Профиль',
 };
+const kindRu = (kind) => (kind === 'rest' ? wd('rest', KIND_RU.rest) : KIND_RU[kind]);
 const PROFILE_FIELDS_RU = {
   name: 'имя', source: 'источник', signature: 'сигнатура', expression: 'выражение', vows: 'обеты',
   patron: 'покровитель', favorites: 'избранное', mastery: 'ступень',
@@ -176,11 +184,11 @@ export function describe(kind, payload, st, applied) {
   const given = applied === undefined || Boolean(applied);
   const effect = (id) => st?.effects?.find((e) => e.id === id) ?? st?.notes?.find((n) => n.effectId === id);
   const fracture = (id) => st?.fractures?.find((f) => f.id === id);
-  const castName = (id) => st?.casts?.[id]?.spell?.name;
+  const castName = (id) => sn(st?.casts?.[id]?.spell);
   const fName = (f) => (f?.manifest?.name ? `«${f.manifest.name}»` : 'надлом');
   switch (kind) {
     case 'cast': {
-      const parts = [`«${p.spell?.name ?? 'чудо'}»`];
+      const parts = [`«${sn(p.spell) ?? 'чудо'}»`];
       if (p.target?.label) parts.push(`→ ${p.target.label}`);
       if (p.outcome && p.outcome !== 'success') parts.push(`· ${OUTCOME_RU[p.outcome] ?? p.outcome}`);
       else if (p.difficulty && p.difficulty !== 'normal') parts.push(`· сложность ${DIFFICULTY_RU[p.difficulty] ?? p.difficulty}`);
@@ -192,10 +200,10 @@ export function describe(kind, payload, st, applied) {
     case 'faith_pray': return `Молитва за «${castName(p.castId) ?? 'чудо'}»`;
     case 'nature_gift': return 'Дар природы';
     case 'breather': return p.root ? 'Передышка · укоренение' : 'Передышка';
-    case 'rest': return 'Отдых';
+    case 'rest': return wd('rest', 'Отдых');
     case 'scene_end': return 'Конец сцены';
-    case 'effect_end': return `Завершить «${effect(p.effectId)?.spell?.name ?? 'чары'}»`;
-    case 'effect_detail_set': return `«${effect(p.effectId)?.spell?.name ?? 'чары'}»: ${p.detail === 'compact' ? 'кратко' : 'подробно'}`;
+    case 'effect_end': return `Завершить «${sn(effect(p.effectId)?.spell) ?? 'чары'}»`;
+    case 'effect_detail_set': return `«${sn(effect(p.effectId)?.spell) ?? 'чары'}»: ${p.detail === 'compact' ? 'кратко' : 'подробно'}`;
     case 'fracture_manifest': return `Проявление надлома: ${p.manifest?.name ?? '—'}`;
     case 'fracture_heal': return `Снять ${fName(fracture(p.fractureId))}`;
     case 'fracture_accept': return `Принять навсегда ${fName(fracture(p.fractureId))}`;
@@ -209,7 +217,7 @@ export function describe(kind, payload, st, applied) {
       const keys = Object.keys(p).filter((k) => PROFILE_FIELDS_RU[k]);
       return `Профиль: ${keys.map((k) => PROFILE_FIELDS_RU[k]).join(', ') || 'без изменений'}`;
     }
-    default: return KIND_RU[kind] ?? 'Событие';
+    default: return kindRu(kind) ?? 'Событие';
   }
 }
 
@@ -244,6 +252,7 @@ export function scaleText(st, confirmed) {
 
 // Данные шкалы напряжения: уровень — подтверждённое состояние, прогноз — с очередью.
 export function tensionOf(view) {
+  useWorld(view);
   const confirmed = view?.state;
   const st = current(view ?? {});
   if (!st) return null;
@@ -252,8 +261,8 @@ export function tensionOf(view) {
   const text = scaleText(st, confirmed);
   return {
     level: scaleOf(confirmed ?? st), forecast: scaleOf(st), cap, marks: candleMarks(confirmed ?? st),
-    title: `Напряжение ${text}${load ? ` · надломы держат ${load}` : ''}`, text,
-    cast: list(view?.pending).some((c) => c.kind === 'cast'),
+    title: `${wd('strain', 'Напряжение')} ${text}${load ? ` · надломы держат ${load}` : ''}`, text,
+    cast: list(view?.pending).some((c) => c.kind === 'cast'), word: wd('strain', 'Напряжение').toLowerCase(),
   };
 }
 
@@ -289,6 +298,7 @@ export function modeOf(view, ui) {
 
 // Имя, источник и флаги персоны: шапка тома и экран телефона рисуют их по-своему.
 function whoOf(view) {
+  useWorld(view);
   const st = current(view);
   const p = st.profile;
   const src = sourceById(view.data, p.source);
@@ -300,7 +310,7 @@ function whoOf(view) {
   if (st.debts?.length) flags.push(`<span class="cc-flag cc-warnflag">долгов: ${esc(st.debts.length)}</span>`);
   if (view.settings?.free === true) flags.push('<span class="cc-flag cc-godflag" title="Касты не тратят напряжение и дар"><span class="cc-godmark" aria-hidden="true">✦</span>режим бога</span>');
   if (view.settings && view.settings.enabled === false) flags.push('<span class="cc-flag cc-warnflag">не передаётся модели</span>');
-  return { name: p.name || 'Персона', source: p.source, sourceName: src?.name ?? '', glyph: SOURCE_GLYPH[p.source] ?? '', flags };
+  return { name: p.name || 'Персона', source: p.source, sourceName: src ? sourceName(src, W) : '', glyph: SOURCE_GLYPH[p.source] ?? '', flags };
 }
 
 function headHtml(view, ui, charm) {
@@ -328,9 +338,10 @@ export function tabsOf(view, ui) {
 
 // Последние последствия для строки телефона: журнал событий, а без него — последняя заметка состояния.
 export function lastEffectOf(view) {
+  useWorld(view);
   const items = list(view.rows).filter((r) => !r.disabled).slice(-5).reverse().map((row) => {
     const st = row.before ?? view.state;
-    const label = KIND_RU[row.event?.kind] ?? 'Событие';
+    const label = kindRu(row.event?.kind) ?? 'Событие';
     const what = describe(row.event?.kind, row.event?.payload, st, st?.casts?.[row.event?.id] ? (st.casts[row.event.id].gift ?? null) : undefined);
     const text = String(what).startsWith(label) ? what : `${label}: ${what}`;
     return { text, bad: row.ok === false };
@@ -344,6 +355,7 @@ export function lastEffectOf(view) {
 
 // Очередь: уйдёт с ближайшим сообщением игрока.
 export function queueHtml(view) {
+  useWorld(view);
   const pending = list(view.pending);
   if (!pending.length) return '';
   const rows = new Map(list(view.pendingRows).map((r) => [r.event?.id ?? r.commandId, r]));
@@ -363,10 +375,11 @@ export function queueHtml(view) {
 
 // Очередь одной строкой (телефон): названия, пометка о перегрузе и кнопка раскрытия.
 export function queueFoldHtml(view, open) {
+  useWorld(view);
   const pending = list(view.pending);
   if (!pending.length) return '';
   const st = current(view);
-  const names = pending.map((cmd) => (cmd.kind === 'cast' ? (cmd.payload?.spell?.name ?? 'чудо') : describe(cmd.kind, cmd.payload, st)));
+  const names = pending.map((cmd) => (cmd.kind === 'cast' ? (sn(cmd.payload?.spell) ?? 'чудо') : describe(cmd.kind, cmd.payload, st)));
   const t = tensionOf(view);
   const over = t && t.forecast > t.cap ? ' · перегруз' : '';
   return `<button type="button" class="cc-qfold" data-act="queuefold" aria-expanded="${open}"><span><b>В очереди:</b> ${esc(names.join(', '))}${over}</span><i aria-hidden="true">${open ? '▾' : '▴'}</i></button>`;
@@ -376,7 +389,7 @@ export function queueFoldHtml(view, open) {
 
 function filteredSpells(view, ui) {
   const all = list(view.data?.spells);
-  let found = createCatalog(all).search(ui.q);
+  let found = createCatalog(all).search(ui.q, (s) => spellNames(s, worldOf(view.settings?.skin)));
   if (ui.label) found = found.filter((s) => list(s.labels).includes(ui.label));
   return found;
 }
@@ -397,14 +410,14 @@ function spellListHtml(view, ui) {
     const fav = prof.favorites.includes(s.id);
     return `<div class="cc-spell-row" data-direction="${esc(s.direction ?? 'custom')}"><button type="button" class="cc-spell" data-act="pick" data-v="${esc(s.id)}" aria-current="${ui.spellId === s.id ? 'true' : 'false'}"${attr('data-open', ui.spellId === s.id)}>
       <span class="cc-spell-g">${glyphFor(s)}</span>
-      <span class="cc-spell-t"><b>${esc(s.name)}${fav ? ' <i class="cc-fav">★</i>' : ''}</b><span>${esc(shortLine(s))}${vow ? ' · <em class="cc-warn-text">обет</em>' : ''}</span></span>
-    </button><button type="button" class="cc-quickcast" data-act="cast" data-v="${esc(s.id)}" aria-pressed="${queued}" aria-label="${queued ? 'Заклинание уже в очереди: ' : 'Быстро добавить в очередь: '}${esc(s.name)}">${coin(s.cost, queued ? 'cc-coin-on' : '')}</button></div>`;
+      <span class="cc-spell-t"><b>${esc(sn(s))}${fav ? ' <i class="cc-fav">★</i>' : ''}</b><span>${esc(shortLine(s))}${vow ? ' · <em class="cc-warn-text">обет</em>' : ''}</span></span>
+    </button><button type="button" class="cc-quickcast" data-act="cast" data-v="${esc(s.id)}" aria-pressed="${queued}" aria-label="${queued ? 'Заклинание уже в очереди: ' : 'Быстро добавить в очередь: '}${esc(sn(s))}">${coin(s.cost, queued ? 'cc-coin-on' : '')}</button></div>`;
   };
   const directions = list(view.data?.directions);
   const tab = schoolTab(ui, prof, directions);
   const searching = Boolean(String(ui.q ?? '').trim());
   const tabBtn = (id, label, title, glyph = '') => `<button type="button" data-act="school" data-v="${esc(id)}" title="${esc(title)}" aria-pressed="${!searching && tab === id}">${glyph}<span>${esc(label)}</span></button>`;
-  const nav = `<nav class="cc-school-nav" aria-label="Школы магии">${tabBtn('all', 'Все', 'Все школы')}${tabBtn('fav', 'Избранное', 'Избранные заклинания', STAR)}${directions.map((d) => tabBtn(d.id, SCHOOL_SHORT[d.id] ?? d.name, d.name, glyphFor({ direction: d.id }))).join('')}${tabBtn('custom', 'Свои', 'Свои заклинания')}</nav>`;
+  const nav = `<nav class="cc-school-nav" aria-label="Школы магии">${tabBtn('all', 'Все', 'Все школы')}${tabBtn('fav', 'Избранное', 'Избранные заклинания', STAR)}${directions.map((d) => tabBtn(d.id, W?.schools?.[d.id] ?? SCHOOL_SHORT[d.id] ?? d.name, schoolName(d, W), glyphFor({ direction: d.id }))).join('')}${tabBtn('custom', 'Свои', 'Свои заклинания')}</nav>`;
   const chapter = (ch, inner) => `<section class="cc-chapter" data-direction="${esc(ch.id)}">
       <h4 class="cc-chapter-h">${ch.glyph}<span>${esc(ch.name)}</span><small>${ch.spells.length}</small></h4>
       ${inner}
@@ -456,7 +469,7 @@ export function spellChapters(spells, directions) {
   const builtin = spells.filter((s) => !String(s.id).startsWith('custom:'));
   const chapters = directions.map((d) => ({
     id: d.id,
-    name: d.name,
+    name: schoolName(d, W),
     glyph: glyphFor({ direction: d.id }),
     spells: builtin.filter((s) => s.direction === d.id).sort(byCost),
   }));
@@ -470,6 +483,7 @@ export function spellChapters(spells, directions) {
 const MERCY_NOTE = ' · <b class="cc-ok-text">Милость: перегруз не оставит надлома</b>';
 
 export function leafHtml(view, ui, preview, spell) {
+  useWorld(view);
   const st = current(view);
   const confirmed = view.state;
   const src = st.profile.source;
@@ -513,7 +527,7 @@ export function leafHtml(view, ui, preview, spell) {
       <button type="button" class="cc-starbtn" data-act="fav" data-v="${esc(spell.id)}" aria-pressed="${fav}" title="${fav ? 'Убрать из избранного' : 'В избранное'}">${STAR}</button>
       <button type="button" class="cc-x cc-leaf-x" data-act="unpick" title="Закрыть лист" aria-label="Закрыть лист">✕</button>
     </div>
-    <h3 class="cc-leaf-name" tabindex="-1">${esc(spell.name)}</h3>
+    <h3 class="cc-leaf-name" tabindex="-1">${esc(sn(spell))}</h3>
     ${shortLine(spell) ? `<p class="cc-leaf-short">${esc(shortLine(spell))}</p>` : ''}
     <div class="cc-leaf-cost">${costLine}</div>
     ${problems}
@@ -536,6 +550,7 @@ function castPage(view, ui, preview) {
 
 // Правая страница без выбранного заклинания: экслибрис персоны, чары «под рукой» и сводка «сейчас».
 export function frontispiece(view) {
+  useWorld(view);
   const st = current(view);
   const p = st.profile;
   const src = sourceById(view.data, p.source);
@@ -553,18 +568,18 @@ export function frontispiece(view) {
   const card = (s) => {
     const queued = Boolean(queuedCast(view, s.id));
     const isRecent = !fav.includes(s.id);
-    return `<div class="cc-hand-card" data-direction="${esc(s.direction ?? 'custom')}"><button type="button" class="cc-hand-pick" data-act="pick" data-v="${esc(s.id)}" title="${esc(shortLine(s))}"><span class="cc-spell-g">${glyphFor(s)}</span><b>${esc(s.name)}</b>${isRecent ? '<i>недавно</i>' : ''}</button><button type="button" class="cc-quickcast" data-act="cast" data-v="${esc(s.id)}" aria-pressed="${queued}" aria-label="${queued ? 'Заклинание уже в очереди: ' : 'Быстро добавить в очередь: '}${esc(s.name)}">${coin(s.cost, queued ? 'cc-coin-on' : '')}</button></div>`;
+    return `<div class="cc-hand-card" data-direction="${esc(s.direction ?? 'custom')}"><button type="button" class="cc-hand-pick" data-act="pick" data-v="${esc(s.id)}" title="${esc(shortLine(s))}"><span class="cc-spell-g">${glyphFor(s)}</span><b>${esc(sn(s))}</b>${isRecent ? '<i>недавно</i>' : ''}</button><button type="button" class="cc-quickcast" data-act="cast" data-v="${esc(s.id)}" aria-pressed="${queued}" aria-label="${queued ? 'Заклинание уже в очереди: ' : 'Быстро добавить в очередь: '}${esc(sn(s))}">${coin(s.cost, queued ? 'cc-coin-on' : '')}</button></div>`;
   };
   // «Сейчас» — подтверждённое состояние; то, что в очереди, отдельной строкой.
   const done = view.state ?? st;
   const effects = list(done.effects);
   const fr = list(done.fractures);
   const spent = Boolean(done.giftUsed);
-  const pending = list(view.pending).filter((c) => c.kind === 'cast').map((c) => c.payload?.spell?.name).filter(Boolean);
+  const pending = list(view.pending).filter((c) => c.kind === 'cast').map((c) => sn(c.payload?.spell)).filter(Boolean);
   const calm = !effects.length && !fr.length && !pending.length;
   const now = calm ? `<li class="cc-now-calm">${STAR}<span>спокойно: чар нет, надломов нет, дар ${spent ? 'потрачен' : 'доступен'}</span></li>` : [
     effects.length
-      ? `<li>${STAR}<span>Действует: ${esc(effects.slice(0, 3).map((e) => e.spell?.name ?? 'чары').join(', '))}${effects.length > 3 ? ` и ещё ${effects.length - 3}` : ''}</span></li>`
+      ? `<li>${STAR}<span>Действует: ${esc(effects.slice(0, 3).map((e) => sn(e.spell) ?? 'чары').join(', '))}${effects.length > 3 ? ` и ещё ${effects.length - 3}` : ''}</span></li>`
       : `<li>${STAR}<span>Ничего не действует</span></li>`,
     `<li>${STAR}<span>${fr.length ? `Надломов: ${fr.length}` : 'Надломов нет'} · дар ${spent ? 'потрачен' : 'доступен'}</span></li>`,
     pending.length ? `<li class="cc-now-q">${STAR}<span>В очереди: ${esc(pending.join(', '))}</span></li>` : '',
@@ -573,7 +588,7 @@ export function frontispiece(view) {
   return `<div class="cc-frontispiece">
     <header class="cc-exlibris">
       <span class="cc-front-mark">${SOURCE_GLYPH[p.source] ?? STAR}</span>
-      <div><p class="cc-front-source">${esc(src?.name ?? 'Источник магии')}</p><h2>${esc(p.name || 'Персона')}</h2>${trait ? `<p class="cc-front-trait">${esc(trait)}</p>` : ''}</div>
+      <div><p class="cc-front-source">${esc(sourceName(src, W) ?? 'Источник магии')}</p><h2>${esc(p.name || 'Персона')}</h2>${trait ? `<p class="cc-front-trait">${esc(trait)}</p>` : ''}</div>
     </header>
     <section class="cc-hand" aria-label="Под рукой">
       ${rule('Под рукой')}
@@ -597,7 +612,7 @@ function effectsHtml(view) {
   const effects = list(st.effects);
   const pendingIds = new Set(list(view.pending).map((c) => c.id));
   const rows = effects.map((e) => `<div class="cc-row">
-      <div><b>${esc(e.spell?.name)}</b><span>${esc([e.target?.label, e.intent].filter(Boolean).join(' · ') || (e.spell?.duration === 'bond' ? 'связь по согласию' : 'действует'))}${pendingIds.has(e.castId) ? ' · в очереди' : ''}</span></div>
+      <div><b>${esc(sn(e.spell))}</b><span>${esc([e.target?.label, e.intent].filter(Boolean).join(' · ') || (e.spell?.duration === 'bond' ? 'связь по согласию' : 'действует'))}${pendingIds.has(e.castId) ? ' · в очереди' : ''}</span></div>
       ${btn('effect-end', 'Завершить', { v: e.id, cls: 'cc-ghost' })}
     </div>`).join('');
   return `${rule('Действующие чары', effects.length ? String(effects.length) : '')}${rows || '<p class="cc-small">Сейчас ничего не действует.</p>'}`;
@@ -609,7 +624,7 @@ function fracturesHtml(view, ui) {
   if (!fr.length) return '';
   const body = fr.map((f) => {
     const m = f.manifest;
-    const from = st.casts?.[f.castId]?.spell?.name;
+    const from = sn(st.casts?.[f.castId]?.spell);
     let more = m ? `<p class="cc-text">${esc(m.text)}</p>` : '';
     const heal = m?.heal?.[f.severity] ?? m?.heal?.[String(f.severity)];
     if (heal) more += `<p class="cc-small"><b>Как снять:</b> ${esc(heal)}</p>`;
@@ -629,9 +644,9 @@ function fracturesHtml(view, ui) {
     } else if (m && ui.manifestFor !== f.id) {
       more += `<div class="cc-inline">${btn('manifest-open', 'Другое проявление', { v: f.id, cls: 'cc-ghost' })}${btn('heal', 'Условие выполнено — снять', { v: f.id, cls: 'cc-ghost' })}${f.severity >= 3 ? btn('accept-open', 'Принять навсегда', { v: f.id, cls: 'cc-ghost' }) : ''}</div>`;
     }
-    return `<div class="cc-fracture" data-sev="${esc(f.severity)}"><div class="cc-fr-head"><b>${esc(m?.name ?? 'Проявление не выбрано')}</b><span>Надлом ${esc(SOURCE_GEN[f.source] ?? '')} · ${esc(SEVERITY_RU[f.severity] ?? f.severity)}${from ? ` · после «${esc(from)}»` : ''}</span></div>${more}</div>`;
+    return `<div class="cc-fracture" data-sev="${esc(f.severity)}"><div class="cc-fr-head"><b>${esc(m?.name ?? 'Проявление не выбрано')}</b><span>${esc(wd('fracture', 'Надлом'))} ${esc(SOURCE_GEN[f.source] ?? '')} · ${esc(SEVERITY_RU[f.severity] ?? f.severity)}${from ? ` · после «${esc(from)}»` : ''}</span></div>${more}</div>`;
   }).join('');
-  return `${rule('Надломы', String(fr.length))}${body}<p class="cc-small">Снятый надлом переходит в обычное напряжение и уходит с отдыхом.</p>`;
+  return `${rule(wd('fractures', 'Надломы'), String(fr.length))}${body}<p class="cc-small">Снятый надлом переходит в обычное напряжение и уходит с отдыхом.</p>`;
 }
 
 function debtsHtml(view) {
@@ -639,7 +654,7 @@ function debtsHtml(view) {
   const debts = list(st.debts);
   if (!debts.length) return '';
   const body = debts.map((d) => {
-    const from = st.casts?.[d.castId]?.spell?.name;
+    const from = sn(st.casts?.[d.castId]?.spell);
     return `<div class="cc-row"><div><b>${esc(d.patron ? `Покровителю: ${d.patron}` : 'Покровителю')}</b><span>${esc(d.condition || 'условие ещё не названо')}${from ? ` · за «${esc(from)}»` : ''}</span></div>${btn('debt-settle', 'Погасить', { v: d.id, cls: 'cc-ghost' })}</div>`;
   }).join('');
   return `${rule('Долги', String(debts.length))}${body}`;
@@ -656,10 +671,10 @@ function recoveryHtml(view, preview) {
   const root = src === 'nature' && view.settings?.free !== true && !st.giftUsed && !st.breatherUsed && st.strain >= 2;
   const out = [`<div class="cc-actions">
     ${root ? action('breather-root', 'breather', 'Передышка — снимет 2 (укоренение)', { root: true }) : action('breather', 'breather', 'Передышка')}
-    ${action('rest', 'rest', 'Отдых')}
+    ${action('rest', 'rest', wd('rest', 'Отдых'))}
     ${btn('scene-end', 'Конец сцены', { cls: 'cc-ghost' })}
   </div>
-  <p class="cc-small">Передышка снимает одно напряжение раз до отдыха${src === 'nature' ? '; при двух и больше — два, и это дар природы' : ''}. Отдых возвращает силы, дар и передышку — надломы остаются. Конец сцены завершает чары, кроме связей по согласию.</p>`];
+  <p class="cc-small">Передышка снимает одно деление шкалы${src === 'nature' ? ' (при двух и больше — два, и это дар природы)' : ''}, снова доступна после «${esc(wd('rest', 'Отдых'))}». «${esc(wd('rest', 'Отдых'))}» возвращает силы, дар и передышку — ${esc(wd('fractures', 'Надломы').toLowerCase())} остаются. Конец сцены завершает чары, кроме связей.</p>`];
   return `${rule('Восстановление')}${out.join('')}`;
 }
 
@@ -678,7 +693,7 @@ function statePage(view, ui, preview) {
 
 function profileFields(d, data) {
   const parts = [];
-  parts.push(`<div class="cc-field"><span>Источник силы</span><div class="cc-sources cc-sources-sm">${sourcesOf(data).map((s) => `<button type="button" class="cc-source" data-act="prof-source" data-v="${esc(s.id)}" aria-pressed="${d.source === s.id}" data-src="${esc(s.id)}">${SOURCE_GLYPH[s.id] ?? ''}<b>${esc(s.name)}</b></button>`).join('')}</div></div>`);
+  parts.push(`<div class="cc-field"><span>Источник силы</span><div class="cc-sources cc-sources-sm">${sourcesOf(data).map((s) => `<button type="button" class="cc-source" data-act="prof-source" data-v="${esc(s.id)}" aria-pressed="${d.source === s.id}" data-src="${esc(s.id)}">${SOURCE_GLYPH[s.id] ?? ''}<b>${esc(sourceName(s, W))}</b></button>`).join('')}</div></div>`);
   parts.push(`<div class="cc-field"><span>Ступень мастерства</span>${seg('prof-mastery', MASTERIES.map((m) => [m, MASTERY_RU[m], MASTERY_TITLE[m]]), d.mastery)}<small>Чем выше ступень, тем длиннее шкала напряжения; каждый принятый навсегда надлом добавляет ещё одно деление (до шести).</small></div>`);
   parts.push(field('Имя', textInput('prof.name', d.name, 'Как зовут персону', { maxlength: 80, id: 'cc-prof-name' })));
   parts.push(field('Как выглядит её магия', textInput('prof.signature', d.signature, 'Серебряные строки, запах грозы… (необязательно)', { area: true, id: 'cc-prof-sig' })));
@@ -726,7 +741,7 @@ function customHtml(view, ui, shared = true) {
   return `${mine.length ? `<div class="cc-own-list">${mine.map(ownRow).join('')}</div>` : `<p class="cc-small">Своих заклинаний пока нет.${shared ? ' Свои чары общие для всех чатов.' : ''}</p>`}
     ${editing ? `<p class="cc-small cc-own-now">Правка: «${esc(mine.find((s) => s.id === ui.customEdit)?.name ?? c.name)}»</p>` : ''}
     ${field('Название', textInput('custom.name', c.name, 'Например: Тёплый ветер', { maxlength: 80, id: 'cc-c-name' }))}
-    ${field('Школа', `<select class="cc-input" data-bind="custom.direction" id="cc-c-dir">${dirOpts.map((d) => `<option value="${esc(d.id)}"${attr('selected', d.id === c.direction)}>${esc(d.name)}</option>`).join('')}</select>`)}
+    ${field('Школа', `<select class="cc-input" data-bind="custom.direction" id="cc-c-dir">${dirOpts.map((d) => `<option value="${esc(d.id)}"${attr('selected', d.id === c.direction)}>${esc(schoolName(d, W))}</option>`).join('')}</select>`)}
     <div class="cc-grid3">
       ${field('Цена', `<select class="cc-input" data-bind="custom.cost" data-num="1" id="cc-c-cost">${[0, 1, 2, 3].map((n) => `<option value="${n}"${attr('selected', Number(c.cost) === n)}>${n}</option>`).join('')}</select>`)}
       ${field('Сопротивление', `<select class="cc-input" data-bind="custom.resist" id="cc-c-res">${opt(RESIST, c.resist)}</select>`)}
@@ -742,7 +757,7 @@ function customHtml(view, ui, shared = true) {
 }
 
 const noteText = (n) => (n.kind === 'effect-end'
-  ? `«${n.spell?.name ?? 'чары'}»${n.target?.label ? ` → ${n.target.label}` : ''}: ${END_RU[n.reason] ?? 'снято'}${n.comment ? `. ${n.comment}` : ''}`
+  ? `«${sn(n.spell) ?? 'чары'}»${n.target?.label ? ` → ${n.target.label}` : ''}: ${END_RU[n.reason] ?? 'снято'}${n.comment ? `. ${n.comment}` : ''}`
   : n.text ?? '');
 
 function notesHtml(view, ui) {
@@ -792,7 +807,7 @@ function journalHtml(view) {
     else if (row.ok === false) note = `<span class="cc-bad-text">Не применено: ${esc(row.reason ?? '')}</span>`;
     else if (row.warnings?.length) note = `<span class="cc-warn-text">${esc(row.warnings.map(capFirst).join(' · '))}</span>`;
     return `<div class="cc-log" data-status="${status}">
-      <div class="cc-log-main"><span>#${esc(row.mesIndex)} · ${esc(KIND_RU[row.event?.kind] ?? 'событие')}</span><b>${esc(describe(row.event?.kind, row.event?.payload, st, st?.casts?.[row.event?.id] ? (st.casts[row.event.id].gift ?? null) : undefined))}</b>${extra ? `<span>${esc(extra)}</span>` : ''}${note}</div>
+      <div class="cc-log-main"><span>#${esc(row.mesIndex)} · ${esc(kindRu(row.event?.kind) ?? 'событие')}</span><b>${esc(describe(row.event?.kind, row.event?.payload, st, st?.casts?.[row.event?.id] ? (st.casts[row.event.id].gift ?? null) : undefined))}</b>${extra ? `<span>${esc(extra)}</span>` : ''}${note}</div>
       ${btn('toggle-event', row.disabled ? 'Вернуть' : 'Отключить', { v: row.event?.id, cls: 'cc-ghost' })}
     </div>`;
   }).join('');
@@ -828,11 +843,12 @@ function morePage(view, ui) {
 // ---------- без профиля ----------
 
 export function choiceHtml(view, ui) {
+  useWorld(view);
   const sources = sourcesOf(view.data);
   return `<div class="cc-choose">
     <p class="cc-choose-lead">Чья это магия? Выберите источник силы — остальное можно дописать потом.</p>
     <div class="cc-sources">${sources.map((s) => `<button type="button" class="cc-source" data-act="create" data-v="${esc(s.id)}" data-src="${esc(s.id)}">
-      ${SOURCE_GLYPH[s.id] ?? ''}<b>${esc(s.name)}</b><span>${esc(s.gift)}</span>
+      ${SOURCE_GLYPH[s.id] ?? ''}<b>${esc(sourceName(s, W))}</b><span>${esc(s.gift)}</span>
     </button>`).join('')}</div>
     ${ui.createError ? warnBox(ui.createError, 'cc-bad') : ''}
     <p class="cc-small">Свои заклинания и настройки общие для всех чатов — их можно править и без источника.</p>
@@ -845,6 +861,7 @@ export function choiceHtml(view, ui) {
 const blankPage = (text) => `<section class="cc-page"><header class="cc-pagehead"><div class="cc-title"><i>✦</i><span>Последние чары</span><i>✦</i></div></header><div class="cc-pagebody">${text}</div>${closeBtn}</section>`;
 
 export function panelHtml(view, ui, preview) {
+  useWorld(view);
   const shell = shellOf(view);
   if (!view || !view.chatOpen) return shell.html({ view, ui, content: blankPage('<p class="cc-empty">Откройте чат — магия хранится в каждом чате отдельно.</p>') });
   if (view.unsupported) return shell.html({ view, ui, content: blankPage(warnBox('Данные магии в этом чате записаны другой версией расширения. Панель их не трогает — обновите расширение.', 'cc-bad')) });
@@ -885,7 +902,7 @@ export function createPanel(actions) {
   const shadow = host.attachShadow({ mode: 'open' });
   const reset = document.createElement('style');
   reset.textContent = ':host { all: initial; }';
-  const sheets = [new URL('./shells/tome.css?v=0.1.15', import.meta.url).href, new URL('./style.css?v=0.1.15', import.meta.url).href, new URL('./shells/phone.css?v=0.1.15', import.meta.url).href].map((href) => {
+  const sheets = [new URL('./shells/tome.css?v=0.1.16', import.meta.url).href, new URL('./style.css?v=0.1.16', import.meta.url).href, new URL('./shells/phone.css?v=0.1.16', import.meta.url).href].map((href) => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = href;

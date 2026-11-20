@@ -177,6 +177,7 @@
   font-size: 14px;
 }
 #cc-panel .cc-pill b { font-weight: 700; }
+#cc-panel:not([data-item="phone"]) .cc-pill.cc-src .cc-glyph { display: none; }
 #cc-panel .cc-pill.cc-src {
   background: linear-gradient(180deg, color-mix(in srgb, var(--cc-accent) 88%, white), var(--cc-accent));
   color: var(--cc-on-accent);

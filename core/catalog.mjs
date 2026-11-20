@@ -1,9 +1,9 @@
 // Каталог: проверка карточек заклинаний и надломов, поиск, копия карточки для каста,
 // минимальная форма своего заклинания.
-import { RESISTANCES, DURATIONS, SOURCES, rollsAgainst } from './rules.mjs?v=0.1.15';
-import { EFFECT_END_REASONS } from './journal.mjs?v=0.1.15';
-import DIRECTIONS from './data/directions.mjs?v=0.1.15';
-import TAGS from './data/tags.mjs?v=0.1.15';
+import { RESISTANCES, DURATIONS, SOURCES, rollsAgainst } from './rules.mjs?v=0.1.16';
+import { EFFECT_END_REASONS } from './journal.mjs?v=0.1.16';
+import DIRECTIONS from './data/directions.mjs?v=0.1.16';
+import TAGS from './data/tags.mjs?v=0.1.16';
 
 export const LABELS = ['бой', 'быт', 'социалка'];
 export const PLACEHOLDERS = ['цель', 'замысел'];
@@ -173,10 +173,11 @@ export function createCatalog(spells = []) {
   return {
     get: (id) => byId.get(id) ?? null,
     list: () => [...spells],
-    search(query) {
+    // names(s) — все названия карточки, по которым её ищут (исходное и мировое).
+    search(query, names = (s) => [s.name]) {
       const q = fold(query);
       if (!q) return [...spells];
-      return spells.filter((s) => fold(s.name).includes(q));
+      return spells.filter((s) => names(s).some((n) => fold(n).includes(q)));
     },
   };
 }

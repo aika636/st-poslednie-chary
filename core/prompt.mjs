@@ -1,11 +1,16 @@
 // Тексты для модели: блок состояния (каждый ход) и факт хода (только для ответа на сообщение).
 // Только проза: никаких чисел механики, ID, цен, бросков и порогов.
-import { scaleFor, scaleOf, fractureLoad } from './rules.mjs?v=0.1.15';
+import { scaleFor, scaleOf, fractureLoad } from './rules.mjs?v=0.1.16';
+import { spellName, sourceName, wordsText } from './worlds.mjs?v=0.1.16';
 
 const SOURCE_GEN = { knowledge: 'знания', blood: 'крови', faith: 'веры', pact: 'договора', nature: 'природы' };
 
 // Как магия устроена в мире — для рассказчика и остальных персонажей.
-const WORLD_TEXT = 'Магия реальна и требует сил. Колдовство обычно заметно окружающим; свидетели помнят замеченные проявления. Накопившаяся магическая усталость видна со стороны. Надлом — след колдовства сверх сил; он не проходит сам и не снимается обычным отдыхом.';
+const WORLD_LEAD = 'Магия реальна и требует сил.';
+const WORLD_TEXT = WORLD_LEAD + ' Колдовство обычно заметно окружающим; свидетели помнят замеченные проявления. Накопившаяся магическая усталость видна со стороны. Надлом — след колдовства сверх сил; он не проходит сам и не снимается обычным отдыхом.';
+
+// Описание мира: у сеттинга может быть свой первый абзац и свои слова механики.
+const worldText = (world) => [world?.laws ? WORLD_TEXT.replace(WORLD_LEAD, world.laws.trim()) : WORLD_TEXT, wordsText(world)].filter(Boolean).join(' ');
 
 // Ступени заполнения шкалы любого размера: свободно, лёгкая, заметная, почти на исходе, предел.
 const STRAIN_TEXT = [
@@ -128,7 +133,7 @@ function charmsPhrase(name, target, aim = '') {
 }
 
 // Текст одной заметки: окончание эффекта по тексту карточки или общему шаблону, иначе — текст.
-export function noteText(note, state) {
+export function noteText(note, state, world = null) {
   if (!note) return '';
   if (note.kind !== 'effect-end') return sentence(note.text);
   const card = state?.casts?.[note.castId]?.spell;
@@ -139,7 +144,7 @@ export function noteText(note, state) {
   else {
     // Замысел называем только при ручном завершении: в остальных шаблонах исход уже сказан.
     const aim = note.reason === 'done' ? clean(note.intent) : '';
-    const charms = charmsPhrase(note.spell?.name ?? card?.name, note.target, aim);
+    const charms = charmsPhrase(spellName(note.spell ?? card, world) ?? card?.name, note.target, aim);
     const tpl = END_TEXT[note.reason] ?? END_TEXT.removed;
     text = tpl.replace('{Чары}', upperFirst(charms)).replace('{чары}', charms);
   }
@@ -166,9 +171,9 @@ function fractureLine(f, skip = false) {
 
 // Строка действующего эффекта. Текст успеха здесь не повторяется — он уже сказан в факте хода.
 // Цель не повторяется: эффекты сгруппированы по ней в effectsSection.
-function effectLine(e, state) {
+function effectLine(e, state, world) {
   const card = state.casts?.[e.castId]?.spell;
-  const name = `«${e.spell?.name ?? card?.name ?? 'без названия'}»`;
+  const name = `«${spellName(e.spell ?? card, world) ?? 'без названия'}»`;
   const aim = stripEnd(clean(e.intent));
   if (e.detail === 'compact') return aim ? `${name} (${aim})` : name;
   const parts = [aim ? `${name}, замысел: ${aim}.` : `${name}.`];
@@ -180,12 +185,12 @@ function effectLine(e, state) {
 }
 
 // Действующие эффекты, сгруппированные по цели; эффекты без цели — отдельными строками без подписи.
-function effectsSection(state) {
+function effectsSection(state, world) {
   const groups = new Map();
   for (const e of state.effects ?? []) {
     const key = e.target?.key ?? '';
     if (!groups.has(key)) groups.set(key, { label: key ? targetLabel(e.target) : '', items: [] });
-    const item = { text: effectLine(e, state), compact: e.detail === 'compact' };
+    const item = { text: effectLine(e, state, world), compact: e.detail === 'compact' };
     const items = groups.get(key).items;
     if (!items.some((x) => x.text === item.text)) items.push(item);
   }
@@ -204,7 +209,7 @@ function effectsSection(state) {
 // Блок состояния: кто персона, как выглядит её магия, сколько осталось сил и что действует.
 // skipNotes — id заметок, которые уже сказаны в факте этого хода: в «недавних» их не повторяем.
 // brief — в покое (ничего не занято и не действует) отдаёт короткий блок без общего описания мира.
-export function statusBlock(state, { sources = {}, tags = null, recentNotes = 3, skipNotes = [], skipFractures = [], free = false, brief = false } = {}) {
+export function statusBlock(state, { sources = {}, tags = null, recentNotes = 3, skipNotes = [], skipFractures = [], free = false, brief = false, world = null } = {}) {
   const p = state.profile ?? {};
   const src = sources[p.source];
 
@@ -212,16 +217,17 @@ export function statusBlock(state, { sources = {}, tags = null, recentNotes = 3,
   const active = new Set((state.effects ?? []).map((e) => e.spell?.id).filter(Boolean));
   const again = (n) => n.kind === 'effect-end' && n.spell?.id && active.has(n.spell.id);
   const notes = recentNotes > 0 ? (state.notes ?? []).filter((n) => !skip.has(n.id) && !again(n)).slice(-recentNotes) : [];
-  const noteLines = notes.map((n) => noteText(n, state)).filter(Boolean);
+  const noteLines = notes.map((n) => noteText(n, state, world)).filter(Boolean);
 
   const calm = brief && scaleOf(state) === 0 && !(state.fractures ?? []).length && !(state.effects ?? []).length
     && !(state.debts ?? []).length && !(p.traits ?? []).some((t) => clean(t.text)) && !noteLines.length;
   const out = ["[Persona's magic]"];
-  if (!calm) out.push(WORLD_TEXT);
+  if (!calm) out.push(worldText(world));
 
   const who = clean(p.name) ? `Персона — ${clean(p.name)}.` : 'Персона игрока владеет магией.';
-  if (calm) out.push(`${clean(p.name) ? `Персона — ${clean(p.name)}, владеет магией` : 'Персона игрока владеет магией'}${src ? `; источник — ${src.name.toLowerCase()}` : ''}.`);
-  else out.push(src ? `${who} Источник магии — ${src.name.toLowerCase()}. ${sentence(src.trait)}` : who);
+  if (calm) out.push(`${clean(p.name) ? `Персона — ${clean(p.name)}, владеет магией` : 'Персона игрока владеет магией'}${src ? `; источник — ${sourceName(src, world).toLowerCase()}` : ''}.`);
+  else out.push(src ? `${who} Источник магии — ${sourceName(src, world).toLowerCase()}. ${sentence(src.trait)}` : who);
+  if (p.source === 'pact' && world?.patron) out.push(sentence(world.patron));
   const look = [];
   if (clean(p.signature)) look.push(`How the persona's magic looks and feels: ${sentence(lowerFirst(clean(p.signature)))}`);
   if (clean(p.expression)) look.push(`Expression: ${sentence(lowerFirst(clean(p.expression)))}`);
@@ -246,7 +252,7 @@ export function statusBlock(state, { sources = {}, tags = null, recentNotes = 3,
     out.push(`Vows: ${p.vows.map((v) => vowText(v, tags)).join('; ')}.`);
   }
 
-  const effects = effectsSection(state);
+  const effects = effectsSection(state, world);
   if (effects.length) out.push('Active magic (sustaining spells costs the persona no strength):', ...effects);
 
   const debts = state.debts ?? [];
@@ -265,7 +271,7 @@ export function statusBlock(state, { sources = {}, tags = null, recentNotes = 3,
 
 // --- Факт хода ---
 
-function castLines(row, last, { sources, tags }) {
+function castLines(row, last, { sources, tags, world }) {
   const c = row.after.casts?.[row.event.id];
   if (!c) return [];
   const card = c.spell ?? {};
@@ -275,7 +281,8 @@ function castLines(row, last, { sources, tags }) {
 
   const label = targetLabel(c.target);
   const aim = clean(c.intent);
-  const named = clean(card.name) ? ` «${clean(card.name)}»` : '';
+  const shown = clean(spellName(card, world));
+  const named = shown ? ` «${shown}»` : '';
   lines.push(`The persona ${named ? `cast${named}` : 'worked a miracle'}${label ? ` (target: ${label})` : ''}${aim ? `, intent: ${stripEnd(aim)}` : ''}.`);
 
   const srcInfo = sources?.[row.after.profile.source];
@@ -320,11 +327,11 @@ function castLines(row, last, { sources, tags }) {
   return lines;
 }
 
-function endNotes(row, ids) {
+function endNotes(row, ids, world) {
   return ids
     .map((id) => (row.after.notes ?? []).find((n) => n.id === `${id}:end`))
     .filter(Boolean)
-    .map((n) => noteText(n, row.after));
+    .map((n) => noteText(n, row.after, world));
 }
 
 function rowLines(row, rows, opts) {
@@ -337,7 +344,7 @@ function rowLines(row, rows, opts) {
     case 'faith_pray': {
       const c = after.casts?.[p.castId];
       if (!c?.prayer) return [];
-      const name = `«${c.spell?.name ?? 'чудо'}»`;
+      const name = `«${spellName(c.spell, opts.world) ?? 'чудо'}»`;
       if (c.prayer.answered) {
         const ok = sentence(fill(lowerFirst(clean(c.spell?.texts?.success)), { target: c.target, intent: c.intent }));
         return [`Персона взмолилась после неудачного чуда ${name}, и молитва услышана: ${ok || 'чудо всё-таки свершилось.'}`];
@@ -345,9 +352,9 @@ function rowLines(row, rows, opts) {
       return [`Персона взмолилась после неудачного чуда ${name}, но молитва осталась без ответа: провал в силе, эффект не наступил.`];
     }
     case 'effect_end':
-      return endNotes(row, [p.effectId]);
+      return endNotes(row, [p.effectId], opts.world);
     case 'scene_end':
-      return endNotes(row, p.effectIds ?? []);
+      return endNotes(row, p.effectIds ?? [], opts.world);
     case 'rest':
       return [after.fractures?.length
         ? 'Персона отдохнула: обычная усталость от магии ушла, но надломы по-прежнему держат часть сил.'
@@ -409,11 +416,11 @@ export function fracturesOfRows(rows) {
 }
 
 // Факт хода по строкам журнала одного сообщения. Пустая строка — сказать нечего.
-export function turnFact(rows, { sources = {}, tags = null } = {}) {
+export function turnFact(rows, { sources = {}, tags = null, world = null } = {}) {
   const done = (rows ?? []).filter((r) => r?.ok);
   let show = false;
   const lines = done.flatMap((r) => {
-    const l = rowLines(r, done, { sources, tags }).filter(Boolean);
+    const l = rowLines(r, done, { sources, tags, world }).filter(Boolean);
     if (l.length && (r.event.kind === 'cast' || r.event.kind === 'faith_pray')) show = true;
     return l;
   });

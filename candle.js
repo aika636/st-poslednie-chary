@@ -1,7 +1,7 @@
 // Свеча — шкала напряжения. Чистая функция: число → SVG-строка (без пользовательского текста).
 // Чем выше напряжение, тем ниже воск, длиннее потёки и выше пламя. Надломы — трещины на воске:
 // временные тёмные, принятые навсегда — золотые швы. Прогноз очереди — пунктирная кромка.
-import { SCALE, SCALE_MAX } from './core/rules.mjs?v=0.1.15';
+import { SCALE, SCALE_MAX } from './core/rules.mjs?v=0.1.16';
 
 const clampScale = (n) => (Number.isFinite(n) ? Math.max(3, Math.min(SCALE_MAX, Math.round(n))) : SCALE);
 const clampLevel = (n, scale) => Math.max(0, Math.min(scale, Number.isFinite(n) ? Math.round(n) : 0));

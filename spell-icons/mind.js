@@ -1,4 +1,4 @@
-import { L, F, E } from './kit.js?v=0.1.15';
+import { L, F, E } from './kit.js?v=0.1.16';
 
 // Чары разума: голова, сон, взгляд.
 export default {
