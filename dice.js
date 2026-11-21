@@ -1,5 +1,5 @@
-import { judgeRoll, threshold } from './core/rules.mjs?v=0.1.16';
-import { worldOf, spellName } from './core/worlds.mjs?v=0.1.16';
+import { judgeRoll, threshold } from './core/rules.mjs?v=0.1.17';
+import { worldOf, spellName } from './core/worlds.mjs?v=0.1.17';
 
 const validD20 = (value) => Number.isInteger(value) && value >= 1 && value <= 20;
 

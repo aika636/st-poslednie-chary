@@ -1,6 +1,6 @@
 # Каталог заклинаний и надломов
 
-`core/data/`: `spells.mjs` (121 карточка), `short.mjs` (короткая строка эффекта по id),
+`core/data/`: `spells.mjs` (135 карточек), `short.mjs` (короткая строка эффекта по id),
 `directions.mjs` (семь школ: matter, body, mind, images, bonds, bounds, desire), `sources.mjs` (пять
 источников), `fractures.mjs` (20 надломов), `tags.mjs` (10 тегов-обетов), `spell-replacements.mjs`
 (переименования и слияния: старые id в избранном приводятся к новым).

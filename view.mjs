@@ -1,15 +1,15 @@
 // Чистые части слоя SillyTavern: чтение метаданных без записи, сборка view для панели,
 // тексты для промпта по типу генерации, настройки, шаблоны и свои заклинания.
 // Без DOM и без SillyTavern: всё нужное приходит параметрами.
-import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.16';
-import { statusBlock, turnFact, notesOfRows, fracturesOfRows } from './core/prompt.mjs?v=0.1.16';
-import { createProfile } from './core/state.mjs?v=0.1.16';
-import { customSpell, customId, validateSpell } from './core/catalog.mjs?v=0.1.16';
-import SPELLS from './core/data/spells.mjs?v=0.1.16';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.16';
-import TAGS from './core/data/tags.mjs?v=0.1.16';
-import DIRECTIONS from './core/data/directions.mjs?v=0.1.16';
-import SOURCES from './core/data/sources.mjs?v=0.1.16';
+import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.17';
+import { statusBlock, turnFact, notesOfRows, fracturesOfRows } from './core/prompt.mjs?v=0.1.17';
+import { createProfile } from './core/state.mjs?v=0.1.17';
+import { customSpell, customId, validateSpell } from './core/catalog.mjs?v=0.1.17';
+import SPELLS from './core/data/spells.mjs?v=0.1.17';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.17';
+import TAGS from './core/data/tags.mjs?v=0.1.17';
+import DIRECTIONS from './core/data/directions.mjs?v=0.1.17';
+import SOURCES from './core/data/sources.mjs?v=0.1.17';
 
 export const DEPTH_MIN = 0;
 export const DEPTH_MAX = 10;
@@ -270,12 +270,12 @@ export function buildView({ chatOpen, chatId = null, chat, meta, unsupported, se
 }
 
 // Смещение тома от места по умолчанию, зажатое так, чтобы минимум `keep` px обложки оставались на экране.
-// rect — рамка обложки без смещения.
-export function clampOffset(off, rect, vw, vh, keep = 120) {
+// rect — рамка обложки без смещения; minTop — верхняя граница, выше которой обложка не поднимается.
+export function clampOffset(off, rect, vw, vh, keep = 120, minTop = 0) {
   const num = (v) => (Number.isFinite(v) ? v : 0);
   const k = Math.min(keep, rect.width, rect.height);
   const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), Math.max(lo, hi));
   const x = clamp(num(off?.x), k - rect.left - rect.width, vw - k - rect.left);
-  const y = clamp(num(off?.y), -rect.top, vh - k - rect.top);
+  const y = clamp(num(off?.y), minTop - rect.top, vh - k - rect.top);
   return { x: Math.round(x), y: Math.round(y) };
 }

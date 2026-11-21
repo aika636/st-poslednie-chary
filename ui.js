@@ -1,15 +1,15 @@
 // Панель «Последних чар» — том заклинаний со свечой. Разметка строками от view, события через
 // data-act / data-bind. Правил здесь нет: можно ли, сколько стоит и что предупредить —
 // говорит actions.preview. Весь текст из чата, профиля и метаданных — только через esc().
-import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.16';
-import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.16';
-import SHORT from './core/data/short.mjs?v=0.1.16';
-import { clampOffset, canSwitchMode, OPTIONAL_TAG, SKINS } from './view.mjs?v=0.1.16';
-import { candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.16';
-import { SOURCE_GLYPH, STAR, glyphFor } from './glyphs.js?v=0.1.16';
-import { esc, list, attr } from './esc.js?v=0.1.16';
-import { shellOf } from './shells/index.js?v=0.1.16';
-import { worldOf, spellName, schoolName, sourceName, wordOf, spellNames } from './core/worlds.mjs?v=0.1.16';
+import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.17';
+import { castCard, createCatalog } from './core/catalog.mjs?v=0.1.17';
+import SHORT from './core/data/short.mjs?v=0.1.17';
+import { clampOffset, canSwitchMode, OPTIONAL_TAG, SKINS } from './view.mjs?v=0.1.17';
+import { candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.17';
+import { SOURCE_GLYPH, STAR, glyphFor } from './glyphs.js?v=0.1.17';
+import { esc, list, attr } from './esc.js?v=0.1.17';
+import { shellOf } from './shells/index.js?v=0.1.17';
+import { worldOf, spellName, schoolName, sourceName, wordOf, spellNames } from './core/worlds.mjs?v=0.1.17';
 
 export { esc };
 
@@ -539,7 +539,7 @@ export function leafHtml(view, ui, preview, spell) {
     <div class="cc-leaf-go">${queued
     ? `<span class="cc-ok-text">✦ В очереди — уйдёт с вашим сообщением</span>${btn('dequeue', 'Убрать', { v: queued.id, cls: 'cc-ghost' })}`
     : `${btn('cast', 'В очередь', { v: spell.id, cls: 'cc-primary' })}${gift ? btn('cast-gift', giftLabel, { v: spell.id, cls: 'cc-ghost cc-gift' }) : ''}`}</div>
-    <div class="cc-leaf-own">${isOwn(spell) ? btn('custom-edit', 'Изменить', { v: spell.id, cls: 'cc-ghost' }) : btn('custom-copy', 'Сделать своей', { v: spell.id, cls: 'cc-ghost' })}</div>
+    <div class="cc-leaf-own">${isOwn(spell) ? btn('custom-edit', 'Изменить', { v: spell.id, cls: 'cc-ghost' }) : btn('custom-copy', 'Копировать и изменить', { v: spell.id, cls: 'cc-ghost', title: 'Создать своё заклинание на основе этого — исходное останется как было' })}</div>
   </article>`;
 }
 
@@ -902,7 +902,7 @@ export function createPanel(actions) {
   const shadow = host.attachShadow({ mode: 'open' });
   const reset = document.createElement('style');
   reset.textContent = ':host { all: initial; }';
-  const sheets = [new URL('./shells/tome.css?v=0.1.16', import.meta.url).href, new URL('./style.css?v=0.1.16', import.meta.url).href, new URL('./shells/phone.css?v=0.1.16', import.meta.url).href].map((href) => {
+  const sheets = [new URL('./shells/tome.css?v=0.1.17', import.meta.url).href, new URL('./style.css?v=0.1.17', import.meta.url).href, new URL('./shells/phone.css?v=0.1.17', import.meta.url).href].map((href) => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = href;
@@ -1317,7 +1317,8 @@ export function createPanel(actions) {
     if (!next || narrow() || root.hidden) return;
     const tome = root.querySelector(shell().dragSelector);
     if (!tome) return;
-    off = clampOffset(next, tome.getBoundingClientRect(), globalThis.innerWidth, globalThis.innerHeight);
+    const bar = document.getElementById('top-settings-holder')?.getBoundingClientRect().bottom || 0;
+    off = clampOffset(next, tome.getBoundingClientRect(), globalThis.innerWidth, globalThis.innerHeight, 120, Math.max(0, Math.ceil(bar)));
     root.style.translate = `${off.x}px ${off.y}px`;
   }
   // Если обложки почти не видно (окно сильно уменьшили), том возвращается на место.
@@ -1366,6 +1367,7 @@ export function createPanel(actions) {
     applyPos();
   });
   globalThis.addEventListener?.('resize', () => applyPos());
+  try { new ResizeObserver(() => applyPos()).observe(root); } catch { /* без ResizeObserver хватит resize */ }
 
   function open() {
     root.hidden = false;

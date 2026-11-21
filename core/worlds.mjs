@@ -1,5 +1,5 @@
 // Словарь сеттинга по коже: названия чар, школ, источников и слов механики. Без DOM и ST.
-import { WORLDS } from './data/worlds.mjs?v=0.1.16';
+import { WORLDS } from './data/worlds.mjs?v=0.1.17';
 
 export const worldOf = (skin) => WORLDS[skin] ?? null;
 

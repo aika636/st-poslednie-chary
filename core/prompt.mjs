@@ -1,7 +1,7 @@
 // Тексты для модели: блок состояния (каждый ход) и факт хода (только для ответа на сообщение).
 // Только проза: никаких чисел механики, ID, цен, бросков и порогов.
-import { scaleFor, scaleOf, fractureLoad } from './rules.mjs?v=0.1.16';
-import { spellName, sourceName, wordsText } from './worlds.mjs?v=0.1.16';
+import { scaleFor, scaleOf, fractureLoad } from './rules.mjs?v=0.1.17';
+import { spellName, sourceName, wordsText } from './worlds.mjs?v=0.1.17';
 
 const SOURCE_GEN = { knowledge: 'знания', blood: 'крови', faith: 'веры', pact: 'договора', nature: 'природы' };
 

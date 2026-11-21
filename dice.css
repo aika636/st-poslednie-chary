@@ -77,3 +77,4 @@
   .cc-dice-result__die { filter: none; }
   .cc-dice-result.is-settling .cc-dice-result__art { animation: none; filter: none; }
 }
+@media (max-width: 700px) { .cc-dice-result__close { min-height: 38px; } }

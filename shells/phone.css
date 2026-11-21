@@ -76,7 +76,7 @@
 }
 #cc-panel .cc-phone .cc-ptop { flex: none; display: flex; gap: 14px; align-items: center; padding: 2px 16px 10px; }
 #cc-panel .cc-phone .cc-pwho { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }
-#cc-panel .cc-phone .cc-pname { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 24px/1.1 var(--f-d); }
+#cc-panel .cc-phone .cc-pname { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 24px/1.25 var(--f-d); }
 #cc-panel .cc-phone .cc-pill.cc-src {
   height: 24px; padding: 0 9px 0 6px; border-radius: 12px; font: 600 12.5px var(--f-ui); background: color-mix(in srgb, var(--src) 18%, transparent);
   border: 1px solid color-mix(in srgb, var(--src) 55%, transparent); color: var(--ink); box-shadow: none;
@@ -196,3 +196,37 @@
 /* Поля ввода и пустые деления: заметнее на тёмном экране. */
 #cc-panel .cc-phone :is(input:not([type="checkbox"], [type="radio"], [type="range"]), textarea, select) { border-color: color-mix(in srgb, var(--mut) 62%, transparent); }
 #cc-panel .cc-phone .cc-ds-off { stroke: color-mix(in srgb, var(--line) 78%, var(--ink)); opacity: 1; }
+
+/* ---------- высота корпуса, низкие окна, цели касания ---------- */
+@media (min-width: 601px) { #cc-panel[data-item="phone"] { height: max(min(864px, var(--cc-room)), calc(var(--cc-room) + 40px - var(--cc-form-h, 64px))); } }
+#cc-panel .cc-phone .cc-pqueue .cc-queue { max-height: min(120px, 24dvh); }
+@media (max-height: 800px) {
+  #cc-panel .cc-phone .cc-pscreen { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+  #cc-panel .cc-phone .cc-pscreen::-webkit-scrollbar { display: none; }
+  #cc-panel .cc-phone .cc-pview { flex: 1 1 0; min-height: 300px; }
+  #cc-panel .cc-phone:has(.cc-queue) .cc-pview { min-height: 160px; }
+  #cc-panel .cc-phone .cc-pbar { height: 28px; }
+  #cc-panel .cc-phone .cc-ptop { gap: 10px; padding: 0 14px 6px; }
+  #cc-panel .cc-phone .cc-dial { width: 92px; height: 92px; }
+  #cc-panel .cc-phone .cc-dial-c b { font-size: 20px; }
+  #cc-panel .cc-phone .cc-dial-c small { margin-top: 1px; font-size: 8px; }
+  #cc-panel .cc-phone .cc-dial-c em { margin-top: 1px; font-size: 10px; }
+  #cc-panel .cc-phone .cc-pwho { gap: 3px; }
+  #cc-panel .cc-phone .cc-pname { font-size: 19px; }
+  #cc-panel .cc-phone .cc-pill.cc-src { height: 22px; font-size: 12px; }
+  #cc-panel .cc-phone .cc-pmode button { height: 26px; padding: 0 12px; font-size: 12.5px; }
+  #cc-panel .cc-phone .cc-flags { gap: 2px 8px; }
+  #cc-panel .cc-phone .cc-tick { margin-bottom: 5px; padding: 4px 10px; }
+  #cc-panel .cc-phone .cc-ptabs { margin-bottom: 4px; padding: 3px; }
+  #cc-panel .cc-phone .cc-ptab { height: 32px; font-size: 13.5px; }
+  #cc-panel .cc-phone .cc-school-nav { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
+  #cc-panel .cc-phone .cc-school-nav button { flex: none; }
+}
+@media (max-width: 700px) {
+  #cc-panel .cc-phone .cc-pbar .cc-close { width: 36px; height: 36px; }
+  #cc-panel .cc-phone .cc-pmode button { min-height: 36px; }
+}
+@media (max-width: 700px) {
+  #cc-panel .cc-phone .cc-ptab { height: 36px; }
+  #cc-panel .cc-phone .cc-tick, #cc-panel .cc-phone .cc-qfold { min-height: 36px; }
+}

@@ -2,8 +2,8 @@
 // в сообщение игрока, отключение событий и выбор сообщения для факта хода.
 // Без DOM и без SillyTavern: на входе массив сообщений чата и объект метаданных чата.
 // Время, генератор случайных чисел и id приходят параметрами.
-import { applyEvent, replay, EVENT_KINDS } from './journal.mjs?v=0.1.16';
-import { rollsAgainst, DIFFICULTIES } from './rules.mjs?v=0.1.16';
+import { applyEvent, replay, EVENT_KINDS } from './journal.mjs?v=0.1.17';
+import { rollsAgainst, DIFFICULTIES } from './rules.mjs?v=0.1.17';
 
 export const META_KEY = 'cenaChuda';
 export const EXTRA_KEY = 'cenaChuda';
