@@ -1,10 +1,14 @@
 // Словарь сеттинга по коже: названия чар, школ, источников и слов механики. Без DOM и ST.
-import { WORLDS } from './data/worlds.mjs?v=0.1.27';
+import { WORLDS } from './data/worlds.mjs?v=0.1.28';
+import SPELLS from './data/spells.mjs?v=0.1.28';
 
 export const worldOf = (skin) => WORLDS[skin] ?? null;
 
 const builtin = (spell) => spell?.id && !String(spell.id).startsWith('custom:');
-export const spellName = (spell, world) => (builtin(spell) && world?.spells?.[spell.id]) || spell?.name;
+const ORIGINAL = new Map(SPELLS.map((s) => [s.id, s.name]));
+// Встроенная чара с изменённым в правке названием показывается своим именем, а не мировым.
+const renamed = (spell) => ORIGINAL.has(spell.id) && spell.name !== ORIGINAL.get(spell.id);
+export const spellName = (spell, world) => (builtin(spell) && !renamed(spell) && world?.spells?.[spell.id]) || spell?.name;
 export const schoolName = (dir, world) => world?.schools?.[dir?.id] ?? dir?.name;
 export const sourceName = (src, world) => world?.sources?.[src?.id] ?? src?.name;
 export const wordOf = (world, key, fallback) => world?.words?.[key] ?? fallback;

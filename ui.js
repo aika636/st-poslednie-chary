@@ -1,16 +1,16 @@
 // Панель «Последних чар» — том заклинаний со свечой. Разметка строками от view, события через
 // data-act / data-bind. Правил здесь нет: можно ли, сколько стоит и что предупредить —
 // говорит actions.preview. Весь текст из чата, профиля и метаданных — только через esc().
-import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.27';
-import { castCard, createCatalog, searchWordsOf } from './core/catalog.mjs?v=0.1.27';
-import SHORT from './core/data/short.mjs?v=0.1.27';
-import { clampOffset, canSwitchMode, OPTIONAL_TAG, SKINS } from './view.mjs?v=0.1.27';
-import { candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.27';
-import { SOURCE_GLYPH, STAR, glyphFor } from './glyphs.js?v=0.1.27';
-import { esc, list, attr } from './esc.js?v=0.1.27';
-import { cleanHow } from './core/journal.mjs?v=0.1.27';
-import { shellOf } from './shells/index.js?v=0.1.27';
-import { worldOf, spellName, schoolName, sourceName, wordOf, spellNames } from './core/worlds.mjs?v=0.1.27';
+import { MASTERIES, THRESHOLDS, DIFFICULTIES, fractureLoad, scaleOf, scaleFor, scaleParts, rollsAgainst } from './core/rules.mjs?v=0.1.28';
+import { castCard, createCatalog, searchWordsOf } from './core/catalog.mjs?v=0.1.28';
+import SHORT from './core/data/short.mjs?v=0.1.28';
+import { clampOffset, canSwitchMode, OPTIONAL_TAG, SKINS } from './view.mjs?v=0.1.28';
+import { candleMarks, levelGrew, castFxKind, playFx } from './candle.js?v=0.1.28';
+import { SOURCE_GLYPH, STAR, glyphFor } from './glyphs.js?v=0.1.28';
+import { esc, list, attr } from './esc.js?v=0.1.28';
+import { cleanHow } from './core/journal.mjs?v=0.1.28';
+import { shellOf } from './shells/index.js?v=0.1.28';
+import { worldOf, spellName, schoolName, sourceName, wordOf, spellNames } from './core/worlds.mjs?v=0.1.28';
 
 export { esc };
 
@@ -97,7 +97,7 @@ export function initialUi() {
     layout: 'spread', school: '', listScroll: 0,
     q: '', label: '',
     spellId: null, lastSpellId: null, opts: emptyOpts(),
-    custom: emptyCustom(), customErrors: [], customEdit: null, customFrom: false, customDelete: null, customMoreOpen: false,
+    custom: emptyCustom(), customErrors: [], customEdit: null, customFrom: false, customDelete: null, spellReset: null, customMoreOpen: false,
     manifestFor: null, acceptFor: null, accept: { text: '', tag: '' },
     noteText: '', traitText: '', restoreAmt: 1, restoreHow: '',
     profileDraft: null, createError: '', peekOpen: false, queueOpen: false,
@@ -549,6 +549,7 @@ export function leafHtml(view, ui, preview, spell) {
   if (gift === 'loan') extra.push(field('Своё условие долга (необязательно)', textInput('opts.debt', opts.debt, dd || 'Что персона будет должна', { area: true, id: 'cc-debt' }) + (queued && !queued.payload?.gift ? '<small class="cc-debt-hint">Применится, если поставить в долг.</small>' : '')));
   const giftLabel = { repeat: `Повторить по записи — цена ${Math.max(0, spell.cost - 1)}`, blood: 'Через кровь — надлом вместо усталости', loan: `В долг — условие: ${clean(opts.debt) || dd || 'назовёт покровитель'}` }[gift];
   const fav = st.profile.favorites.includes(spell.id);
+  const edited = list(view.data?.edited).includes(spell.id);
   const rolls = view.mode === 'dice' && rollsAgainst(spell);
   return `<article class="cc-leaf" data-direction="${esc(spell.direction ?? 'custom')}" ${sparkStyle(spell.id)} data-queued="${Boolean(queued)}">
     <nav class="cc-leaf-nav" aria-label="Навигация страницы">
@@ -559,6 +560,7 @@ export function leafHtml(view, ui, preview, spell) {
     <div class="cc-leaf-top">
       <span class="cc-leaf-g">${glyphFor(spell)}</span>
       <button type="button" class="cc-starbtn" data-act="fav" data-v="${esc(spell.id)}" aria-pressed="${fav}" title="${fav ? 'Убрать из избранного' : 'В избранное'}">${STAR}</button>
+      <button type="button" class="cc-starbtn cc-editbtn" data-act="spell-edit" data-v="${esc(spell.id)}" title="Изменить заклинание" aria-label="Изменить заклинание">✎</button>
       <button type="button" class="cc-x cc-leaf-x" data-act="unpick" title="Закрыть лист" aria-label="Закрыть лист">✕</button>
     </div>
     <h3 class="cc-leaf-name" tabindex="-1">${esc(sn(spell))}</h3>
@@ -574,7 +576,9 @@ export function leafHtml(view, ui, preview, spell) {
     ? `<span class="cc-ok-text">✦ В очереди — уйдёт с вашим сообщением</span>${btn('dequeue', 'Убрать', { v: queued.id, cls: 'cc-ghost' })}`
     : `${btn('cast', 'В очередь', { v: spell.id, cls: 'cc-primary' })}${gift ? btn('cast-gift', giftLabel, { v: spell.id, cls: 'cc-ghost cc-gift' }) : ''}`}</div>
     <label class="cc-field cc-leaf-words"><span>Свои слова для поиска</span><input type="text" class="cc-input" data-words="${esc(spell.id)}" value="${esc(searchWordsOf(spell, view.settings?.searchWords).join(', '))}" maxlength="400" placeholder="через запятую, например: огонёк, факел"><small>Работает во всех чатах. Пусто — убрать.</small></label>
-    <div class="cc-leaf-own">${isOwn(spell) ? btn('custom-edit', 'Изменить', { v: spell.id, cls: 'cc-ghost' }) : btn('custom-copy', 'Копировать и изменить', { v: spell.id, cls: 'cc-ghost', title: 'Создать своё заклинание на основе этого — исходное останется как было' })}</div>
+    <div class="cc-leaf-own">${edited ? `<span class="cc-small cc-edited">изменено</span>${ui.spellReset === spell.id
+      ? `${btn('spell-reset-go', 'Точно вернуть?', { v: spell.id, cls: 'cc-danger' })}${btn('spell-reset-no', 'Не надо', { cls: 'cc-ghost' })}`
+      : btn('spell-reset', 'Вернуть как было', { v: spell.id, cls: 'cc-ghost' })}` : ''}${isOwn(spell) ? btn('custom-edit', 'Изменить', { v: spell.id, cls: 'cc-ghost' }) : btn('custom-copy', 'Копировать и изменить', { v: spell.id, cls: 'cc-ghost', title: 'Создать своё заклинание на основе этого — исходное останется как было' })}</div>
   </article>`;
 }
 
@@ -781,7 +785,7 @@ function customHtml(view, ui, shared = true) {
       ${field('Конец сцены', textInput('custom.end.scene', c.end.scene, 'Что заметно, когда сцена кончилась (необязательно)', { area: true, id: 'cc-c-end-scene' }))}` : ''}
     </div></details>`;
   return `${mine.length ? `<div class="cc-own-list">${mine.map(ownRow).join('')}</div>` : `<p class="cc-small">Своих заклинаний пока нет.${shared ? ' Свои чары общие для всех чатов.' : ''}</p>`}
-    ${editing ? `<p class="cc-small cc-own-now">Правка: «${esc(mine.find((s) => s.id === ui.customEdit)?.name ?? c.name)}»</p>` : ''}
+    ${editing ? `<p class="cc-small cc-own-now">Правка: «${esc(list(view.data?.spells).find((s) => s.id === ui.customEdit)?.name ?? c.name)}»</p>` : ''}
     ${field('Название', textInput('custom.name', c.name, 'Например: Тёплый ветер', { maxlength: 80, id: 'cc-c-name' }))}
     ${field('Школа', `<select class="cc-input" data-bind="custom.direction" id="cc-c-dir">${dirOpts.map((d) => `<option value="${esc(d.id)}"${attr('selected', d.id === c.direction)}>${esc(schoolName(d, W))}</option>`).join('')}</select>`)}
     <div class="cc-grid3">
@@ -945,7 +949,7 @@ export function createPanel(actions) {
   const shadow = host.attachShadow({ mode: 'open' });
   const reset = document.createElement('style');
   reset.textContent = ':host { all: initial; }';
-  const sheets = [new URL('./shells/tome.css?v=0.1.27', import.meta.url).href, new URL('./style.css?v=0.1.27', import.meta.url).href, new URL('./shells/phone.css?v=0.1.27', import.meta.url).href].map((href) => {
+  const sheets = [new URL('./shells/tome.css?v=0.1.28', import.meta.url).href, new URL('./style.css?v=0.1.28', import.meta.url).href, new URL('./shells/phone.css?v=0.1.28', import.meta.url).href].map((href) => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = href;
@@ -1224,6 +1228,7 @@ export function createPanel(actions) {
         return;
       }
       case 'custom-cancel': resetCustom(); break;
+      case 'spell-edit':
       case 'custom-edit':
       case 'custom-copy': {
         const spell = spellById(v);
@@ -1231,10 +1236,13 @@ export function createPanel(actions) {
         const copy = act === 'custom-copy';
         ui.custom = customFromCard(spell);
         if (copy) ui.custom.name = `${spell.name} (своё)`;
-        Object.assign(ui, { customEdit: copy ? null : v, customFrom: copy, customErrors: [], customDelete: null, customMoreOpen: false, tab: 'more', moreOpen: 'custom' });
+        Object.assign(ui, { customEdit: copy ? null : v, customFrom: copy, customErrors: [], customDelete: null, spellReset: null, customMoreOpen: false, tab: 'more', moreOpen: 'custom' });
         scrollTop = true;
         break;
       }
+      case 'spell-reset': ui.spellReset = v; break;
+      case 'spell-reset-no': ui.spellReset = null; break;
+      case 'spell-reset-go': ui.spellReset = null; actions.resetSpell(v); break;
       case 'custom-del': ui.customDelete = v; break;
       case 'custom-del-no': ui.customDelete = null; break;
       case 'custom-del-go': {

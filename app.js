@@ -2,21 +2,21 @@
 import {
   META_KEY, MODES, previewCommand, enqueue as coreEnqueue, dequeue as coreDequeue, commitPending,
   toggleEvent as coreToggleEvent, computeChat, factTarget, INSTANT_KINDS, instantTarget, removeEvent,
-} from './core/chat-journal.mjs?v=0.1.27';
-import { createSnapshot } from './core/state.mjs?v=0.1.27';
-import { statusBlock } from './core/prompt.mjs?v=0.1.27';
-import { worldOf, spellName } from './core/worlds.mjs?v=0.1.27';
+} from './core/chat-journal.mjs?v=0.1.28';
+import { createSnapshot } from './core/state.mjs?v=0.1.28';
+import { statusBlock } from './core/prompt.mjs?v=0.1.28';
+import { worldOf, spellName } from './core/worlds.mjs?v=0.1.28';
 import {
   readMeta, worthWarning, hasProfile, hasHistory, canSwitchMode, buildView, promptTexts, normalizeSettings, clampDepth, ITEMS, SKINS, THEMES,
-  upsertTemplate, removeTemplate, saveCustomSpell as saveCustomSpellTo, deleteCustomSpell as deleteCustomSpellFrom, migrateCustom, setSearchWords as setSearchWordsOf, PROMPT_OPTIONS, DEPTH_MIN, DEPTH_MAX,
-} from './view.mjs?v=0.1.27';
-import { createPanel, candleHtml } from './ui.js?v=0.1.27';
-import { levelGrew, playFx } from './candle.js?v=0.1.27';
-import { scaleOf } from './core/rules.mjs?v=0.1.27';
-import { clampOffset } from './view.mjs?v=0.1.27';
-import { createDicePresenter } from './dice.js?v=0.1.27';
-import { buildMatchers, findSpell } from './hint.js?v=0.1.27';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.27';
+  upsertTemplate, removeTemplate, saveCustomSpell as saveCustomSpellTo, deleteCustomSpell as deleteCustomSpellFrom, resetSpell as resetSpellOf, migrateCustom, setSearchWords as setSearchWordsOf, PROMPT_OPTIONS, DEPTH_MIN, DEPTH_MAX,
+} from './view.mjs?v=0.1.28';
+import { createPanel, candleHtml } from './ui.js?v=0.1.28';
+import { levelGrew, playFx } from './candle.js?v=0.1.28';
+import { scaleOf } from './core/rules.mjs?v=0.1.28';
+import { clampOffset } from './view.mjs?v=0.1.28';
+import { createDicePresenter } from './dice.js?v=0.1.28';
+import { buildMatchers, findSpell } from './hint.js?v=0.1.28';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.28';
 
 const MODULE = 'cena-chuda';
 const SETTINGS_KEY = 'cenaChuda';
@@ -292,6 +292,14 @@ const actions = {
     return { ok: true, errors: [] };
   },
 
+  resetSpell(id) {
+    const patch = resetSpellOf(readSettings(), id);
+    if (!patch) return { ok: false, errors: ['так не получится вернуть'] };
+    writeSettings(patch);
+    refresh();
+    return { ok: true, errors: [] };
+  },
+
   // Свои слова для поиска общие для всех чатов и лежат в настройках.
   setSearchWords(id, text) {
     writeSettings(setSearchWordsOf(readSettings(), id, text));
@@ -555,13 +563,13 @@ function mountFonts() {
   const link = document.createElement('link');
   link.id = 'cc-fonts';
   link.rel = 'stylesheet';
-  link.href = new URL('./fonts/fonts.css?v=0.1.27', import.meta.url).href;
+  link.href = new URL('./fonts/fonts.css?v=0.1.28', import.meta.url).href;
   document.head.append(link);
 }
 
 function mountStyle() {
   if (document.getElementById('cc-style')) return;
-  const hrefs = [new URL('./shells/tome.css?v=0.1.27', import.meta.url).href, new URL('./style.css?v=0.1.27', import.meta.url).href, new URL('./shells/phone.css?v=0.1.27', import.meta.url).href];
+  const hrefs = [new URL('./shells/tome.css?v=0.1.28', import.meta.url).href, new URL('./style.css?v=0.1.28', import.meta.url).href, new URL('./shells/phone.css?v=0.1.28', import.meta.url).href];
   hrefs.forEach((href, i) => {
     const link = document.createElement('link');
     if (i === 1) link.id = 'cc-style';
@@ -576,7 +584,7 @@ function mountDiceStyles() {
   const link = document.createElement('link');
   link.id = 'cc-dice-style';
   link.rel = 'stylesheet';
-  link.href = new URL('./dice.css?v=0.1.27', import.meta.url).href;
+  link.href = new URL('./dice.css?v=0.1.28', import.meta.url).href;
   document.head.append(link);
 }
 

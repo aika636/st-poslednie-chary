@@ -1,6 +1,6 @@
 // Подсказка каста по тексту поста: ищет в тексте названия заклинаний с учётом падежей.
 // Только предлагает — каст ставит в очередь сам игрок нажатием на подсказку.
-import { spellNames, spellName } from './core/worlds.mjs?v=0.1.27';
+import { spellNames, spellName } from './core/worlds.mjs?v=0.1.28';
 
 const norm = (s) => String(s ?? '').toLowerCase().replace(/ё/g, 'е');
 const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

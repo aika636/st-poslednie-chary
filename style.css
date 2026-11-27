@@ -39,16 +39,16 @@
   --cc-wick: #2b1a10;
   --cc-hand: 'CC Marck Script', 'Segoe Script', cursive;
   --cc-lift: white;
-  --cc-surface-image: url("assets/parchment.webp?v=0.1.27");
+  --cc-surface-image: url("assets/parchment.webp?v=0.1.28");
   --cc-surface-blend: multiply;
   --cc-vignette: rgba(120, 78, 22, .36);
   --cc-fold: 40, 20, 6;
   --cc-note-ink: #5a3b4a;
-  --cc-note-image: url("assets/scrap.webp?v=0.1.27");
-  --cc-seal-image: url("assets/seal-moon.webp?v=0.1.27");
+  --cc-note-image: url("assets/scrap.webp?v=0.1.28");
+  --cc-seal-image: url("assets/seal-moon.webp?v=0.1.28");
   --cc-lupa: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23998066' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='6'/%3E%3Cpath d='m20 20-4.5-4.5'/%3E%3C/svg%3E");
   --cc-lupa-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23665050' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='6'/%3E%3Cpath d='m20 20-4.5-4.5'/%3E%3C/svg%3E");
-  --cc-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n?v=0.1.27)'/%3E%3C/svg%3E");
+  --cc-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n?v=0.1.28)'/%3E%3C/svg%3E");
   --cc-display: 'CC Playfair Display', 'Playfair Display', Georgia, 'Times New Roman', serif;
   --cc-body: 'CC Alegreya', Alegreya, Georgia, 'Times New Roman', serif;
   --cc-accent-font: 'CC Kurale', Georgia, 'Times New Roman', serif;
@@ -571,7 +571,8 @@
 #cc-panel .cc-starbtn .cc-glyph { width: 20px; height: 20px; }
 #cc-panel .cc-starbtn[aria-pressed="true"] .cc-g-line { fill: var(--cc-gold); }
 /* Правый верхний угол листа занят свечой — крестик стоит рядом со звездой. */
-#cc-panel .cc-leaf-x { left: 46px; }
+#cc-panel .cc-editbtn { left: 28px; font-size: 22px; line-height: 1; }
+#cc-panel .cc-leaf-x { left: 76px; }
 #cc-panel .cc-leaf-name { text-align: center; font: 700 24px/1.15 var(--cc-display); text-wrap: balance; }
 #cc-panel .cc-leaf-short { text-align: center; font-style: italic; color: var(--cc-muted); }
 #cc-panel .cc-leaf-cost {
@@ -998,7 +999,7 @@
 /* Предмет лежит на нижнем поле обложки; по умолчанию засушенная лаванда с полумесяцем. */
 #cc-panel .cc-bottom { position: absolute; z-index: 3; bottom: -4px; left: calc(63% - 50px); width: 100px; height: 46px; filter: drop-shadow(0 2px 2px rgba(10, 2, 22, .35)) saturate(.85); pointer-events: none; }
 #cc-panel .cc-bt { display: none; position: absolute; left: 50%; bottom: 0; translate: -50% 0; width: var(--w, 100px); aspect-ratio: var(--r); background: var(--img) center / contain no-repeat; rotate: var(--rot, 0deg); }
-#cc-panel .cc-bt-def { display: block; --w: 100px; --r: 300 / 123; --img: url("assets/bottom-amethyst.webp?v=0.1.27"); --rot: -2deg; }
+#cc-panel .cc-bt-def { display: block; --w: 100px; --r: 300 / 123; --img: url("assets/bottom-amethyst.webp?v=0.1.28"); --rot: -2deg; }
 #cc-panel .cc-props { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
 /* Тёплое пятно от свечи на правой странице. */
 #cc-panel .cc-candlelight { position: absolute; top: 0; right: 0; width: 34%; height: 34%; background: radial-gradient(ellipse at 96% 2%, rgba(255, 211, 140, .15), rgba(255, 190, 110, .05) 55%, transparent 72%); mix-blend-mode: screen; animation: cc-light 3.2s ease-in-out infinite; }
@@ -1228,7 +1229,7 @@
     radial-gradient(circle 70px at 0 0, rgba(225, 195, 150, .2), transparent), radial-gradient(circle 70px at 100% 0, rgba(225, 195, 150, .18), transparent),
     radial-gradient(circle 70px at 0 100%, rgba(225, 195, 150, .2), transparent), radial-gradient(circle 70px at 100% 100%, rgba(225, 195, 150, .22), transparent),
     linear-gradient(90deg, rgba(15, 5, 31, .4), transparent 7%, transparent 94%, rgba(15, 5, 31, .2)),
-    url("assets/leather.webp?v=0.1.27") 0 0 / 400px 400px repeat,
+    url("assets/leather.webp?v=0.1.28") 0 0 / 400px 400px repeat,
     linear-gradient(110deg, var(--cc-cover-1), var(--cc-cover-2) 72%, var(--cc-cover-3));
   background-blend-mode: normal, normal, normal, normal, normal, normal, overlay, normal;
   box-shadow: 0 16px 32px rgba(7, 2, 18, .45), inset 0 0 0 1px rgba(235, 205, 160, .16), inset 0 0 18px rgba(225, 195, 150, .1), inset 0 0 3px 2px rgba(0, 0, 0, .35), 0 0 0 2px var(--cc-cover-3), 0 0 0 3px var(--cc-gold-3);
@@ -1240,7 +1241,7 @@
 #cc-panel .cc-tome::after {
   background:
     radial-gradient(ellipse 100% 40% at 50% 0, rgba(225, 195, 150, .16), transparent), radial-gradient(ellipse 100% 40% at 50% 100%, rgba(225, 195, 150, .16), transparent),
-    url("assets/leather.webp?v=0.1.27") 60px 0 / 400px 400px repeat,
+    url("assets/leather.webp?v=0.1.28") 60px 0 / 400px 400px repeat,
     linear-gradient(90deg, var(--cc-cover-3) 0%, color-mix(in srgb, var(--cc-cover-1) 75%, var(--cc-cover-3)) 38%, var(--cc-cover-2) 74%, var(--cc-cover-3) 100%);
   background-blend-mode: normal, normal, overlay, normal;
 }
@@ -1401,7 +1402,7 @@
 #cc-panel .cc-custom-more { border: 1px solid var(--cc-line); border-radius: 3px; padding: 0 8px; }
 #cc-panel .cc-custom-more > summary { padding: 8px 0; }
 #cc-panel .cc-custom-more .cc-more-body { padding-bottom: 10px; }
-#cc-panel .cc-leaf-own { display: flex; justify-content: center; padding-top: 6px; }
+#cc-panel .cc-leaf-own { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; padding-top: 6px; }
 #cc-panel .cc-leaf-own .cc-btn { padding: 4px 12px; font-size: 13px; }
 
 /* ---------- кожи тома: «Тёмное фэнтези», «Ведьмин лес», «Храм» ---------- */
@@ -1545,7 +1546,7 @@
     background:
       var(--cc-spine-orn) 6px 0 / 10px 36px repeat-y,
       radial-gradient(ellipse 100% 40% at 50% 0, rgba(225, 195, 150, .12), transparent), radial-gradient(ellipse 100% 40% at 50% 100%, rgba(225, 195, 150, .12), transparent),
-      url("assets/leather.webp?v=0.1.27") 60px 0 / 400px 400px repeat,
+      url("assets/leather.webp?v=0.1.28") 60px 0 / 400px 400px repeat,
       linear-gradient(90deg, var(--cc-cover-3) 0%, color-mix(in srgb, var(--cc-cover-1) 75%, var(--cc-cover-3)) 38%, var(--cc-cover-2) 74%, var(--cc-cover-3) 100%);
     background-blend-mode: normal, normal, normal, overlay, normal;
   }
@@ -1566,9 +1567,9 @@
 #cc-panel[data-skin="dark"] .cc-spine::after, #cc-panel[data-skin="temple"] .cc-spine::after { opacity: .8; }
 
 /* ---------- новые кожи: бумага, поля и мотивы ---------- */
-#cc-panel[data-skin="dark"] { --cc-seal-image: url("assets/seal-dark.webp?v=0.1.27"); }
-#cc-panel[data-skin="forest"] { --cc-seal-image: url("assets/seal-forest.webp?v=0.1.27"); }
-#cc-panel[data-skin="temple"] { --cc-seal-image: url("assets/seal-temple.webp?v=0.1.27"); }
+#cc-panel[data-skin="dark"] { --cc-seal-image: url("assets/seal-dark.webp?v=0.1.28"); }
+#cc-panel[data-skin="forest"] { --cc-seal-image: url("assets/seal-forest.webp?v=0.1.28"); }
+#cc-panel[data-skin="temple"] { --cc-seal-image: url("assets/seal-temple.webp?v=0.1.28"); }
 /* Тёмное фэнтези: бумага тёмная, чернила светлые; белёсые подложки светлых кож заменены на лёгкий свет. */
 #cc-panel[data-skin="dark"] {
   & .cc-leaf-cost, & .cc-now-calm { background: rgba(255, 255, 255, .07); }
@@ -1602,7 +1603,7 @@
 @media (forced-colors: active) {
   #cc-panel .cc-alt, #cc-panel .cc-hum, #cc-panel .cc-bottom, #cc-panel .cc-front-foot::after { display: none !important; }
 }
-#cc-panel[data-skin="temple"] { --cc-surface-image: url("assets/paper-ivory.webp?v=0.1.27"); --cc-surface-blend: normal; }
+#cc-panel[data-skin="temple"] { --cc-surface-image: url("assets/paper-ivory.webp?v=0.1.28"); --cc-surface-blend: normal; }
 #cc-panel[data-skin="dark"] .cc-perch { top: -49px; right: 168px; width: 72px; height: 55px; }
 #cc-panel[data-skin="forest"] .cc-perch { top: -61px; right: 176px; width: 50px; height: 64px; }
 #cc-panel[data-skin="temple"] .cc-perch { top: -63px; right: 170px; width: 64px; height: 66px; }
@@ -1620,26 +1621,26 @@
   #cc-panel[data-skin="temple"] .cc-perch { left: 307px; width: 34px; height: 35px; }
 }
 @media (max-width: 330px) { #cc-panel .cc-perch { display: none; } }
-#cc-panel[data-skin="dark"] .cc-bt-dark { display: block; --w: 100px; --r: 300 / 114; --img: url("assets/bottom-dark.webp?v=0.1.27"); --rot: -3deg; }
-#cc-panel[data-skin="forest"] .cc-bt-forest { display: block; --w: 90px; --r: 260 / 99; --img: url("assets/rowan.webp?v=0.1.27"); --rot: -3deg; }
-#cc-panel[data-skin="temple"] .cc-bt-temple { display: block; --w: 100px; --r: 300 / 132; --img: url("assets/bottom-temple.webp?v=0.1.27"); --rot: 2deg; }
+#cc-panel[data-skin="dark"] .cc-bt-dark { display: block; --w: 100px; --r: 300 / 114; --img: url("assets/bottom-dark.webp?v=0.1.28"); --rot: -3deg; }
+#cc-panel[data-skin="forest"] .cc-bt-forest { display: block; --w: 90px; --r: 260 / 99; --img: url("assets/rowan.webp?v=0.1.28"); --rot: -3deg; }
+#cc-panel[data-skin="temple"] .cc-bt-temple { display: block; --w: 100px; --r: 300 / 132; --img: url("assets/bottom-temple.webp?v=0.1.28"); --rot: 2deg; }
 #cc-panel .cc-mascot .cc-mf { background-position: center bottom; opacity: 0; animation-duration: var(--mf-t); animation-iteration-count: infinite; animation-timing-function: linear; }
 #cc-panel .cc-hum { --mf-t: 15s; }
 #cc-panel .cc-raven { --mf-t: 17s; }
 #cc-panel .cc-owl { --mf-t: 11s; }
 #cc-panel .cc-dove { --mf-t: 19s; }
-#cc-panel .cc-raven .cc-mf-rest { background-image: url("assets/raven-rest.webp?v=0.1.27"); animation-name: cc-raven-rest; }
-#cc-panel .cc-raven .cc-mf-look { background-image: url("assets/raven-look.webp?v=0.1.27"); animation-name: cc-raven-look; }
-#cc-panel .cc-raven .cc-mf-wings { background-image: url("assets/raven-wings.webp?v=0.1.27"); animation-name: cc-raven-wings; }
-#cc-panel .cc-owl .cc-mf-rest { background-image: url("assets/owl-rest.webp?v=0.1.27"); animation-name: cc-owl-rest; }
-#cc-panel .cc-owl .cc-mf-blink { background-image: url("assets/owl-blink.webp?v=0.1.27"); animation-name: cc-owl-blink; }
-#cc-panel .cc-owl .cc-mf-fluff { background-image: url("assets/owl-fluff.webp?v=0.1.27"); animation-name: cc-owl-fluff; }
-#cc-panel .cc-dove .cc-mf-rest { background-image: url("assets/dove-rest.webp?v=0.1.27"); animation-name: cc-dove-rest; }
-#cc-panel .cc-dove .cc-mf-preen { background-image: url("assets/dove-preen.webp?v=0.1.27"); animation-name: cc-dove-preen; }
-#cc-panel .cc-dove .cc-mf-wings { background-image: url("assets/dove-wings.webp?v=0.1.27"); animation-name: cc-dove-wings; }
-#cc-panel .cc-hum .cc-mf-rest { background-image: url("assets/hummingbird-rest.webp?v=0.1.27"); animation-name: cc-hum-rest; }
-#cc-panel .cc-hum .cc-mf-look { background-image: url("assets/hummingbird-look.webp?v=0.1.27"); animation-name: cc-hum-look; }
-#cc-panel .cc-hum .cc-mf-wings { background-image: url("assets/hummingbird-wings.webp?v=0.1.27"); animation-name: cc-hum-wings; }
+#cc-panel .cc-raven .cc-mf-rest { background-image: url("assets/raven-rest.webp?v=0.1.28"); animation-name: cc-raven-rest; }
+#cc-panel .cc-raven .cc-mf-look { background-image: url("assets/raven-look.webp?v=0.1.28"); animation-name: cc-raven-look; }
+#cc-panel .cc-raven .cc-mf-wings { background-image: url("assets/raven-wings.webp?v=0.1.28"); animation-name: cc-raven-wings; }
+#cc-panel .cc-owl .cc-mf-rest { background-image: url("assets/owl-rest.webp?v=0.1.28"); animation-name: cc-owl-rest; }
+#cc-panel .cc-owl .cc-mf-blink { background-image: url("assets/owl-blink.webp?v=0.1.28"); animation-name: cc-owl-blink; }
+#cc-panel .cc-owl .cc-mf-fluff { background-image: url("assets/owl-fluff.webp?v=0.1.28"); animation-name: cc-owl-fluff; }
+#cc-panel .cc-dove .cc-mf-rest { background-image: url("assets/dove-rest.webp?v=0.1.28"); animation-name: cc-dove-rest; }
+#cc-panel .cc-dove .cc-mf-preen { background-image: url("assets/dove-preen.webp?v=0.1.28"); animation-name: cc-dove-preen; }
+#cc-panel .cc-dove .cc-mf-wings { background-image: url("assets/dove-wings.webp?v=0.1.28"); animation-name: cc-dove-wings; }
+#cc-panel .cc-hum .cc-mf-rest { background-image: url("assets/hummingbird-rest.webp?v=0.1.28"); animation-name: cc-hum-rest; }
+#cc-panel .cc-hum .cc-mf-look { background-image: url("assets/hummingbird-look.webp?v=0.1.28"); animation-name: cc-hum-look; }
+#cc-panel .cc-hum .cc-mf-wings { background-image: url("assets/hummingbird-wings.webp?v=0.1.28"); animation-name: cc-hum-wings; }
 @keyframes cc-hum-rest { 0% { opacity: 1; } 35.33% { opacity: 1; } 36.67% { opacity: 0; } 48% { opacity: 0; } 49.33% { opacity: 1; } 74.67% { opacity: 1; } 75.33% { opacity: 0; } 76.33% { opacity: 0; } 77% { opacity: 1; } 79.67% { opacity: 1; } 80.33% { opacity: 0; } 81.33% { opacity: 0; } 82% { opacity: 1; } 100% { opacity: 1; } }
 @keyframes cc-hum-look { 0% { opacity: 0; } 34% { opacity: 0; } 35.33% { opacity: 1; } 49.33% { opacity: 1; } 50.67% { opacity: 0; } 100% { opacity: 0; } }
 @keyframes cc-hum-wings { 0% { opacity: 0; } 74% { opacity: 0; } 74.67% { opacity: 1; } 77% { opacity: 1; } 77.67% { opacity: 0; } 79% { opacity: 0; } 79.67% { opacity: 1; } 82% { opacity: 1; } 82.67% { opacity: 0; } 100% { opacity: 0; } }
@@ -1683,6 +1684,8 @@
   #cc-panel .cc-tog { min-height: 36px; min-width: 44px; }
   #cc-panel .cc-school-nav button { min-width: 36px; }
   #cc-panel .cc-starbtn { width: 36px; height: 36px; top: -4px; left: -4px; }
+  #cc-panel .cc-editbtn { left: 30px; }
+  #cc-panel .cc-leaf-x { left: 70px; }
   #cc-panel .cc-btn, #cc-panel .cc-seg button, #cc-panel .cc-leaf-own .cc-btn, #cc-panel .cc-own-btns .cc-btn { min-height: 36px; }
   #cc-panel .cc-pick, #cc-panel .cc-check { min-height: 36px; align-items: center; }
 }
@@ -1801,13 +1804,13 @@
 }
 #cc-panel[data-item="tome"][data-skin="amethyst"] .cc-page {
   background-image:
-    url("assets/burn-corner.webp?v=0.1.27"), url("assets/burn-edge.webp?v=0.1.27"),
+    url("assets/burn-corner.webp?v=0.1.28"), url("assets/burn-edge.webp?v=0.1.28"),
     linear-gradient(270deg, rgba(var(--cc-fold), .3), rgba(var(--cc-fold), .08) 4%, transparent 10%),
     linear-gradient(180deg, rgba(var(--cc-edge), .55), transparent 20px),
     linear-gradient(0deg, rgba(var(--cc-edge), .55), transparent 20px),
     linear-gradient(90deg, rgba(var(--cc-edge), .55), transparent 20px),
     radial-gradient(ellipse 120% 115% at 50% 45%, transparent 60%, rgba(var(--cc-edge), .22) 88%, rgba(var(--cc-edge), .4) 100%),
-    url("assets/paper-aged.webp?v=0.1.27");
+    url("assets/paper-aged.webp?v=0.1.28");
   background-position: left 0 bottom 0, left 0 top 4%, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
   background-size: 116px 116px, 7px 46%, auto, auto, auto, auto, auto, 640px 640px;
 }
@@ -1816,13 +1819,13 @@
 }
 #cc-panel[data-item="tome"][data-skin="amethyst"] .cc-side {
   background-image:
-    url("assets/burn-r.webp?v=0.1.27"), url("assets/burn-b.webp?v=0.1.27"),
+    url("assets/burn-r.webp?v=0.1.28"), url("assets/burn-b.webp?v=0.1.28"),
     linear-gradient(90deg, rgba(var(--cc-fold), .32), rgba(var(--cc-fold), .1) 4%, transparent 10%),
     linear-gradient(180deg, rgba(var(--cc-edge), .55), transparent 20px),
     linear-gradient(0deg, rgba(var(--cc-edge), .55), transparent 20px),
     linear-gradient(270deg, rgba(var(--cc-edge), .55), transparent 20px),
     radial-gradient(ellipse 120% 115% at 50% 45%, transparent 60%, rgba(var(--cc-edge), .22) 88%, rgba(var(--cc-edge), .4) 100%),
-    url("assets/paper-aged.webp?v=0.1.27");
+    url("assets/paper-aged.webp?v=0.1.28");
   background-position: right 0 bottom 20px, left 4% bottom 0, 0 0, 0 0, 0 0, 0 0, 0 0, 210px 130px;
   background-size: auto, auto, auto, auto, auto, auto, auto, 640px 640px;
 }
@@ -1847,7 +1850,7 @@
 }
 
 /* «Ведьмин лес»: страница — осенний лист. Жилки только по внешнему полю (assets/leaf-vein-*.webp; на телефоне узкие, на развороте с тонким хвостом), мелкая ячеистая сетка — только в углах (assets/leaf-cells.webp за маской). */
-#cc-panel[data-item="tome"][data-skin="forest"] { --cc-surface-image: url("assets/paper-ivory.webp?v=0.1.27"); --cc-surface-blend: normal; }
+#cc-panel[data-item="tome"][data-skin="forest"] { --cc-surface-image: url("assets/paper-ivory.webp?v=0.1.28"); --cc-surface-blend: normal; }
 #cc-panel[data-item="tome"][data-skin="forest"] .cc-page, #cc-panel[data-item="tome"][data-skin="forest"] .cc-side {
   background-size: auto, auto, auto, 44px 480px, 44px 480px, 520px 520px;
   background-repeat: no-repeat, no-repeat, no-repeat, repeat-y, repeat-y, repeat;
@@ -1858,7 +1861,7 @@
     linear-gradient(270deg, rgba(var(--cc-fold), .3), rgba(var(--cc-fold), .08) 4%, transparent 9%),
     radial-gradient(ellipse 80% 75% at 50% 45%, var(--cc-glow), transparent 72%),
     radial-gradient(ellipse 115% 110% at 50% 45%, transparent 45%, var(--cc-vignette) 100%),
-    url("assets/leaf-vein-l.webp?v=0.1.27"), url("assets/leaf-vein-r.webp?v=0.1.27"),
+    url("assets/leaf-vein-l.webp?v=0.1.28"), url("assets/leaf-vein-r.webp?v=0.1.28"),
     var(--cc-surface-image);
   background-position: 0 0, 0 0, 0 0, left 0 top 0, right 0 top 0, 0 0;
 }
@@ -1867,7 +1870,7 @@
     linear-gradient(90deg, rgba(var(--cc-fold), .34), rgba(var(--cc-fold), .1) 4%, transparent 9%),
     radial-gradient(ellipse 80% 75% at 50% 45%, var(--cc-glow), transparent 72%),
     radial-gradient(ellipse 115% 110% at 50% 45%, transparent 45%, var(--cc-vignette) 100%),
-    url("assets/leaf-vein-r.webp?v=0.1.27"), none,
+    url("assets/leaf-vein-r.webp?v=0.1.28"), none,
     var(--cc-surface-image);
   background-position: 0 0, 0 0, 0 0, right 0 top 0, 0 0, 200px 130px;
 }
@@ -1876,16 +1879,16 @@
     linear-gradient(270deg, rgba(var(--cc-fold), .3), rgba(var(--cc-fold), .08) 4%, transparent 9%),
     radial-gradient(ellipse 80% 75% at 50% 45%, var(--cc-glow), transparent 72%),
     radial-gradient(ellipse 115% 110% at 50% 45%, transparent 45%, var(--cc-vignette) 100%),
-    url("assets/leaf-vein-wide-l.webp?v=0.1.27"), none, var(--cc-surface-image); background-size: auto, auto, auto, 100px 480px, 44px 480px, 520px 520px; }
+    url("assets/leaf-vein-wide-l.webp?v=0.1.28"), none, var(--cc-surface-image); background-size: auto, auto, auto, 100px 480px, 44px 480px, 520px 520px; }
   #cc-panel[data-item="tome"][data-skin="forest"] .cc-side { background-image:
     linear-gradient(90deg, rgba(var(--cc-fold), .34), rgba(var(--cc-fold), .1) 4%, transparent 9%),
     radial-gradient(ellipse 80% 75% at 50% 45%, var(--cc-glow), transparent 72%),
     radial-gradient(ellipse 115% 110% at 50% 45%, transparent 45%, var(--cc-vignette) 100%),
-    url("assets/leaf-vein-wide-r.webp?v=0.1.27"), none, var(--cc-surface-image); background-size: auto, auto, auto, 100px 480px, 44px 480px, 520px 520px; }
+    url("assets/leaf-vein-wide-r.webp?v=0.1.28"), none, var(--cc-surface-image); background-size: auto, auto, auto, 100px 480px, 44px 480px, 520px 520px; }
 }
 #cc-panel[data-item="tome"][data-skin="forest"] .cc-page::after, #cc-panel[data-item="tome"][data-skin="forest"] .cc-side::before {
   content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0; border-radius: inherit;
-  background: url("assets/leaf-cells.webp?v=0.1.27") 0 0 / 160px 160px;
+  background: url("assets/leaf-cells.webp?v=0.1.28") 0 0 / 160px 160px;
   --m: 64px;
   -webkit-mask-image: radial-gradient(circle var(--m) at 0 0, #000, transparent), radial-gradient(circle var(--m) at 100% 0, #000, transparent), radial-gradient(circle var(--m) at 0 100%, #000, transparent), radial-gradient(circle var(--m) at 100% 100%, #000, transparent);
   mask-image: radial-gradient(circle var(--m) at 0 0, #000, transparent), radial-gradient(circle var(--m) at 100% 0, #000, transparent), radial-gradient(circle var(--m) at 0 100%, #000, transparent), radial-gradient(circle var(--m) at 100% 100%, #000, transparent);

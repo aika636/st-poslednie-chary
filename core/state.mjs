@@ -1,7 +1,7 @@
 // Профиль персоны, начальный снимок и состояние. Снимок — состояние до журнала:
 // его не перезаписывают, иначе удаление старого сообщения не отменит последствий.
-import { SOURCES, ENVIRONMENTS, MASTERIES, DEFAULT_MASTERY, scaleFor, fractureLoad, severityOf } from './rules.mjs?v=0.1.27';
-import { canonicalFavorites } from './data/spell-replacements.mjs?v=0.1.27';
+import { SOURCES, ENVIRONMENTS, MASTERIES, DEFAULT_MASTERY, scaleFor, fractureLoad, severityOf } from './rules.mjs?v=0.1.28';
+import { canonicalFavorites } from './data/spell-replacements.mjs?v=0.1.28';
 
 // Версия шкалы: у снимков старых чатов поля нет, они считаются по прежней шкале (sv: 1), пока не
 // появится действие с маркером `sv: 2` (так помечаются все новые действия). Новые чаты создаются с sv: 2.

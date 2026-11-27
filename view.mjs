@@ -1,15 +1,15 @@
 // Чистые части слоя SillyTavern: чтение метаданных без записи, сборка view для панели,
 // тексты для промпта по типу генерации, настройки, шаблоны и свои заклинания.
 // Без DOM и без SillyTavern: всё нужное приходит параметрами.
-import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.27';
-import { statusBlock, turnFact, notesOfRows, fracturesOfRows } from './core/prompt.mjs?v=0.1.27';
-import { createProfile } from './core/state.mjs?v=0.1.27';
-import { customSpell, customId, validateSpell, cleanSearchWords } from './core/catalog.mjs?v=0.1.27';
-import SPELLS from './core/data/spells.mjs?v=0.1.27';
-import FRACTURES from './core/data/fractures.mjs?v=0.1.27';
-import TAGS from './core/data/tags.mjs?v=0.1.27';
-import DIRECTIONS from './core/data/directions.mjs?v=0.1.27';
-import SOURCES from './core/data/sources.mjs?v=0.1.27';
+import { normalizeMeta, computeChat, factRows, collectEvents, staleNoteIds, MODES } from './core/chat-journal.mjs?v=0.1.28';
+import { statusBlock, turnFact, notesOfRows, fracturesOfRows } from './core/prompt.mjs?v=0.1.28';
+import { createProfile } from './core/state.mjs?v=0.1.28';
+import { customSpell, customId, validateSpell, cleanSearchWords } from './core/catalog.mjs?v=0.1.28';
+import SPELLS from './core/data/spells.mjs?v=0.1.28';
+import FRACTURES from './core/data/fractures.mjs?v=0.1.28';
+import TAGS from './core/data/tags.mjs?v=0.1.28';
+import DIRECTIONS from './core/data/directions.mjs?v=0.1.28';
+import SOURCES from './core/data/sources.mjs?v=0.1.28';
 
 export const DEPTH_MIN = 0;
 export const DEPTH_MAX = 10;
@@ -132,7 +132,8 @@ export function saveCustomSpell(settings, meta, input, { editId = null } = {}) {
   const s = normalizeSettings(settings);
   const shared = s.customSpells;
   const known = customSpellsOf(meta, s);
-  if (editId !== null && !known.some((c) => c.id === editId)) return fail('такого заклинания уже нет');
+  const base = editId === null ? null : SPELLS.find((c) => c.id === editId) ?? null;
+  if (editId !== null && !base && !known.some((c) => c.id === editId)) return fail('такого заклинания уже нет');
   if (!s.desire && (input?.direction === OPTIONAL_SCHOOL || (input?.tags ?? []).includes(OPTIONAL_TAG))) {
     return fail('школа «Чары влечения» выключена в настройках');
   }
@@ -140,6 +141,11 @@ export function saveCustomSpell(settings, meta, input, { editId = null } = {}) {
   let card;
   try {
     card = customSpell({ ...input, id: editId ?? customId(input?.name ?? '', taken) });
+    if (base) {
+      card = { ...base, ...card };
+      const errors = validateSpell(card);
+      if (errors.length) throw new Error(`заклинание «${card.name}»: ${errors.join('; ')}`);
+    }
   } catch (err) {
     return fail(String(err?.message ?? err));
   }
@@ -147,6 +153,13 @@ export function saveCustomSpell(settings, meta, input, { editId = null } = {}) {
     ? shared.map((c) => (c.id === editId ? card : c))
     : [...shared, card];
   return { ok: true, errors: [], card, patch: { customSpells } };
+}
+
+// Правка встроенной чары хранится перекрытием с тем же id; возврат убирает его (в удалённые не пишется).
+export function resetSpell(settings, id) {
+  const s = normalizeSettings(settings);
+  if (!isText(id) || String(id).startsWith('custom:') || !SPELLS.some((c) => c.id === id)) return null;
+  return { customSpells: s.customSpells.filter((c) => c.id !== id) };
 }
 
 // Удаление: из общих настроек, id запоминается, чтобы перенос из метаданных его не вернул.
@@ -235,7 +248,7 @@ export function promptTexts({ chat, meta, unsupported, enabled, type = 'normal',
 export function viewData(meta, settings = {}) {
   const desire = settings?.desire === true;
   const directions = desire ? DIRECTIONS : DIRECTIONS.filter((d) => d.id !== OPTIONAL_SCHOOL);
-  return { spells: allSpells(meta, SPELLS, { desire, settings }), fractures: FRACTURES, tags: TAGS, directions, allDirections: DIRECTIONS, sources: SOURCES };
+  return { spells: allSpells(meta, SPELLS, { desire, settings }), edited: customSpellsOf(meta, settings).filter((c) => SPELLS.some((b) => b.id === c.id)).map((c) => c.id), fractures: FRACTURES, tags: TAGS, directions, allDirections: DIRECTIONS, sources: SOURCES };
 }
 
 // View для панели (форма — в договоре ui-contract).
