@@ -1,0 +1,156 @@
+/* Оболочка «том»: обложка, корешок, кольца, уголки, торцы страниц, свеча на кронштейне. Грузится до style.css, чтобы порядок правил остался прежним. */
+
+/* ---------- переплёт: обложка, корешок, кольца ---------- */
+
+#cc-panel .cc-tome {
+  position: relative;
+  isolation: isolate;
+  flex: 1;
+  display: flex;
+  gap: 0;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: min(760px, 100%);
+  padding: 26px 30px 54px 64px;
+  border-radius: 16px 12px 12px 16px;
+  background:
+    linear-gradient(90deg, rgba(15, 5, 31, .4), transparent 7%, transparent 94%, rgba(15, 5, 31, .2)),
+    radial-gradient(ellipse at 9% 100%, rgba(226, 192, 122, .055), transparent 24%),
+    radial-gradient(ellipse at 96% 52%, rgba(226, 192, 122, .04), transparent 16%),
+    url("../assets/cover-grain.svg?v=0.1.27") 0 0 / 128px 128px repeat,
+    linear-gradient(110deg, var(--cc-cover-1), var(--cc-cover-2) 72%, var(--cc-cover-3));
+  box-shadow: 0 16px 32px rgba(7, 2, 18, .4), inset 0 1px rgba(255, 255, 255, .06), 0 0 0 2px var(--cc-cover-3), 0 0 0 3px var(--cc-gold-3);
+}
+/* Тиснёная рамка по обложке. */
+#cc-panel .cc-tome::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border: 1px solid color-mix(in srgb, var(--cc-cover-3) 70%, transparent);
+  border-radius: 11px 9px 9px 11px;
+  box-shadow: 0 1px 0 rgba(255, 240, 210, .08);
+  pointer-events: none;
+}
+/* Корешок. */
+#cc-panel .cc-tome::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 56px;
+  border-radius: 16px 0 0 16px;
+  background: linear-gradient(90deg, var(--cc-cover-3) 0%, color-mix(in srgb, var(--cc-cover-1) 75%, var(--cc-cover-3)) 38%, var(--cc-cover-2) 74%, var(--cc-cover-3) 100%);
+  box-shadow: 1px 0 rgba(255,255,255,.12), 5px 0 10px rgba(8,2,20,.22);
+  pointer-events: none;
+}
+
+#cc-panel .cc-spine {
+  position: absolute;
+  left: -6px;
+  top: 8%;
+  bottom: 10%;
+  width: 150px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  pointer-events: none;
+}
+/* Кольца: SVG 1:1, сдвиг -6 px — механизм на корешке (x=27), край блока (x=60), люверс на листе (x=96). */
+#cc-panel .cc-ring { position: relative; z-index: 1; display: block; width: 150px; height: 70px; overflow: visible; }
+/* Тень от колец на бумаге у люверсов: центры колец — 1/6, 1/2 и 5/6 высоты корешка. */
+#cc-panel .cc-spine::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 150px; z-index: 0; background: radial-gradient(circle 17px at 96px 16.667%, rgba(40, 25, 10, .18), transparent), radial-gradient(circle 17px at 96px 50%, rgba(40, 25, 10, .18), transparent), radial-gradient(circle 17px at 96px 83.333%, rgba(40, 25, 10, .18), transparent); }
+/* Стальная планка механизма вдоль корешка. */
+#cc-panel .cc-spine::before { content: ""; position: absolute; left: 15px; top: -10px; bottom: -10px; width: 12px; border-radius: 6px; background: linear-gradient(90deg, #3c3e48, #858995 38%, #646874 62%, #3c3e48); box-shadow: 1px 2px 3px rgba(10, 2, 22, .5), inset 0 0 0 1px rgba(40, 42, 50, .5); }
+#cc-panel .cc-ring-back { filter: brightness(.8); }
+#cc-panel .cc-ring rect, #cc-panel .cc-ring ellipse { stroke-linecap: butt; }
+#cc-panel .cc-ring .cc-ring-plate-inset { fill: none; }
+#cc-panel .cc-ring path { fill: none; stroke-linecap: butt; }
+#cc-panel .cc-ring-shadow { stroke: rgba(10, 2, 22, .55); stroke-width: 12.5; }
+#cc-panel .cc-ring-rim { stroke: #5c3b10; stroke-width: 12.5; }
+#cc-panel .cc-ring-body { stroke: url(#cc-ring-gold); stroke-width: 9.8; }
+#cc-panel .cc-ring-bounce { stroke: #b48cf0; stroke-width: 1.2; opacity: .16; }
+#cc-panel .cc-ring-shine { stroke: #f3e6c0; stroke-width: 1.3; opacity: .5; stroke-linecap: round; stroke-dasharray: 8 36; }
+#cc-panel .cc-ring .cc-ring-plate-shadow { fill: rgba(10, 2, 22, .5); }
+#cc-panel .cc-ring .cc-ring-plate { fill: url(#cc-ring-steel); stroke: #4d505b; stroke-width: 1.2; }
+#cc-panel .cc-ring .cc-ring-plate-inset { stroke: rgba(255, 255, 255, .25); stroke-width: .8; }
+#cc-panel .cc-ring-eyelet { fill: url(#cc-ring-gold); stroke: #5c3b10; stroke-width: 1.2; }
+#cc-panel .cc-ring-hole { fill: url(#cc-ring-pit); }
+#cc-panel .cc-ring .cc-ring-lip { stroke: url(#cc-ring-gold); stroke-width: 4.2; }
+#cc-panel .cc-rivet-base { fill: url(#cc-ring-steel); stroke: #3f424c; stroke-width: 1; }
+#cc-panel .cc-rivet-facet { fill: rgba(255, 255, 255, .35); stroke: rgba(60, 63, 72, .5); stroke-width: .4; }
+#cc-panel .cc-rivet-glint { fill: #fff; }
+
+/* Уголки обложки: один рисунок, остальные углы — зеркалом. */
+#cc-panel .cc-corners { position: absolute; inset: -3px; z-index: 4; pointer-events: none; }
+#cc-panel .cc-corner { position: absolute; width: 44px; height: 44px; }
+#cc-panel .cc-corner:nth-child(1) { left: 0; top: 0; }
+#cc-panel .cc-corner:nth-child(2) { right: 0; top: 0; transform: scaleX(-1); }
+#cc-panel .cc-corner:nth-child(3) { left: 0; bottom: 0; transform: scaleY(-1); }
+#cc-panel .cc-corner:nth-child(4) { right: 0; bottom: 0; transform: scale(-1); }
+#cc-panel .cc-corner-shadow { fill: rgba(10, 2, 22, .5); }
+#cc-panel .cc-corner-plate { fill: url(#cc-ring-steel); stroke: #45474f; stroke-width: 1; }
+#cc-panel .cc-corner-inset { fill: none; stroke: rgba(255, 255, 255, .22); stroke-width: .7; }
+#cc-panel .cc-corner-star { fill: #2a1640; }
+#cc-panel .cc-corner-rivet { fill: #d8c07a; stroke: #6a4a16; stroke-width: .9; }
+#cc-panel .cc-corner-glint { fill: #fff; opacity: .35; }
+
+/* Торец блока страниц: выступает из-под разворота снизу и по бокам. */
+#cc-panel .cc-edges {
+  --cc-ep: color-mix(in srgb, var(--cc-page-2) 82%, #5a3a12);
+  --cc-el: color-mix(in srgb, var(--cc-page-edge) 60%, #2e1a08);
+  position: absolute;
+  top: 30px;
+  right: 19px;
+  bottom: 43px;
+  left: 54px;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent 30%, rgba(52, 28, 8, .38)) bottom / 100% 11px no-repeat,
+    linear-gradient(90deg, rgba(60, 34, 10, .3), transparent 14%, rgba(60, 34, 10, .16) 31%, transparent 47%, rgba(60, 34, 10, .34) 66%, transparent 79%, rgba(60, 34, 10, .26)) bottom / 100% 11px no-repeat,
+    linear-gradient(270deg, rgba(52, 28, 8, .4), transparent 70%) right / 11px 100% no-repeat,
+    linear-gradient(180deg, rgba(60, 34, 10, .28), transparent 18%, rgba(60, 34, 10, .12) 40%, transparent 52%, rgba(60, 34, 10, .3) 78%, transparent) right / 11px 100% no-repeat,
+    linear-gradient(90deg, transparent 46%, rgba(70, 45, 25, .22) 50%, transparent 54%) bottom / 100% 11px no-repeat,
+    repeating-linear-gradient(180deg, color-mix(in srgb, var(--cc-el) 48%, transparent) 0 .8px, var(--cc-ep) .8px 2.6px, color-mix(in srgb, var(--cc-el) 30%, transparent) 2.6px 3.1px, var(--cc-ep) 3.1px 4.1px, color-mix(in srgb, var(--cc-el) 42%, transparent) 4.1px 5.4px, var(--cc-ep) 5.4px 8.4px, color-mix(in srgb, var(--cc-el) 28%, transparent) 8.4px 9px, var(--cc-ep) 9px 10.4px) bottom / 100% 11px no-repeat,
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--cc-el) 46%, transparent) 0 1px, var(--cc-ep) 1px 3.2px, color-mix(in srgb, var(--cc-el) 28%, transparent) 3.2px 3.7px, var(--cc-ep) 3.7px 6px, color-mix(in srgb, var(--cc-el) 40%, transparent) 6px 7.5px, var(--cc-ep) 7.5px 8.7px) right / 11px 100% no-repeat,
+    repeating-linear-gradient(90deg, var(--cc-ep) 0 1.6px, color-mix(in srgb, var(--cc-el) 40%, transparent) 1.6px 2.5px, var(--cc-ep) 2.5px 5.5px, color-mix(in srgb, var(--cc-el) 26%, transparent) 5.5px 6.2px, var(--cc-ep) 6.2px 9.3px) left / 10px 100% no-repeat;
+  clip-path: polygon(1px 0, 100% 0, calc(100% - 1px) 34%, 100% 67%, calc(100% - 1px) 100%, 74% 100%, 50% calc(100% - 1px), 26% 100%, 0 calc(100% - 1px), 1px 50%);
+  filter: drop-shadow(0 4px 5px rgba(10, 2, 22, .4));
+}
+#cc-panel .cc-edges::after { content: ""; position: absolute; left: 8px; right: 2px; bottom: -1px; height: 10px; z-index: -1; background: repeating-linear-gradient(180deg, color-mix(in srgb, var(--cc-el) 36%, transparent) 0 .7px, color-mix(in srgb, var(--cc-ep) 90%, #3a2208) .7px 3.6px, color-mix(in srgb, var(--cc-el) 26%, transparent) 3.6px 4.1px, color-mix(in srgb, var(--cc-ep) 90%, #3a2208) 4.1px 7px); }
+
+
+/* Свеча на обложке. */
+/* Свеча на кронштейне: поднимается над обложкой, чаша стоит на углу правой страницы.
+   Над томом для неё оставлен отступ панели, угол страницы под ней свободен от кнопок. */
+#cc-panel { padding-top: 44px; pointer-events: none; }
+#cc-panel .cc-tome { pointer-events: auto; cursor: grab; touch-action: none; }
+#cc-panel .cc-spine { touch-action: none; }
+#cc-panel .cc-page, #cc-panel .cc-side { cursor: auto; }
+#cc-panel.cc-dragging, #cc-panel.cc-dragging * { cursor: grabbing; user-select: none; }
+@media (max-width: 700px) { #cc-panel .cc-tome, #cc-panel .cc-spine { cursor: auto; touch-action: auto; } }
+#cc-panel .cc-tome-candle { position: absolute; z-index: 5; top: -44px; right: 20px; width: 84px; pointer-events: none; }
+#cc-panel .cc-tome-candle .cc-candle-box { position: relative; z-index: 1; width: 100%; }
+#cc-panel .cc-tome-candle .cc-candle { width: 84px; height: 126px; filter: drop-shadow(0 6px 6px rgba(10, 2, 20, .5)); }
+#cc-panel .cc-tome-candle .cc-candle-n {
+  position: relative;
+  margin-top: 2px;
+  min-width: 52px;
+  padding: 3px 10px 4px;
+  border: 1px solid var(--cc-gold-2);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--cc-cover-2) 85%, black);
+  box-shadow: 0 2px 3px rgba(10, 2, 20, .4);
+  color: var(--cc-gold);
+  font: 700 17px/1.1 var(--cc-display);
+  text-align: center;
+}
+#cc-panel .cc-bracket { position: absolute; z-index: 0; top: 96px; right: -20px; width: 60px; height: 70px; overflow: visible; }
+#cc-panel .cc-bracket path { fill: none; stroke-linecap: round; }
+#cc-panel .cc-bracket .cc-bracket-arm-shadow { stroke: rgba(10, 2, 22, .5); stroke-width: 6; }
+#cc-panel .cc-bracket .cc-bracket-arm { stroke: url(#cc-ring-gold); stroke-width: 5; }
+#cc-panel .cc-bracket .cc-bracket-curl { stroke: url(#cc-ring-gold); stroke-width: 2.6; }
+#cc-panel .cc-bracket .cc-bracket-shine { stroke: #f3e6c0; stroke-width: .8; opacity: .3; }
+#cc-panel .cc-bracket .cc-bracket-plate { fill: url(#cc-ring-steel); stroke: #45474f; stroke-width: 1; }
+#cc-panel .cc-bracket-rivet { fill: #d8c07a; stroke: #6a4a16; stroke-width: .8; }
+
